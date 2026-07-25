@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0074)https://info.aec.edu.in/aus/Examinations/studentexamtimetable.aspx?scrid=9 -->
+<html xmlns="http://www.w3.org/1999/xhtml"><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/content/location/location.js" id="eppiocemhmnlbhjplcgkofciiegomcon"></script><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/libs/extend-native-history-api.js"></script><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/libs/requests.js"></script><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"><link href="./StudentExamTimetable_files/bootstrap.css" rel="stylesheet" type="text/css"><link href="./StudentExamTimetable_files/font-awesome.css" rel="stylesheet" type="text/css"><link href="./StudentExamTimetable_files/CssCAP.css" rel="Stylesheet" type="text/css"><link href="./StudentExamTimetable_files/style.css" rel="stylesheet" type="text/css"><link href="./StudentExamTimetable_files/report.css" rel="Stylesheet" type="text/css"><link href="./StudentExamTimetable_files/jquery-ui-1.8.12.custom.css" rel="Stylesheet" type="text/css"><link href="./StudentExamTimetable_files/uploadify.css" rel="Stylesheet" type="text/css">
+    
+
+    <script language="javascript" src="./StudentExamTimetable_files/Validations.js.download" type="text/javascript"></script><script bis_use="true" type="text/javascript" charset="utf-8" nonce="" data-dynamic-id="d2abdf55-66c3-42e1-b80e-871b5b9c6199" src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/200.js"></script><script bis_use="true" type="text/javascript" charset="utf-8" nonce="" data-dynamic-id="d2abdf55-66c3-42e1-b80e-871b5b9c6199" src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/101.js"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/jsGeneralFunctions.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/pdfviewer.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/iframe-resize.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/AjaxMethods.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/jsPermissions.js.download" type="text/javascript"></script>
+
+    <script language="javascript" src="./StudentExamTimetable_files/jquery-1.3.2.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/jquery-1.3.2.min.js.download" type="text/javascript"></script>
+    
+    <script language="javascript" src="./StudentExamTimetable_files/jquery.fixedheader.js.download" type="text/javascript"></script>
+    
+    
+    
+    
+    <script language="javascript" src="./StudentExamTimetable_files/jquery-ui-1.8.12.custom.min.js.download" type="text/javascript"></script>
+    
+    
+    
+    <script language="javascript" src="./StudentExamTimetable_files/jquery.uploadify.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/jquery.ui.datepicker-en-GB.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/jquery-ui-timepicker-addon.js.download" type="text/javascript"></script>
+
+    <script language="javascript" src="./StudentExamTimetable_files/jquery.json-2.2.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/jquery.json-2.2.min.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/json2.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/fxHeader_0.6.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/fxHeader_0.6.min.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/jquerymethods.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/canvasjs.min.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/jqBarGraph.1.1.min.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/ajaxupload.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/table2csv.js.download" type="text/javascript"></script>
+<script language="javascript" src="./StudentExamTimetable_files/chart.js.download" type="text/javascript"></script>
+<script language="javascript" src="./StudentExamTimetable_files/chartjs-plugin-datalabels.js.download" type="text/javascript"></script>
+    <script language="javascript" src="./StudentExamTimetable_files/exceljs.min.js.download" type="text/javascript"></script>
+<script language="javascript" src="./StudentExamTimetable_files/FileSaver.min.js.download" type="text/javascript"></script>
+    
+    <script language="javascript" src="./StudentExamTimetable_files/xlsx.bundle.js.download" type="text/javascript"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(document).bind("contextmenu", function () { return false; });
+    </script>
+    <script src="./StudentExamTimetable_files/pdf.min.js.download"></script>
+    <script type="text/javascript">
+	 window.AUTH_TOKEN = 'b4764519-3e56-4c38-82e9-8e22a6777201';
+        if (typeof pdfjsLib !== "undefined") {
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                "../JSFiles/pdf.worker.min.js";
+        }
+        window.onbeforeunload = function () {
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/LogoutHandler.ashx", false); // synchronous
+                xhr.send(null);
+            } catch (e) {
+                // ignore errors
+            }
+        };
+
+    </script>
+    
+    <title>
+	Engineering College Automation Package
+</title></head>
+<body id="ctl00_MasterBody" style="margin: 0px; background-color: rgb(255, 255, 255); min-height: 0px;" __processed_c671dae3-d14f-420e-89de-6c4d17d275ee__="true" bis_register="W3sibWFzdGVyIjp0cnVlLCJleHRlbnNpb25JZCI6ImVwcGlvY2VtaG1ubGJoanBsY2drb2ZjaWllZ29tY29uIiwiYWRibG9ja2VyU3RhdHVzIjp7IkRJU1BMQVkiOiJlbmFibGVkIiwiRkFDRUJPT0siOiJlbmFibGVkIiwiVFdJVFRFUiI6ImVuYWJsZWQiLCJSRURESVQiOiJlbmFibGVkIiwiUElOVEVSRVNUIjoiZW5hYmxlZCIsIklOU1RBR1JBTSI6ImVuYWJsZWQiLCJUSUtUT0siOiJkaXNhYmxlZCIsIkxJTktFRElOIjoiZW5hYmxlZCIsIkNPTkZJRyI6ImRpc2FibGVkIn0sInZlcnNpb24iOiIyLjEuMiIsInNjb3JlIjoyMDEwMjB9XQ==">
+    <form name="aspnetForm" method="post" action="https://info.aec.edu.in/aus/Examinations/studentexamtimetable.aspx?scrid=9" id="aspnetForm">
+<div bis_skin_checked="1">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="">
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="7sIqKENDocVx8u8Dwm2yN1dXpGRwblQSkvplhvywqLPfr72i/eis6Nj3iQ+dek1WleM9orx7bkDbvgAaYIdx7IS0Ai9TOQyTXQKc0NNugZ8=">
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="./StudentExamTimetable_files/WebResource.axd" type="text/javascript"></script>
+
+<script type="text/javascript" src="./StudentExamTimetable_files/common.ashx"></script><script type="text/javascript" src="./StudentExamTimetable_files/Academics_CAPMaster,App_Web_capmaster.master.cdcab7d2.ashx"></script>
+<script src="./StudentExamTimetable_files/ScriptResource.axd" type="text/javascript"></script>
+<script src="./StudentExamTimetable_files/ScriptResource(1).axd" type="text/javascript"></script>
+<div bis_skin_checked="1">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="43C25598">
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="">
+</div>
+        <div bis_skin_checked="1">
+            <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$scripMan', 'aspnetForm', [], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+            
+    <table width="100%" cellpadding="2" cellspacing="0" class="gvStyle">
+        <tbody><tr><td align="left" class="MainHead">Exams Data</td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td valign="top">
+            <div id="divaccordian" class="ui-accordion ui-widget ui-helper-reset ui-accordion-icons" role="tablist" bis_skin_checked="1">
+                <h1 class="ui-accordion-header ui-helper-reset ui-state-active ui-corner-top" role="tab" aria-expanded="true" aria-selected="true" tabindex="0"><span class="ui-icon ui-icon-triangle-1-s"></span>Time Table</h1>
+                <div id="divtimetable" class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion-content-active" role="tabpanel" style="display: block;" bis_skin_checked="1">
+                    
+                        
+                </div>
+
+            </div>
+            </td></tr>
+    </tbody></table>
+    
+    <script language="javascript" type="text/javascript">
+        $(document).ready(function () {
+            $("#divaccordian").accordion({ collapsible: true, active: false, clearStyle: true, autoHeight: false });
+            $('#divaccordian').bind('accordionchange',
+                function () {
+                    ResizeIFrame();
+                    //alert('Active tab index: ' + $(this).accordion('option', 'active'))
+                });
+            callWebMethod({
+                url: "studentexamtimetable.aspx/ShowStudentData",
+                data: {},
+                success: function (res) {
+                    if (res != "-1000")
+                    {
+                        const tabledata = `<table width="100%" cellpadding="2" cellspacing="0" class="popupTable" id="tblexamtimetable">
+                                            <thead><tr class="gvHeaderStyle"><td align="center">Date</td><td align="center">Time</td><td align="center">Exam Type</td><td align="center">Course Code</td><td align="left">Course Name</td></tr></thead>
+                                            <tbody>
+                                            ${JSON.parse(res).Table.map(item => `
+                                            <tr>
+                                                <td align="center">${item.doe}</td>
+                                                <td align="center">${item.examtime}</td>
+                                                <td align="center">${item.examid == 1 ? "External" : item.examname}</td>
+                                                <td align="center">${item.subjectcode}</td>
+                                                <td align="left">${item.subjectname}</td>
+                                            </tr>
+                                            `).join('')}
+                                            </tbody>
+                                            </table>`
+                        $("#divtimetable").html(tabledata);
+                        $("#tblexamtimetable tr:gt(0):even").addClass("evenRow");
+                    }
+                    else alert("Not an authorized user");
+                }
+            })
+        })
+    </script>
+
+        </div>
+    </form>
+
+
+<div id="divprocess" class="" style="width: auto; min-height: 0px; height: 108px; display: none;" bis_skin_checked="1"></div><protonpass-root-a6b5 data-protonpass-role="root" data-protonpass-theme="os"><template shadowrootmode="closed"></template></protonpass-root-a6b5></body></html>

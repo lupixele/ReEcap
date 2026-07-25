@@ -1,0 +1,43 @@
+﻿{
+  "manifest_version": 3,
+  "name": "Re:Ecap",
+  "version": "1.0.0",
+  "description": "A modern reskin for the AEC student portal — cleaner UI, same functionality.",
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Re:Ecap"
+  },
+
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": ["*://info.aec.edu.in/*"],
+      "js": ["content.js"],
+      "all_frames": true,
+      "run_at": "document_start"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["style.css"],
+      "matches": ["*://info.aec.edu.in/*"]
+    }
+  ]
+}

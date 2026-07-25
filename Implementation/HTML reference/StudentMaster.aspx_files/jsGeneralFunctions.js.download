@@ -1,0 +1,1375 @@
+﻿// JScript File
+var _radgprsdevice,_radinternet;
+var _arrmonthnames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var _arrromannumber=["-","I","II","III","IV","V","VI","VII","VIII","IX","X"];
+var _arrdaynames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function _setSMSControls()
+{
+    _radgprsdevice=document.getElementById("radDevice");
+    _radinternet=document.getElementById("radInternet");
+}
+function setDropdownValue(drpControl, valueToSet) {
+    if(valueToSet!='')
+    $(drpControl).val(valueToSet);
+    /*
+      var _flag=false; 
+      for(var j=0;j<drpControl.options.length;j++)
+      {
+         drpControl.selectedIndex=j;
+         
+         if(drpControl.value==valueToSet)
+         {
+            _flag=true;
+            break;
+         }   
+      }
+      if(!_flag)
+        drpControl.selectedIndex=0;*/
+}
+
+function setDropdownText(drpControl, textToSet) {
+    if(textToSet!='')
+    $(drpControl).find("option:contains(" + textToSet + ")").attr("selected", true);
+      /*var _flag=false;
+      for(var j=0;j<drpControl.options.length;j++)
+      {
+            drpControl.selectedIndex=j;
+            if(drpControl.options[j].text==textToSet)
+            {
+                _flag=true;
+                break;
+            } 
+      }
+      if(!_flag)
+        drpControl.selectedIndex=0;*/
+}
+function setDropdownTexNew(ddlid, textToSet) {
+    $("#" + ddlid).find("option:contains(" + textToSet + ")").attr("selected", true);
+}
+
+function RemoveAllFromDropDown(ctl,isAddSelect,isDefaultValueOne)
+{
+    try {
+        if ($(ctl).length > 0) {
+            $(ctl).find("option").remove();
+            if (isAddSelect == null || isAddSelect)
+                $(ctl).append("<option value='" + (isDefaultValueOne?"1":"0") + "'>-Select-</option>");
+        }
+        /*
+        if(ctl!=null)
+        {
+            var l=ctl.options.length;
+            while(l>=0)
+            {
+                ctl.options.remove(l);
+                l--;
+            }
+            if(isAddSelect==null || isAddSelect)
+            {
+                var _value=0;
+                if(isDefaultValueOne)
+                    _value=1;
+                var opt=new Option("Select",_value);
+                ctl.options.add(opt);
+            }
+        }*/
+    }
+    catch(e)
+    {
+        alert(e);
+    }
+}
+
+
+//To Cehck/Uncheck All Check Boxes In a Table When Clicking Table Header CheckBox
+function OnClickHeaderCheckBox(tableName,checkBoxCellNo,e,headrowid)  //e:headercheckbox
+{
+    headrowid = headrowid == null ? 0 : headrowid;
+    if (tableName.toString() == "[object]" || tableName.toString() == "[object Object]")
+        tableName = $(tableName).attr("id");
+    $("#" + tableName).find("tr:gt("+headrowid+")").each(function() {
+        if($(this).find("td").length>checkBoxCellNo)
+            $(this).find("td:eq(" + checkBoxCellNo + ")").find("input:checkbox").attr("checked",$(e).attr("checked"));
+    });
+}
+
+//To Check/Uncheck Header Check Box When Clicking Table Row CheckBox
+function OnClickRowCheckBox(tableName, checkBoxCellNo, headrowid) {
+    headrowid = headrowid == null ? 0 : headrowid;
+    if (tableName.toString() == "[object]" || tableName.toString() == "[object Object]")
+        tableName=$(tableName).attr("id");
+    var flag = true;
+    $("#" + tableName).find("tr:gt("+headrowid+")").each(function() {
+        if(flag && $(this).find("td").length>checkBoxCellNo)//
+        {//
+            if($(this).find("td:eq(" + checkBoxCellNo +")").find("input:checkbox:not(:checked)").length>0)
+                flag=false;
+        }//
+    });
+    $("#" + tableName).find("tr:eq("+headrowid+")").find("td:eq(" + checkBoxCellNo + ")").find("input:checkbox").attr("checked",flag);
+}
+
+
+function OnClickHeaderCheckBox_Object(objname, e) {
+    $("#" + objname).find("input:checkbox").attr("checked", $(e).attr("checked"));
+}
+function OnClickRowCheckBox_Object(objname, hdrobject) {
+    if ($("#" + objname).find("input:checkbox[name!='chkhead']").length == $("#" + objname).find("input:checkbox[name!='chkhead']:checked").length)
+        $("#" + hdrobject).attr("checked", true);
+    else
+        $("#" + hdrobject).attr("checked", false);
+
+}
+
+//To Check/Uncheck Header Check Box When Clicking Table Row CheckBox (Two Diifferent Tables i.e Header Checkbox In One Table)
+function OnClickRowCheckBoxWithTwoTables(tableName,checkBoxCellNo,headerTableName,rowId)
+{
+    
+    if(tableName.toString()=="[object]" || tableName.toString() == "[object Object]")
+        tableName=$(tableName).attr("id");
+    var flag=true;
+    $("#" + tableName).find("tr:gt(0)").each(function() {
+        if (flag) {
+            if ($(this).find("td:eq(" + checkBoxCellNo + ")").find("input:checkbox:not(:checked)").length > 0)
+                flag = false;
+        }
+    });
+    $("#" + headerTableName).find("tr:eq(" + rowId + ")").find("td:eq(" + checkBoxCellNo + ")").find("input:checkbox").attr("checked", flag);
+}
+function OnClickHeaderCheckBox_Object(objname, e) {
+    $("#" + objname).find("input:checkbox").attr("checked", $(e).attr("checked"));
+}
+function OnClickRowCheckBox_Object(objname, hdrobject) {
+    if ($("#" + objname).find("input:checkbox[name!='chkhead']").length == $("#" + objname).find("input:checkbox[name!='chkhead']:checked").length)
+        $("#" + hdrobject).attr("checked", true);
+    else
+        $("#" + hdrobject).attr("checked", false);
+
+}
+//Check Any CheckBox Checked In Grid
+//And Any Data Entered Any Required TextBoxes
+//For Checking TextBoxes We have to send Table Cells in Comma Seperated String
+function CheckForCheckBoxInTable(tableName,checkBoxCellNo,textBoxesCellNos,messageForNullTextBoxes)
+{
+    var flag=false;
+    var arr=textBoxesCellNos.split(",");
+    var arrmsg=messageForNullTextBoxes.split(",");
+    $("#" + tableName).find("tr:gt(0)").each(function() {
+        var _row = $(this);
+        $(this).find("td:eq(" + checkBoxCellNo + ")").find("input:checkbox:checked").each(function() {
+            for (k = 0; k < arr.length; k++) {
+                el1 = tbl.rows[i].cells[arr[k]].getElementsByTagName("input");
+                $(_row).find("td:eq(" + arr[k] + ")").find("input:text").each(function() {
+                    if ($(this).val() == "") {
+                        alert("Please enter " + arrmsg[k]);
+                        $(this).focus();
+                        return false;
+                    }
+                });
+            }
+            flag = true;
+        });
+    });
+    if(!flag)
+    {
+        alert("Please select any item");
+        return false;
+    }        
+   
+    return true;
+}
+function returnLeft(obj) {
+    var curleft = 0;
+    if (obj != null) {
+        var _offset = $(obj).offset();
+        curleft = _offset.left;
+    }
+    /*
+    //var obj=document.all('imgSearch');
+    
+    if (obj.offsetParent)
+
+        while (1) {
+        curleft += obj.offsetLeft;
+        if (!obj.offsetParent)
+            break;
+        obj = obj.offsetParent;
+    }
+    else if (obj.x)
+        curleft += obj.x;*/
+    return curleft;
+}
+function returnTop(obj) {
+    var curtop = 0;
+    if (obj != null) {
+        var _offset = $(obj).offset();
+        curtop = _offset.top;
+    }
+    /*
+			//var obj=document.all('imgSearch');
+			var curtop = 0;
+			if(obj.offsetParent)
+				while(1)
+				{
+					curtop += obj.offsetTop;
+					if(!obj.offsetParent)
+					break;
+					obj = obj.offsetParent;
+				}
+			else if(obj.y)
+				curtop += obj.y;
+			return curtop;
+	*/
+    return curtop;
+}
+	
+
+function ShowHideObject(objectId,flag,btnName)
+{
+    var objctl=$("#" + objectId);
+    if (flag)
+        $(objctl).show();
+    else
+        $(objctl).hide();
+        
+    if(btnName!=null)
+    {
+        var ctlbtn=$("#" + btnName);
+        if(flag)
+            $(ctlbtn).hide();
+        else
+            $(ctlbtn).show();
+    }
+    ResizeIFrame();
+}
+
+
+function CompareTimes(FromTime,ToTime)
+{
+    try
+    {
+        
+            var arrFromTime=FromTime.split(':')
+            var arrToTime=ToTime.split(':');
+            var currentDate=new Date();
+            var currentYear=currentDate.getFullYear();
+            var convertDate1=new Date(currentYear,1,1,arrFromTime[0],arrFromTime[1],0);
+            var convertDate2=new Date(currentYear,1,1,arrToTime[0],arrToTime[1],0);
+            if(convertDate1>convertDate2)
+            {
+                alert("FromTime shold not greater than ToTime");
+                return false;
+            }
+       
+    }
+    catch(e)
+    {
+        alert(e.message);
+        return false;
+    }
+return true;
+}
+
+var ctlcourse,ctlbranch,ctlsem,ctlsection,ctlnosections,isvisiblesection,sectiondefaultall,branchdefaultall,semesterdefaultall;
+function GetCourseBranchControls()
+{
+    $("#tblCBS select").each(function() {
+        if ($(this).attr("id").indexOf("ddlCourse") >= 0)
+            ctlcourse = $(this);
+        else if ($(this).attr("id").indexOf("ddlBranch") >= 0)
+            ctlbranch = $(this);
+        else if ($(this).attr("id").indexOf("ddlSemester") >= 0)
+            ctlsem = $(this);
+        else if ($(this).attr("id").indexOf("ddlSection") >= 0)
+            ctlsection = $(this);
+        else if ($(this).attr("id").indexOf("ddlNoOfSections") >= 0)
+            ctlnosections = $(this);
+    });
+}
+
+var ctlsubject,ctltitle,titleddl,ctlauthor,authorddl,ctlpublisher,publisherddl,authorslistddl;
+function GetBookSearchControls() {
+   if($("#tblLibrarySearch").length>0) {
+       $("#tblLibrarySearch select").each(function() {
+            if ($(this).attr("id")!=null && $(this).attr("id").indexOf("lstSubject") >= 0)
+                ctlsubject = $(this);
+            else if ($(this).attr("id")!=null && $(this).attr("id").indexOf("ddlTitle") >= 0)
+                titleddl = $(this);
+            else if ($(this).attr("id")!=null &&  $(this).attr("id").indexOf("ddlAuthors") >= 0)
+                authorslistddl = $(this);
+            else if ($(this).attr("id").id!=null && $(this).attr("id").indexOf("ddlAuthor") >= 0)
+                authorddl = $(this);
+            else if ($(this).attr("id")!=null && $(this).attr("id").indexOf("ddlPublisher") >= 0)
+                publisherddl = $(this);
+        });
+
+        $("#tblLibrarySearch input:text").each(function() {
+            if ($(this).attr("id") != null && $(this).attr("id").indexOf("txtTitle") >= 0)
+                ctltitle = $(this);
+            else if ($(this).attr("id") != null && $(this).attr("id").indexOf("txtAuthor") >= 0)
+                ctlauthor = $(this);
+            else if ($(this).attr("id") != null && $(this).attr("id").indexOf("txtPublisher") >= 0) 
+                ctlpublisher = $(this);
+
+        });
+   } 
+}
+
+function ToUpperCase(objCtl)
+{
+   
+    if($(objCtl).length>0) {
+        /*
+        if(objCtl.type=="text")
+            objCtl.value=objCtl.value.toUpperCase(objCtl.value);
+        else if(objCtl.type=="span")
+            objCtl.innerText= toUpperCase(objCtl.innerText);
+        */
+        if ($(objCtl).prop('type') == "text")
+            $(objCtl).val(toUpperCase($(objCtl).val()));    
+        else
+            $(objCtl).text(toUpperCase($(objCtl).text()));    
+    }
+}
+
+function CheckValidDate(strValue,fieldForValidation)
+{  
+        //arrValue=strValue.split('/','-');
+       // strValue=arrValue[1] + '/' + arrValue[0] + '/' + arrValue[2];
+        var RegExPattern = /^((((0?[1-9]|[12]\d|3[01])[\.\-\/](0?[13578]|1[02])[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|((0?[1-9]|[12]\d|30)[\.\-\/](0?[13456789]|1[012])[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|((0?[1-9]|1\d|2[0-8])[\.\-\/]0?2[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|(29[\.\-\/]0?2[\.\-\/]((1[6-9]|[2-9]\d)?(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)|00)))|(((0[1-9]|[12]\d|3[01])(0[13578]|1[02])((1[6-9]|[2-9]\d)?\d{2}))|((0[1-9]|[12]\d|30)(0[13456789]|1[012])((1[6-9]|[2-9]\d)?\d{2}))|((0[1-9]|1\d|2[0-8])02((1[6-9]|[2-9]\d)?\d{2}))|(2902((1[6-9]|[2-9]\d)?(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)|00))))$/;
+        var errorMessage = 'Check date ( ' + fieldForValidation + ' )';
+        if (strValue.match(RegExPattern))
+           return true;
+        else 
+        {
+            alert(errorMessage);
+           return false;
+        }
+}
+
+function CheckWithCurrentMonthAndYear(currentMonth,currentYear,selectedMonth,selectedYear)
+{
+    var _currentDate=new Date();
+    if(currentMonth==0)
+        currentMonth=_currentDate.getMonth()+1;
+    if(currentYear==0)
+        currentYear=_currentDate.getFullYear();   
+    
+    
+    if(parseInt(currentYear)>=parseInt(selectedYear))//==
+    {
+        if(parseInt(currentYear)==parseInt(selectedYear))//
+        if(selectedMonth>currentMonth)
+        {
+            alert('Select valid month');
+            return false;
+        }
+    }
+    //appu
+    else
+    {
+        alert('Invalid Year');
+        return false;
+    }
+    //end appu
+    return true;
+}
+
+function Raiserror(errorMessage)
+{
+    if(errorMessage=='SyntaxError Syntax error' || errorMessage=="SE")  //SE:Session Expires
+    {
+       
+        alert("Sorry, your session has expired");
+        parent.window.location.href="default.aspx";
+    }
+    else
+        alert(errorMessage);
+}
+
+function IncreaseIFrameHeight(height) {
+    var sourceHeight = document.body.scrollHeight + 50;
+    if(sourceHeight<height)
+        sourceHeight = height;
+    $("#capIframeId", parent.document).css("height", sourceHeight);
+    
+}
+function PrintReceipt(rcvdfrom,amount,towards)
+{
+    var _width=screen.width/2;
+    var _height=screen.height/2;
+    window.open("../receipt.aspx?rcvdfrom=" + rcvdfrom + "&amt=" + amount + "&towards=" + towards,"Receipt","scrollbars=no,toolbar=no,location=no,status=no,width=" + _width + ",height=" + _height);
+}
+function ShowSearchPage(ctlid)
+{
+    var _width=screen.width;
+    _width=_width-(_width/3);
+    var _height=screen.height/2;
+    window.open("../studentsearch.aspx?ctlid=" + ctlid,'SSearch','width=' + _width +',height=' + _height + ',toolbar=no,scrollbars=yes,titlebar=no,status=no,directories=no,location=no');
+    
+}
+function ShowEmpSearch(ctlid)
+{
+    var _width=screen.width;
+    _width=_width-(_width/3);
+    var _height=screen.height/2;
+    window.open("../empsearch.aspx?ctlid=" + ctlid,'ESearch','width=' + _width +',height=' + _height + ',toolbar=no,scrollbars=yes,titlebar=no,status=no,directories=no,location=no');
+    
+}
+
+
+function _checkTextAreaLength(o,maxlength,spanid)
+{
+    if($(o).val().length>maxlength)
+        $(o).val($(o).val().substring(0,maxlength));
+    else if (spanid != null) {
+      if ($(o).val() != "")
+   $("#" + spanid).html("No.Of Characters Left:&nbsp;"+(maxlength - $(o).val().length).toString());
+        else $("#" + spanid).html("");
+    }
+}
+function maxLengthPaste(field,maxChars,spanid)
+ {
+       var _totalstring=$(field).val() + " " + window.clipboardData.getData("Text");
+       if(_totalstring.length> maxChars) 
+       {
+            _checkTextAreaLength(field,maxChars,null);
+       }
+       if(spanid!=null)
+       {
+            var _spnlength=$get(spanid);
+            $("#" + spanid).html("No.Of Characters Left:&nbsp;" + (maxChars-$(field).val().length).toString());
+       }
+ }
+
+//parent div id in each page is divDisableWindow
+function _openDisableWindow(childWindow,l,t)
+{
+    //$("#divDisableWindow").show();
+    $(childWindow).dialog();
+    if(l!=null)
+        $(childWindow).css("left",l);
+    if(t!=null)
+        $(childWindow).css("top",t);
+   
+}
+function _closeDisableWindow(childWindow)
+{
+    $(childWindow).hide();
+    $("#divDisableWindow").hide();
+}
+function exportTableToExcel(tablename, filename = "Marks.xls",isaddlink,isfromold) {
+
+
+
+    if (!tablename)
+        tablename = 'tblreport';
+
+    //replaceCanvasWithImages(tablename);
+
+    // 1. Get the table HTML
+    let table = "";
+    if (isfromold == null || isfromold == false)
+    	table = document.getElementById(tablename).outerHTML;
+    else {
+        table = $("#"+tablename).html();
+    }    
+
+    //let table = convertDivsToTable(tablename);
+
+    // 2. Replace <br> tags with Excel-compatible line feeds
+    table = table.replace(/<br\s*\/?>/gi, "&#10;");
+
+ table = table.replace(/&#10004;/gi, '✔');
+
+    // 3. Add Excel-specific style to all <td> cells to wrap text
+    //table = table.replace(/<td([^>]*)>/gi, '<td$1 style="white-space:pre-wrap;">');
+ table = table.replace(
+     /<td([^>]*)>/gi,
+     '<td$1 style="white-space:pre-wrap; mso-number-format:\\@;">'
+ );
+
+    // 4. Construct full Excel HTML
+    const excelFile = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <!--[if gte mso 9]>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <xml>
+    <x:ExcelWorkbook>
+      <x:ExcelWorksheets>
+        <x:ExcelWorksheet>
+          <x:Name>Sheet1</x:Name>
+          <x:WorksheetOptions>
+            <x:DisplayGridlines/>
+          </x:WorksheetOptions>
+        </x:ExcelWorksheet>
+      </x:ExcelWorksheets>
+    </x:ExcelWorkbook>
+  </xml>
+  <![endif]-->
+</head>
+<body>
+  ${table}
+</body>
+</html>
+`;
+
+    // 5. Encode to Base64
+    const base64Encode = (str) => window.btoa(unescape(encodeURIComponent(str)));
+    const uri = 'data:application/vnd.ms-excel;base64,' + base64Encode(excelFile);
+
+    // 6. Create temporary download link and click
+    const link = document.createElement("a");
+    link.href = uri;
+    link.download = filename;
+    if (isaddlink) {
+    	link.text = "Download";
+        $("#divlink").append(link);
+   }
+    else {
+       document.body.appendChild(link);
+       link.click();
+      document.body.removeChild(link);
+   }
+}
+function convertDivsToTable(containerId) {
+    const container = document.getElementById(containerId);
+    let table = `<table border="1">`;
+
+    Array.from(container.children).forEach(rowDiv => {
+        table += `<tr>`;
+
+        Array.from(rowDiv.children).forEach(cellDiv => {
+            table += `<td style="white-space:pre-wrap;">${cellDiv.innerHTML}</td>`;
+        });
+
+        table += `</tr>`;
+    });
+
+    table += `</table>`;
+    return table;
+}
+
+
+function exportToExcel_MultipleSheets(arrTables, fname) {
+    var wb = XLSX.utils.book_new();
+
+    arrTables.forEach(function (tableId) {
+
+        var table = document.getElementById(tableId);
+        if (!table) return;
+
+        var ws = XLSX.utils.table_to_sheet(table);
+
+        var range = XLSX.utils.decode_range(ws['!ref']);
+
+
+        for (var R = range.s.r; R <= range.e.r; ++R) {
+            for (var C = range.s.c; C <= range.e.c; ++C) {
+
+                var addr = XLSX.utils.encode_cell({ r: R, c: C });
+
+                if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+
+                var cell = ws[addr];
+
+                if (!cell.s) cell.s = {};
+
+                cell.s = {
+                    border: {
+                        top: { style: "thin", color: { rgb: "000000" } },
+                        bottom: { style: "thin", color: { rgb: "000000" } },
+                        left: { style: "thin", color: { rgb: "000000" } },
+                        right: { style: "thin", color: { rgb: "000000" } }
+                    },
+                    alignment: {
+                        horizontal: "center",
+                        vertical: "center"
+                    }
+                };
+
+                if (R === range.s.r) {
+                    cell.s.font = { bold: true };
+                }
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, tableId);
+
+    });
+    fname = fname + ".xlsx"
+    XLSX.writeFile(wb, fname);
+
+    
+
+}
+
+
+
+function replaceCanvasWithImages(containerId) {
+    const container = document.getElementById(containerId);
+    const canvases = container.querySelectorAll("canvas");
+
+    canvases.forEach((canvas) => {
+        const img = document.createElement("img");
+        img.src = canvas.toDataURL("image/png");
+
+        // 🔑 Excel requires explicit sizing
+        img.setAttribute("width", canvas.width);
+        img.setAttribute("height", canvas.height);
+        img.style.display = "block";
+
+        // Wrap inside TD if needed
+        let td = canvas.closest("td");
+        if (td) {
+            td.innerHTML = "";
+            td.appendChild(img);
+        } else {
+            canvas.parentNode.replaceChild(img, canvas);
+        }
+    });
+}
+
+async function exportDivTablesToExcel( tablename, filename) {
+
+    const container = document.getElementById(tablename);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Sheet1");
+
+    let currentRow = 1;
+
+    for (const table of container.querySelectorAll("table")) {
+
+        for (const row of table.rows) {
+
+            const excelRow = [];
+
+            for (const cell of row.cells) {
+
+                const canvas = cell.querySelector("canvas");
+
+                // ───── Canvas cell ─────
+                if (canvas) {
+                    excelRow.push(""); // placeholder
+                }
+                // ───── Normal cell ─────
+                else {
+                    excelRow.push(cell.innerText.trim());
+                }
+            }
+
+            worksheet.addRow(excelRow);
+            currentRow++;
+
+            // Insert canvas image AFTER the row
+            for (let c = 0; c < row.cells.length; c++) {
+                const canvas = row.cells[c].querySelector("canvas");
+                if (canvas) {
+                    const imageId = workbook.addImage({
+                        base64: canvas.toDataURL("image/png"),
+                        extension: "png"
+                    });
+
+                    worksheet.addImage(imageId, {
+                        tl: { col: c, row: currentRow - 1 },
+                        ext: { width: 400, height: 250 }
+                    });
+
+                    currentRow += 15;
+                }
+            }
+        }
+
+        currentRow += 2; // space between tables
+    }
+
+    worksheet.columns.forEach(col => col.width = 20);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), filename);
+}
+
+
+
+
+//to export table data into excel
+//in every page report table(in more reports using div tag) id is tblReport
+function ExportToExcel(tblName) {
+
+	 const today = new Date();
+	 const _current_time = today.getFullYear().toString() + (today.getMonth()+1).toString() + today.getHours().toString() + today.getMinutes().toString() + today.getSeconds().toString(); // 2024
+	 $("#tblReport").append("<div id='divlink'></div>");
+	 exportTableToExcel("tblReport", "ecap_excel_" + _current_time + ".xls", true, true);
+
+    /*try {
+        if ($.browser.msie) {
+            var thisTable = $("#tblReport").html();
+
+            window.clipboardData.setData("Text", thisTable);
+            var objExcel = new ActiveXObject("Excel.Application");
+            objExcel.visible = true;
+
+            var objWorkbook = objExcel.Workbooks.Add;
+            var objWorksheet = objWorkbook.Worksheets(1);
+            objWorksheet.Paste;
+        }
+        else {
+            var str = $("#tblReport").html();
+            //window.open('data:application/vnd.ms-excel,' + encodeURIComponent(str));
+            window.open('data:application/vnd.csv,' + encodeURIComponent(str));
+            e.preventDefault();
+        }
+    }
+    catch (e) {
+        alert(e.error);
+    }*/
+}
+function ExportToExcelNew(e) {
+    try {
+        var str = $("#tblReport").html();
+        /*$('#tblReport table:tr').each(function() {
+
+        $(this).find('td').each(function() {
+
+         str=str+$(this).html()+"\t";
+        });
+        str=str+"\n";
+
+    });*/
+        //window.open('data:application/vnd.ms-excel,' + encodeURIComponent(str));
+        window.open('data:application/vnd.csv,' + encodeURIComponent(str));
+        e.preventDefault();
+    }
+    catch (e) {
+        alert(e.error);
+    }
+ }
+function ExportToCSV(tid, fname, row_remove_name) {
+    var _table = $("#" + tid);//.find("table");
+    if (row_remove_name != null)
+        $(_table).find("tr[name=" + row_remove_name + "]").remove();
+    $(_table).table2csv({
+        filename: fname + '.csv'
+    });
+}
+
+function OnDatePickerClick(ctlid)
+{
+    
+    if(self.Pop)
+    {
+        var ctl=document.getElementById(ctlid);
+        Pop.PopCalendar(ctl,true);
+        return false;
+   }
+}
+function GoToReports()
+{
+    location.href='student_reports.aspx'
+}
+
+function _onTBFocus(o,isforthis)  //text box focus
+{
+    //o.srcElement.parentNode.parentNode.style.backgroundColor="Red";    
+    if(isforthis==null)
+    {
+        o.srcElement.parentNode.parentNode.className="gvHeaderStyle";    
+        o.srcElement.className="popupTable";
+    }
+    else
+    {
+        o.className="setBGColor";
+    }
+}
+function _onTBlur(o,isforthis)   //text box blur
+{
+    if(isforthis==null)
+        o.srcElement.parentNode.parentNode.className="popupTable";    
+    else
+        o.className="INPUT";
+}
+function _showEmpImageDiv()
+{
+    //var _imghead=document.getElementById("imgHead")
+    var _divimg=document.getElementById("divImg");
+    //if(_imghead!=null && _divimg!=null)
+    if( _divimg!=null)
+    {
+        var _left=900;
+        /*var _top=returnTop(_imghead);
+        var _imgwidth=_imghead.width;
+        if(_imgwidth>0)
+            var _left=_imgwidth-100;*/
+        /*_divimg.style.top=0;    
+        _divimg.style.left=_left;
+        _divimg.style.position="absolute";
+        _divimg.style.display="block";*/
+    }
+}
+function _onTextBoxFocus(o)
+{
+	$(o).css("background-color","Blue");
+	$(o).css("color","White");
+}
+function _changeRowColor(tblname,rowid,o)
+{
+    if($(o).attr("checked")) {
+        $("#" + tblname).find("tr:eq(" + rowid + ")").css("background-color", "red");
+        $("#" + tblname).find("tr:eq(" + rowid + ")").css("color", "white");
+    }    
+    else {
+        /*
+        tblobj.rows[rowid].style.backgroundColor = document.body.style.backgroundColor;
+        tblobj.rows[rowid].style.color=document.body.style.color ;*/
+
+        $("#" + tblname).find("tr:eq(" + rowid + ")").css("background-color", $("body").css("background-color"));
+        $("#" + tblname).find("tr:eq(" + rowid + ")").css("color", $("body").css("color"));
+    }    
+}
+function setBackgroundColor(obj,curs)
+{
+    $(obj).css("background-color","red");
+    $(obj).css("color","#ffffff");    
+    if(curs)
+        $(obj).css("cursor","pointer");
+}
+function setDefaultColor(obj) {
+
+    $(obj).css("background-color", $("body").css("background-color"));
+    $(obj).css("color", $("body").css("color"));
+    $(obj).css("cursor","default");
+     
+}
+
+//set values for user control course and batch for marks
+var _uctlbatch=0,_uctlcourseid=0,_uctlbranchid=0;       
+var _uctlsemid=0,_uctlmarkssemid=0,_uctlsectionid=0;
+var _uctlcursemname='',_uctlmarkssemname='',_is_utcl_ddlmarkssem_show;
+var _uctlcoursename='',_uctlbranchname='';
+function setUCTLValues()
+{
+    _uctlbatch=0;       
+    _uctlcourseid=$(_uctl_ddlcourse).val();
+    _uctlbranchid = $("#utclddlBranch").val();
+    _uctlsemid=0;
+    _uctlcursemname='';
+    _uctlsemid = $("#utclddlBatch").val();
+    if ($("#utclddlBatch").find("option:selected").attr("title") != '')
+    {
+        _uctlcursemname = $("#utclddlBatch").find("option:selected").attr("title");
+    }
+    if ($(_utcl_ddlbatch).attr("selectedIndex") > 0)
+        _uctlbatch = $("#utclddlBatch").find("option:selected").text();    
+    _uctlcoursename=$(_uctl_ddlcourse).find("option:selected").text();
+    _uctlbranchname = $("#utclddlBranch").find("option:selected").text();
+    _uctlmarkssemid = $("#utclddlMarksSem").val();
+    
+    _uctlmarkssemname = $("#utclddlMarksSem").find("option:selected").text();
+    _uctlsectionid = $("#utclddlSection").val();
+}
+
+
+
+//set values for user control course and batch for feetype
+var _uctlbybatch=0,_uctlbycourseid=0,_uctlbybranchid=0;       
+var _uctlbysemid=0,_uctlbyyearid=0,_uctlbysectionid=0;
+var _uctlbycursemname='',_uctlbyyear='',_uctlbybranch='',_uctlbycourse='';
+var _uctlbyrevenueid=0,_uctlbyseattype='0',_uctlbyfeename='';
+function setBatchYearUCTLValues()
+{
+    _uctlbybatch=0;       
+    _uctlbycourseid=$(_uctlby_ddlcourse).val();
+    _uctlbybranchid = $("#uctlbyddlBranch").val();
+    _uctlbysemid=0;
+    _uctlbycourse=$(_uctlby_ddlcourse).find("option:selected").text();
+    var _selindex=_uctlby_ddlbatch.selectedIndex;
+    _uctlbysemid = $("#uctlbyddlBatch").val();
+    _uctlbycursemname = $("#uctlbyddlBatch option:selected").attr("title");
+    
+    if(_uctlbycursemname=='-')
+    {
+        _uctlbybatch = $("#uctlbyddlBatch option:selected").text();
+        _uctlbycursemname=_uctlbybatch + " Batch";
+        
+    }    
+    _uctlbyyearid=$(_uctlby_ddlyear).val();
+    _uctlbyyear = $("#uctlbyddlYear option:selected").text();
+    _uctlbyrevenueid = $("#ddlHead").val();
+    _uctlbyfeename = $("#ddlHead option:selected").text();
+    _uctlbyseattype=$(_uctlby_ddlseattype).val();
+    _uctlbysectionid=$(_uctlby_ddlsection).val();
+}
+function _showUploadDIV(ttype)
+{
+    if($("#spnFile").length>0)
+    {
+        $("#spnFile").text("");
+        $("#spnFile").attr("title","");
+    }
+    $("#ifFile").attr("src", "../uploadfile.aspx?stype=" + ttype);
+    showUploadFileDialog();
+    /*ttype:AN=>Application.No
+            GR=>Govt Receipts Off-Line
+    */
+}
+function getUrlParams() 
+{
+   var params = {};   
+   window.location.search.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(str,key,value) {     params[key] = value;   });     
+  
+   return params; 
+}
+
+function getURLParameters() 
+{
+	var sURL = window.document.URL.toString();
+	var arrParamValues=new Array();
+	if (sURL.indexOf("?") > 0)
+	{
+		var arrParams = sURL.split("?");
+			
+		var arrURLParams = arrParams[1].split("&");
+		arrParamValues = new Array(arrURLParams.length);
+		var i = 0;
+		for (i=0;i<arrURLParams.length;i++)
+		{
+			var sParam =  arrURLParams[i].split("=");
+			//arrParamNames[i] = sParam[0];
+			if (sParam[1] != "")
+				arrParamValues[i] = unescape(sParam[1]);
+			else
+				arrParamValues[i] = "0";
+		}
+		/*
+		for (i=0;i<arrURLParams.length;i++)
+		{
+			alert(arrParamNames[i]+" = "+ arrParamValues[i]);
+		}*/
+	}
+    return arrParamValues;
+}
+
+function fillSampleFileLink(filename,ctlid)
+{
+    var _objdiv;
+    if(ctlid!=null)
+        _objdiv=$("#" + ctlid);
+    else
+        _objdiv=$("#divSampleLink");
+    if($(_objdiv).length>0)
+        $(_objdiv).html("&nbsp;&nbsp;Click&nbsp;<a href=../SampleSheets/"+filename +" target=_blank style=text-decoration:none>here</a>&nbsp;to sample excel file");
+}
+function showProcessDialog(objid,isopen) {
+
+    if (isopen) {
+        $("#" + objid).html("<center><img src='../images/loading_animation.gif'/><br/>Please wait while processing....</center>");
+        $("#" + objid).dialog(
+        {
+            /*open:function() {
+            $(this).parents(".ui-dialog:first").find(".ui-dialog-titlebar-close").remove()
+            }, */
+            position: [0,0],
+            modal: true,
+            height: 150,
+            width:300,
+            resizable: false,
+            close: false
+        });
+        $(".ui-dialog-titlebar").hide();
+    }
+    else {
+        //$("#" + objid).dialog('close');
+        $("#" + objid).html('');
+        $("#" + objid).dialog('destroy');
+    }
+        
+}
+
+function showDialog(ctlpopupid,_width,_height,closefunction)
+{
+        $("#" + ctlpopupid).dialog(
+            {
+             bgiframe: true,
+             //position: 'center',
+             position:[0,0],
+             modal: true,
+             width:_width,
+             height:_height ,
+             //width:_width,
+             //height:_height,
+             close:function(){if(closefunction!=null) eval(closefunction);},
+             resizable:false,
+             //title:"Questions"
+             //dialogClass: 'popupTable'
+             modal:true
+             
+             /*buttons: { "Close": function() { $(this).dialog("destroy"); }}*/
+             }
+        );
+}
+function showDialogWithPosition(ctlpopupid,_width,_height,closefunction,head,x,y)
+{
+    $("#" + ctlpopupid).dialog(
+            {
+                bgiframe: false,
+                position: 'center',
+                modal: true,
+                width: _width,
+                height: _height,
+                //width:_width,
+                //height:_height,
+                close: function() { if (closefunction != null) eval(closefunction); },
+                resizable: false,
+                title: head,
+                dialogClass: function() { if (head == '' || head == null) 'no-titlebar'; else '' },
+                position: [x, y]
+                /*buttons: { "Close": function() { $(this).dialog("destroy"); }}*/
+            }
+        );
+}
+function showDialogWithoutTitle(ctlpopupid, _width, _height, closefunction, head) {
+    if ($("#" + ctlpopupid).hasClass("ui-dialog-content")) {
+       $("#" + ctlpopupid).dialog("destroy");
+    }
+    $("#" + ctlpopupid).dialog(
+    {
+        bgiframe: false,
+        //position: 'center',
+        position:[0,0],
+        modal: true,
+        width: _width,
+        height: _height,
+        //width:_width,
+        //height:_height,
+        close: function() { if (closefunction != null) eval(closefunction); },
+        resizable: false,
+        title: head,
+        dialogClass: function() { if(head==null && head=='') 'no-titlebar' }
+        /*buttons: { "Close": function() { $(this).dialog("destroy"); }}*/
+    }
+);
+}
+function showDialogWithAutoResize(ctlpopupid,_width,closefunction, head) {
+    $("#" + ctlpopupid).dialog(
+    {
+        bgiframe: false,
+        position: [0, 0],
+        modal: true,
+        height: 'auto',
+        width:_width,
+        close: function() { if (closefunction != null) eval(closefunction); },
+        resizable: false,
+        title: head,
+        dialogClass: function() { if (head == null && head == '') 'no-titlebar' }
+        /*buttons: { "Close": function() { $(this).dialog("destroy"); }}*/
+    }
+);
+}
+function showUploadFileDialog() {
+    $("#divUpload").dialog(
+    {
+        bgiframe: false,
+        position: 'center',
+        position: [0, 0],
+        modal: true,
+        width:600,
+        height:'auto',
+        resizable:false,
+        title: "Upload File"
+    }
+ );
+}
+function hideDialg(ctlpopupid, isdestroy) {
+    try {
+        if (isdestroy)
+            $("#" + ctlpopupid).dialog("destroy");
+        else
+            $("#" + ctlpopupid).hide();
+    } catch (e) {
+    alert(e.error);
+    }
+
+        
+}
+function setDatePicker()
+{
+    $('.datePicker').datepicker({
+		showOn: 'button',
+		buttonImage: '../images/calendar.gif',
+		buttonImageOnly: true,
+		changeMonth:true,
+		changeYear:true,
+		yearRange: "-60:+20"
+		//yearRange: '1950:2013',
+		});
+}
+function setDatePicker_MonthRange(belowmonths, abovemonths) {
+    $('.datePicker').datepicker({
+        showOn: 'button',
+        buttonImage: '../images/calendar.gif',
+        buttonImageOnly: true,
+        changeMonth: true,
+        changeYear: true,
+        minDate: "-" + belowmonths + "M",
+        maxDate: "+" + abovemonths + "M"
+        //yearRange: '1950:2013',
+    });
+}
+function setDatePickerWithoutImage()
+{
+    $('.datePicker').datepicker({
+		changeMonth:true,
+		changeYear:true
+		});
+}
+function setDateTimePicker()
+{
+    /*$('.datePicker').timepicker({
+		showOn: 'button',
+		buttonImage: '../images/calendar.gif',
+		buttonImageOnly: true,
+		timeFormat: "h:mm TT",ampm: true
+		});*/
+		
+$(".datePicker").datetimepicker(
+   {timeFormat: "h:mm TT",
+  ampm: true});
+}
+function setTimePicker() {
+    /*$('.datePicker').timepicker({
+    showOn: 'button',
+    buttonImage: '../images/calendar.gif',
+    buttonImageOnly: true,
+    timeFormat: "h:mm TT",ampm: true
+    });*/
+
+    $(".timePicker").timepicker(
+   { timeFormat: "h:mm TT",
+       ampm: true
+   });
+}
+
+function changeFloatingHeaderPosition(container, headerId) 
+{ 
+                   
+    $("#"+headerId + " tr th") 
+        .css("top", container.scrollTop); 
+                    
+} 
+function showloading() {
+    $('#content').hide();
+    $('#siteLoader').show();
+}
+
+function hideloading() {
+    $('#content').show();
+    $('#siteLoader').hide();
+}
+function updateTips(t) {
+    var tips = $(".validateTips");
+    tips
+            .text(t)
+            .addClass("ui-state-highlight");
+    setTimeout(function() {
+        tips.removeClass("ui-state-highlight", 1500);
+    }, 500);
+}
+
+function checkLength(o, n, min, max) {
+    if ($(o).val().length > max || $(o).val().length < min) {
+        $(o).addClass("ui-state-error");
+        updateTips("Length of " + n + " must be between " + min + " and " + max + ".");
+        return false;
+    } else {
+        return true;
+    }
+} function validateTb(objId, errObjId, errMsg) {
+    //errMsg = 'Please fill ' + errMsg;
+    var db = $('#' + objId).val();
+    if (!db && db.length <= 0) {
+        $('#' + errObjId).html(errMsg).show();
+        return false;
+    } else {
+        $('#' + errObjId).html('').hide();
+        return true;
+    }
+}
+function setCurrentDate(ctlid) {
+    try {
+        var response = AjaxGeneral.GetDates();
+        if (response.error == null)
+            $("#" + ctlid).val(response.value[1]);
+    }
+    catch (e) {
+    }
+}
+function setFromAndToDate(fromctlid, toctlid) {
+    try {
+        var response = AjaxGeneral.GetDates();
+        if (response.error == null) {
+            var _arr = response.value;
+            $("#" + fromctlid).val(_arr[0]);
+            $("#" + toctlid).val(_arr[1]);
+        }
+    } catch (e) {
+    }
+}
+function setDepartmentDropDownStatus(ddlid) {
+    // alert(ddlid + "," + _showalldeptdata);
+    $("#" + ddlid).attr("disabled", !_showalldeptdata);
+    if (!_showalldeptdata)
+        $("#" + ddlid).find("option").not(":selected").remove();
+}
+function setJqueryBrowseControl_WithFlashPlayer(fileControlid, spanId) {
+    
+    $("#" +fileControlid).fileUpload({
+        'uploader': '../JSFiles/uploader.swf',
+        'cancelImg': '../images/cancel.png',
+        'buttonText': 'Select File',
+        'script': '../Upload.ashx',
+        'fileDesc': 'Excel Files',
+        'fileExt': '*.xls',
+        'multi': false,
+        'auto': true,
+        'onComplete': function(event, queueID, fileObj, reposnse, data) {
+            var fpath = fileObj.filePath;
+            //$('#spnFile').attr("title", fileObj.name);
+            //$('#spnFile').text(fileObj.name);
+            $("#" + spanId).attr("title", fileObj.name);
+            $("#" + spanId).text(fileObj.name);
+        },
+        'onCancel': function() {
+        //$("#<%=ctlFile.ClientID %>").fileUpload('cancel');
+            $("#" + fileControlid).fileUpload('cancel');
+        }
+    });
+}
+
+function setJqueryBrowseControl(fileControlid, spanId) {
+    new AjaxUpload('#' + fileControlid, {
+        action: '../upload.ashx',
+        name: 'upload',
+        onComplete: function (file) {
+            //$('<div><img src="../images/delete_small.png" style="width:20px;height:20px"/>' + file + '</div>').appendTo('#fileList');
+            $("#" + spanId).text(file);
+            $("#" + spanId).attr("title", file);
+            //$('<div><img src="../images/delete_small.png" style="width:20px;height:20px"/>' + file + '</div>').append('#fileList');
+            //$('#uploadStatus').html("Upload done...");
+        },
+        onSubmit: function (file, ext) {
+            //if (!(ext && /^(txt|doc|docx|xls|pdf)$/i.test(ext))) {
+            if (!(ext && /^(xls)$/i.test(ext))) {
+                alert('Invalid File Format.');
+                return false;
+            }
+            //$('#uploadStatus').html("Uploading...");
+        }
+
+    });
+}
+
+function setJqueryBrowseControl_Images(fileControlid, spanId,hidedialogid) {
+
+    $("#" + fileControlid).fileUpload({
+        'uploader': '../JSFiles/uploader.swf',
+        'cancelImg': '../images/cancel.png',
+        'buttonText': 'Select File',
+        'script': '../Upload.ashx',
+        'fileDesc': 'Images',
+        'fileExt': '*.png;*.jpeg;*.gif;*.jpg',
+        'multi': false,
+        'auto': true,
+        'onComplete': function(event, queueID, fileObj, reposnse, data) {
+            var fpath = fileObj.filePath;
+            //$('#spnFile').attr("title", fileObj.name);
+            //$('#spnFile').text(fileObj.name);
+            if (spanId != null) {
+                alert("dd");
+                $("#" + spanId).attr("title", fileObj.name);
+                $("#" + spanId).text(fileObj.name);
+            }
+            else {  //from upload certificates page
+                alert(_filespanid);
+                $("#" + _filespanid).attr("title", fileObj.name);
+                $("#" + _filespanid).text(fileObj.name);
+
+            }
+            if (hidedialogid != null)
+                hideDialg(hidedialogid, true);
+        },
+        'onCancel': function() {
+            //$("#<%=ctlFile.ClientID %>").fileUpload('cancel');
+            $("#" + fileControlid).fileUpload('cancel');
+        }
+    });
+}
+function fillBankAccounts(divid) {
+    var response = AjaxGeneral.FillAccounts();
+    if (response.error == null) {
+        $("#" + divid).html(response.value);
+    }
+}
+function ReceiptPrint(controlid) {
+    //alert($("#" + controlid).html());
+
+    var windowUrl = 'about:blank';
+    var printWindow = window.open(windowUrl, 'Print', 'left=50000,top=50000,width=0,height=0');
+    printWindow.document.write($("#" + controlid).html());
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+}
+function appendPrintAndExportButtons(exportmethod) {
+    return "<div style='float:left'><input type='button' value='Print' class='buttonStyle' onclick='PrintReport()'/></div><div style='float:left'>&nbsp;</div><div style='float:left'><input type='button' id='btnexport_excel' value='Export' class='buttonStyle' " + (exportmethod ?"onclick='ExportToExcel(this)'":"") +"/></div>";
+}
+
+function loadMonthNames(divid, monthddlid) {
+    monthddlid = (monthddlid == null ? "ddlmonth" : monthddlid);
+    var _monthsstr = "<select id='" + monthddlid + "'>";
+    for (var i = 0; i < _arrmonthnames.length; i++)
+        _monthsstr += "<option value='" + (i + 1) + "'>" + _arrmonthnames[i] + "</option>";
+    _monthsstr += "</select>";
+    $("#" + divid).html(_monthsstr);
+}
+
+function formatSqlDate(sqlDate) {
+
+    let d = new Date(sqlDate);
+
+    let day = String(d.getDate()).padStart(2, '0');
+    let month = String(d.getMonth() + 1).padStart(2, '0');
+    let year = d.getFullYear();
+
+    let hours = d.getHours();
+    let minutes = String(d.getMinutes()).padStart(2, '0');
+
+    let ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;  // 0 becomes 12
+    hours = String(hours).padStart(2, '0');
+
+    return `${day}.${month}.${year} ${hours}:${minutes} ${ampm}`;
+}
+function formatTimeToAMPM(timeStr) {
+    if (!timeStr) return "";
+
+    // Remove fractional seconds if present
+    timeStr = timeStr.split(".")[0]; // "09:00:00"
+
+    var parts = timeStr.split(":");
+    var hours = parseInt(parts[0], 10);
+    var minutes = parts[1];
+
+    var ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+
+    return (hours < 10 ? "0" + hours : hours) + ":" + minutes + " " + ampm;
+}
+function loadReportImage() {
+    $("#divreport_header").html("<img src='https://info.aec.edu.in/aus/collegeimages/reporthead_plain.png'/>")
+}

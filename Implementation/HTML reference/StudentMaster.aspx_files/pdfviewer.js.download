@@ -1,0 +1,179 @@
+﻿window.PdfViewer = {
+
+    // =============================
+    // State
+    // =============================
+    currentPdf: null,
+    currentLoadingTask: null,
+    currentRenderTasks: new Map(),
+    observer: null,
+    container: null,
+    scale: 1.2,
+    isLoading: false,
+
+    // =============================
+    // Public Render
+    // =============================
+    async render(url, container, startPage = 1) {
+
+        if (this.isLoading) return;
+        this.isLoading = true;
+
+        this.container = container;
+        this.toggleUI(true);
+
+        try {
+
+            await this.cleanup();
+
+            container.innerHTML = "<p>Loading PDF…</p>";
+
+            this.currentLoadingTask = pdfjsLib.getDocument(url);
+            this.currentPdf = await this.currentLoadingTask.promise;
+
+            container.innerHTML = "";
+
+            this.setupObserver();
+
+            for (let i = startPage ; i <= this.currentPdf.numPages; i++) {
+                const placeholder = document.createElement("div");
+                placeholder.className = "pdf-page";
+                placeholder.dataset.pageNumber = i;
+                placeholder.style.minHeight = "1000px";
+                placeholder.style.marginBottom = "20px";
+                placeholder.style.background = "#f5f5f5";
+                placeholder.style.display = "flex";
+                placeholder.style.alignItems = "center";
+                placeholder.style.justifyContent = "center";
+                placeholder.innerHTML = "Loading page " + i + "...";
+
+                container.appendChild(placeholder);
+                this.observer.observe(placeholder);
+            }
+
+        } catch (err) {
+            console.error("PDF Load Error:", err);
+
+            const fileName = this.getFileNameFromUrl(url);
+
+            if (err?.name === "MissingPDFException") {
+                container.innerHTML = `
+            <div style="color:red; padding:20px;">
+                <strong>File not found:</strong> ${fileName}
+            </div>`;
+            } else {
+                container.innerHTML = `
+            <div style="color:red; padding:20px;">
+                <strong>Failed to load:</strong> ${fileName}<br>
+                Please try again later.
+            </div>`;
+            }
+
+        }
+        finally {
+            this.isLoading = false;
+            this.toggleUI(false);
+        }
+    },
+
+    // =============================
+    // Setup Intersection Observer
+    // =============================
+    setupObserver() {
+
+        this.observer = new IntersectionObserver(entries => {
+
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const pageNumber = parseInt(entry.target.dataset.pageNumber);
+                    this.renderPage(pageNumber, entry.target);
+                }
+            });
+
+        }, {
+            root: this.container,
+            threshold: 0.1
+        });
+    },
+
+    // =============================
+    // Render Individual Page
+    // =============================
+    async renderPage(pageNumber, placeholder) {
+
+        if (!this.currentPdf) return;
+        if (this.currentRenderTasks.has(pageNumber)) return;
+
+        const page = await this.currentPdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: this.scale });
+
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        placeholder.innerHTML = "";
+        placeholder.style.background = "white";
+        placeholder.style.minHeight = "";
+        placeholder.appendChild(canvas);
+
+        const renderTask = page.render({
+            canvasContext: context,
+            viewport
+        });
+
+        this.currentRenderTasks.set(pageNumber, renderTask);
+
+        try {
+            await renderTask.promise;
+        } catch (e) {
+            console.warn("Render cancelled:", pageNumber);
+        }
+    },
+
+    // =============================
+    // Cleanup
+    // =============================
+    async cleanup() {
+
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
+
+        this.currentRenderTasks.forEach(task => {
+            try { task.cancel(); } catch (e) { }
+        });
+        this.currentRenderTasks.clear();
+
+        if (this.currentLoadingTask) {
+            try { await this.currentLoadingTask.destroy(); } catch (e) { }
+            this.currentLoadingTask = null;
+        }
+
+        if (this.currentPdf) {
+            try { await this.currentPdf.destroy(); } catch (e) { }
+            this.currentPdf = null;
+        }
+
+        if (this.container) {
+            this.container.innerHTML = "";
+        }
+    },
+
+    toggleUI(disable) {
+        $("#div_scripts a").css({
+            "pointer-events": disable ? "none" : "auto",
+            "opacity": disable ? "0.5" : "1"
+        });
+    },
+    getFileNameFromUrl(url) {
+        try {
+            const cleanUrl = url.split("?")[0]; // remove query params
+            return cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1);
+        } catch (e) {
+            return "Unknown file";
+        }
+    }
+};

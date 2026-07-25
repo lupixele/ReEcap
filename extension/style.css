@@ -1,0 +1,432 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #4338ca;
+  --primary-hover: #3730a3;
+  --primary-light: #e0e7ff;
+  --accent: #6366f1;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   Global Reset & Typography
+   ========================================================================== */
+body.bodyStyle,
+body#ctl00_MasterBody {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  color: var(--text-main) !important;
+  background-color: var(--bg-main) !important;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   Page Shell & Header Banner
+   ========================================================================== */
+body.bodyStyle > form > center > div {
+  background-color: var(--bg-main) !important;
+  max-width: 1280px !important;
+  width: 96% !important;
+  padding: 20px !important;
+  margin: 0 auto;
+}
+
+#imgHead {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Student Photo Overlay on Header */
+#divimg {
+  top: 25px !important;
+  transition: var(--transition);
+}
+#imgstudent {
+  border-radius: 50% !important;
+  border: 4px solid var(--bg-card) !important;
+  box-shadow: var(--shadow-md) !important;
+  object-fit: cover;
+}
+
+/* News Banner Background */
+.newsBG {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  margin-top: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ==========================================================================
+   User Bar (.userData)
+   ========================================================================== */
+.userData {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: block;
+  margin: 12px 0 !important;
+  padding: 12px 20px !important;
+}
+
+.userData table {
+  width: 100%;
+}
+
+#lblUser {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--primary) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+a.welcomeLink {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text-muted) !important;
+  text-decoration: none !important;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  background: #f1f5f9;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+a.welcomeLink:hover {
+  color: var(--bg-card) !important;
+  background: var(--primary) !important;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Left Menu Navigation
+   ========================================================================== */
+.linksBG {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 12px !important;
+  box-shadow: var(--shadow-md);
+  width: 220px !important;
+  min-width: 220px !important;
+}
+
+.LeftMenuHead {
+  background: linear-gradient(135deg, var(--primary), var(--accent)) !important;
+  color: white !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  padding: 12px !important;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(67, 56, 202, 0.25);
+}
+
+ul.menu {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+ul.menu li {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+a.menuLink,
+ul.menu > li > a {
+  display: block !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text-main) !important;
+  text-decoration: none !important;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  border-left: 3px solid transparent;
+}
+
+a.menuLink:hover,
+ul.menu > li > a:hover {
+  background-color: var(--primary-light) !important;
+  color: var(--primary) !important;
+  border-left-color: var(--primary);
+  transform: translateX(2px);
+}
+
+ul.submenu {
+  list-style: none !important;
+  padding-left: 14px !important;
+  margin: 4px 0 !important;
+  border-left: 1px dashed var(--border-color);
+}
+
+ul.submenu a.menuLink {
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  color: var(--text-muted) !important;
+}
+
+ul.submenu a.menuLink:hover {
+  color: var(--primary) !important;
+}
+
+/* ==========================================================================
+   Content Tables & Grids (gvStyle, popupTable, etc.)
+   ========================================================================== */
+table.gvStyle {
+  width: 100% !important;
+  margin-bottom: 20px;
+}
+
+.MainHead {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: var(--text-main) !important;
+  padding: 16px 4px !important;
+  border-bottom: 2px solid var(--primary);
+  display: block;
+  margin-bottom: 12px;
+  letter-spacing: -0.3px;
+}
+
+table.popupTable {
+  width: 100% !important;
+  background: var(--bg-card) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border-color) !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  overflow: hidden !important;
+  box-shadow: var(--shadow-sm);
+  margin-top: 8px;
+}
+
+.gvHeaderStyle,
+table.popupTable tr.gvHeaderStyle td {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 14px 16px !important;
+  border-bottom: 2px solid var(--border-color) !important;
+}
+
+table.popupTable td {
+  padding: 12px 16px !important;
+  font-size: 13px !important;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-color) !important;
+  line-height: 1.5;
+}
+
+table.popupTable tr:last-child td {
+  border-bottom: none !important;
+}
+
+.evenRow td,
+tr.evenRow {
+  background-color: #f8fafc !important;
+}
+
+table.popupTable tr:hover td {
+  background-color: #f1f5f9 !important;
+  transition: background-color 0.15s ease;
+}
+
+/* Row shading remapping to subtle modern hues */
+.lightorange_1 {
+  background-color: #fffaf0 !important;
+  border-left: 3px solid #f97316 !important;
+}
+.lightpurple_1 {
+  background-color: #fbfaff !important;
+  border-left: 3px solid #8b5cf6 !important;
+}
+
+/* ==========================================================================
+   Report Tables (Fee Card, Profile, Timetable Reports)
+   ========================================================================== */
+.reportHeading1 {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--primary) !important;
+  padding: 14px !important;
+  background-color: #f8fafc !important;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.5px;
+}
+
+.reportHeading2,
+.reportHeading2WithBackground td {
+  font-weight: 600 !important;
+  color: #334155 !important;
+  background-color: #f1f5f9 !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+}
+
+.reportData2 {
+  font-size: 13px !important;
+  padding: 10px 14px !important;
+  color: var(--text-main) !important;
+}
+
+.cellBorder {
+  border: 1px solid var(--border-color) !important;
+}
+
+/* ==========================================================================
+   Inputs, Selects & Buttons
+   ========================================================================== */
+input[type=text],
+input[type=password],
+select {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+  padding: 8px 12px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  outline: none !important;
+  transition: var(--transition);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+}
+
+input[type=text]:focus,
+input[type=password]:focus,
+select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+input[type=submit],
+input[type=button],
+.buttonStyle {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: white !important;
+  background: linear-gradient(135deg, var(--primary), var(--accent)) !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 9px 18px !important;
+  cursor: pointer !important;
+  transition: var(--transition);
+  box-shadow: 0 2px 4px rgba(67, 56, 202, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+input[type=submit]:hover,
+input[type=button]:hover,
+.buttonStyle:hover {
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary)) !important;
+  box-shadow: 0 4px 10px rgba(67, 56, 202, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+input[type=submit]:active,
+input[type=button]:active,
+.buttonStyle:active {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   jQuery UI Accordions & Tabs Reskinning
+   ========================================================================== */
+.ui-accordion .ui-accordion-header,
+.ui-tabs .ui-tabs-nav li {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  color: var(--text-main) !important;
+  transition: var(--transition);
+}
+
+.ui-accordion .ui-accordion-header:hover,
+.ui-tabs .ui-tabs-nav li:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+.ui-accordion .ui-state-active,
+.ui-tabs .ui-tabs-nav li.ui-state-active {
+  background: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-state-active a {
+  color: white !important;
+}
+
+.ui-accordion-content,
+.ui-tabs-panel {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+  box-shadow: var(--shadow-sm);
+  margin-top: 8px;
+}
+
+/* ==========================================================================
+   Popups & Dialogs
+   ========================================================================== */
+#divGreetings,
+#divinstructions,
+#divprocess {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 20px !important;
+}

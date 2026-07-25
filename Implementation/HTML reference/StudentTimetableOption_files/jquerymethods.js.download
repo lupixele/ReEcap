@@ -1,0 +1,840 @@
+﻿var _posturl = '';
+var _postdata, _arrpublisherplace = [], _arrlibrarysubjects = [], _arrhostelitems = [];
+var _arramlcompanies = [], _arramldesignations = [], _arramllocations = [], _arramlcourses = [], _arramlcolleges = [];  //alumni history masters
+var _filefullpath = '';
+function executeAjaxMethod(posturl, postdata,ttype ) {
+
+
+    try {
+        $.ajax({
+            type: "POST",
+            url: posturl,
+            data: postdata,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            cache: false,
+            success: function(msg) {
+                if (msg.d == '') {
+                    if (ttype == "RT") {
+                        alert("Resource type saved successfully");
+                        executeAjaxForFillDataWithArray("ResourcesTypes.aspx/BindResoursetypetoTable", "{}", "divtypes", "RT");
+                    }
+                    else if (ttype == "RTD") {
+                        alert("Resource type deleted successfully");
+                        executeAjaxForFillDataWithArray("ResourcesTypes.aspx/BindResoursetypetoTable", "{}", "divtypes", "RT");
+                    }
+                    else if (ttype == "CCS") { //course certificate save
+                        alert($("input:button[name=btnsave]").val() + "d successfully");
+                        $("#tblcertificates input:checkbox").attr("checked", false);
+                        $("#ddlcourse").attr("selectedIndex", 0);
+                        $("#divcertificates").hide();
+                    }
+                    else if (ttype == "SCS") {  //student certificate save
+                        alert("Certificates are uploaded successfully");
+                        $("#divdetails").html('');
+                        $("#txtrollno").val('');
+                        $("#txtrollno").focus();
+                    }
+                    else if (ttype == "DUC") {
+                        alert("Scanned certificates are deleted successfully");
+                        $("#divdetails").html('');
+                        $("#txtrollno").val('');
+                        $("#txtrollno").focus();
+                    }
+                    else if (ttype == "AGS") {
+                        alert("Agent " + $("#btnsave").val() + "d successfully");
+                        if (_agentid > 0)
+                            hideDialg("divnew", true);
+                        $("input:text").val('');
+                        $("textarea").val('');
+                        fillAgentsGrid();
+                        IncreaseIFrameHeight(275);
+                    }
+                    else if (ttype == "AGD") {  //agent delete
+                        alert("Agent deleted successfully");
+                        fillAgentsGrid();
+                    }
+                    else if (ttype == "ECS") {
+                        alert("Staff certificates are uploaded successfully");
+                        $("#divdetails").html('');
+                        $("#txtcode").val('');
+                        $("#txtcode").focus();
+                    }
+                    else if (ttype == "DSUC") {
+                        alert("Staff scanned certificates are deleted successfully");
+                        $("#divdetails").html('');
+                        $("#txtcode").val('');
+                        $("#txtcode").focus();
+                    }
+                    else if (ttype == 'sms') {
+                        alert("sms login details are " + $("#btnsave").val() + "d successfully");
+                    }
+                    
+                }
+                else if (msg.d != '') {
+                      alert(msg.d);
+                }
+            },
+            error: function(x, e) {
+                alert("The call to the server side failed. " + x.responseText);
+            },
+            complete: function() {
+                //hideProcessDialog("divprocess");
+            }
+
+        });
+
+    }
+    catch (e) {
+        alert(e.error);
+    }
+    //ResizeIFrame();
+}
+function executeAjaxForFillData(posturl, postdata, divid) {
+
+
+    try {
+        $.ajax({
+            type: "POST",
+            url: posturl,
+            data: postdata,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            cache: false,
+            success: function(msg) {
+                $("#" + divid).html(msg.d);
+                if ($("#tblReport").length == 0 && $("#" + divid).find("table").length > 0)
+                    $("#" + divid).find("table tr:gt(1):even").addClass("evenRow");
+                ResizeIFrame();
+            },
+            error: function(x, e) {
+                alert("The call to the server side failed. " + x.responseText);
+            },
+            complete: function() {
+                if($("#divprocess").length>0)
+                    showProcessDialog("divprocess",false);
+            }
+
+        });
+
+    }
+    catch (e) {
+        alert(e.error);
+    }
+
+}
+function executeAjaxForFillDataWithArray(posturl, postdata, divid,ttype) {
+
+
+    try {
+        $.ajax({
+            type: "POST",
+            url: posturl,
+            data: postdata,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            cache: false,
+            success: function(msg) {
+
+                if (ttype == "RT") {    //resource type
+                    var _table = "<table  width='70%' cellpadding='2' cellspacing='0'><tr><td align='left'><input type='button' value='New Resource Type' class='newbuttonStyle' onclick='onNewResourceTypeClick()'/></td></tr></table><table id='tblresources' width='70%' class='popupTable' cellpadding='2' cellspacing='0'>"
+                                + "<tr class='gvHeaderStyle'><td>Sl.No</td><td align='left'>Resource Type</td><td></td><td></td></tr>";
+                    var slno = 1;
+                    $.each(msg.d, function(key, Value) {
+                        _table += "<tr name='" + Value.ResourceTypeId + "'><td>" + slno + "</td><td align='left' name='" + Value.ResourceType + "'>" + Value.ResourceType + "</td><td><div class='editimage' title='edit' onclick='onEditResourceTypeClick(this)' title='edit'></div></td><td><div class='deleteimage' title='delete' onclick='onDeleteResourceTypeClick(this)' title='delete'></div></td></tr>";
+                        slno++;
+                    });
+                    _table += "</table>";
+                    $("#" + divid).html(_table);
+                    $("#tblresources tr:gt(0):even").addClass("evenRow");
+                }
+                else if (ttype == "BCC") {  //bind course certificates
+                    $.each(msg, function(key, Value) {
+                        alert(Value);
+                    });
+                }
+                ResizeIFrame();
+            },
+            error: function(x, e) {
+                alert("The call to the server side failed. " + x.responseText);
+            },
+            complete: function() {
+                //hideProcessDialog("divprocess");
+            }
+
+        });
+
+    }
+    catch (e) {
+        alert(e.error);
+    }
+
+}
+function executeAjaxForFillDataWithMultipleDiv(posturl, postdata, arrdivid) {
+
+
+    try {
+        $.ajax({
+            type: "POST",
+            url: posturl,
+            data: postdata,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false ,
+            cache: false,
+            success: function(msg) {
+                for (var i = 0; i < arrdivid.length; i++)
+		{
+		   if(arrdivid[i]!=null && arrdivid[i]!="")
+                    $("#" + arrdivid[i]).html(msg.d[i]);
+		}
+                ResizeIFrame();
+            },
+            error: function(x, e) {
+                alert("The call to the server side failed. " + x.responseText);
+            },
+            complete: function() {
+                //hideProcessDialog("divprocess");
+            }
+
+        });
+
+    }
+    catch (e) {
+        alert(e.error);
+    }
+
+}
+function executeAjaxForReturnString(posturl, postdata, ttype) {
+
+    try {
+        $.ajax({
+            type: "POST",
+            url: posturl,
+            data: postdata,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            cache: false,
+            success: function(msg) {
+                var responsestring = msg.d;
+                if (ttype == "BCC") {
+                    $("#tblcertificates tr:gt(0)").find("input:checkbox").attr("checked", false);
+                    for (var i = 0; i < responsestring.length; i++) {
+                        var ccflag = false;
+                        $("#tblcertificates tr:gt(0)").find("input:checkbox").each(function() {
+                            if (ccflag == false && responsestring[i] == $(this).val()) {
+                                $(this).attr("checked", true);
+                                {
+                                    ccflag = true;
+                                    $("input:button[name=btnsave]").val("Update");
+                                }
+                            }
+                        });
+                    }
+                    $("#divcertificates").show();
+                }
+                else if (ttype == "GPP") {  //get publisher place
+                    $.each(responsestring, function(index, pdata) {
+                        var _place = {};
+                        _place['value'] = pdata.PlaceName;
+                        _place['label'] = pdata.PlaceName;
+                        _place['title'] = pdata.PlaceId;
+                        _arrpublisherplace.push(_place);
+                    });
+                }
+                else if (ttype == "GLS")   //get library subjects
+                {
+                    $.each(responsestring, function(index, lsdata) {
+                        var _subject = {};
+                        _subject['label'] = lsdata.SubjectName;
+                        _subject['value'] = lsdata.SubjectName;
+                        _subject['title'] = lsdata.SubjectId
+                        _subject['callno'] = lsdata.CallNo;
+                        _arrlibrarysubjects.push(_subject);
+                    });
+                }
+                else if (ttype == "HIS")   //get hostel items
+                {
+                    $.each(responsestring, function(index, lsdata) {
+                        var _item = {};
+                        _item['label'] = lsdata.ItemName;
+                        _item['value'] = lsdata.ItemName;
+                        _item['title'] = lsdata.ItemId;
+                        _item['units'] = lsdata.ItemUnits;
+                        _item['availqty'] = lsdata.AvailableQuantity;
+                        _item['urate'] = lsdata.UnitRate;
+                        _arrhostelitems.push(_item);
+                    });
+                }
+                else if (ttype == "AML") {
+                    $.each(responsestring, function(index, mdata) {
+                        var _item = {};
+                        _item['value'] = mdata.DataText;
+                        _item['label'] = mdata.DataText;
+                        _item['title'] = mdata.DataValue;
+                        var _mtype = mdata.MasterType
+                        if (_mtype == 'C')
+                            _arramlcompanies.push(_item);
+                        else if (_mtype == 'D')
+                            _arramldesignations.push(_item);
+                        else if (_mtype == 'U')
+                            _arramlcourses.push(_item);
+                        else if (_mtype == 'O')
+                            _arramlcolleges.push(_item);
+                        else if (_mtype == 'L')
+                            _arramllocations.push(_item);
+                    });
+                }
+                else if (ttype == "GFP")
+                    _filefullpath = responsestring;
+                ResizeIFrame();
+            },
+            error: function(x, e) {
+                alert("The call to the server side failed. " + x.responseText);
+            },
+            complete: function() {
+            }
+        });
+
+    }
+    catch (e) {
+        alert(e.error);
+    }
+
+}
+
+//common functions
+
+function fillCourses(ctlid, methodonchange, defaultisall, coursedivid) {
+    /*
+    var response = AjaxGeneral.LoadCourses("ddlcourse", methodonchange, false);
+    if (response.error == null)
+        $("#" + coursedivid).html(response.value);
+    else
+        Raiserror(response.error);
+    ResizeIFrame();    */
+    
+    _posturl = "../jqmethods.aspx/LoadCourses";
+    //_postdata = "{'controlid':'" + ctlid + "','onchangemethod':\"" + methodonchange + "\",'isdefaultall':" + defaultisall + "}";
+    _postdata = "{'controlid':'" + ctlid + "','onchangemethod':'','isdefaultall':" + defaultisall + "}";
+    executeAjaxForFillData(_posturl, _postdata, coursedivid, null);
+    if(methodonchange!=null && methodonchange!='')
+        $("#" + ctlid).change(function() {eval(methodonchange) });
+}
+function loadSemAndBranchDropDown(o, divbranchid, divsemid, branchddlid, branchchangemethod, branchdefaultall, semddlid, semchangemethod, semdefaultall, divsectionid, semorbatch, sectiondefaulttext, onlycurrentsemesters, batchselectiontype) {
+    //int , string branchcontrolid, string branchonchangemethod, bool branchdefaultall, string semestercontrolid, string semesteronchangemethod, bool semesterdefaultall
+    if (semorbatch == null)
+        semorbatch = 'S';
+    sectiondefaulttext = sectiondefaulttext == null ? '' : sectiondefaulttext;        
+    _posturl = "../jqmethods.aspx/LoadBranchAndSemestersDropDown";
+    //_postdata = "{'courseid':" + $(o).val() + ",'branchcontrolid':'" + branchddlid + "','branchonchangemethod':\"" + branchchangemethod + "\",'branchdefaultall':" + branchdefaultall + ",'semestercontrolid':'" + semddlid + "','semesteronchangemethod':\"" + semchangemethod + "\",'semesterdefaultall':" + semdefaultall + "}";
+    _postdata = "{'courseid':" + $(o).val() + ",'branchcontrolid':'" + branchddlid + "','branchonchangemethod':'','branchdefaultall':" + branchdefaultall + ",'semestercontrolid':'" + semddlid + "','semesteronchangemethod':'','semesterdefaultall':" + semdefaultall + ",'semesterorbatch':'" + semorbatch + "'}";
+    
+    var arrid = [];
+    arrid.push(divbranchid);
+    arrid.push(divsemid);
+    executeAjaxForFillDataWithMultipleDiv(_posturl, _postdata, arrid);
+    if ((branchchangemethod != null && branchchangemethod != '') && (divsectionid != null && divsectionid != ''))
+        $("#" + branchddlid).change(function () { eval(branchchangemethod); loadBranchSections($(o).attr("id"), branchddlid, semddlid, batchselectiontype, divsectionid, sectiondefaulttext, ''); });
+    else if (branchchangemethod != null && branchchangemethod != '')
+        $("#" + branchddlid).change(function() { eval(branchchangemethod); });
+    else if (divsectionid != null && divsectionid != '')
+        $("#" + branchddlid).change(function () { loadBranchSections($(o).attr("id"), branchddlid, semddlid, batchselectiontype, divsectionid, sectiondefaulttext, ''); });
+
+    if ((semchangemethod != null && semchangemethod != '') && (divsectionid != null && divsectionid != ''))
+        $("#" + semddlid).change(function () { eval(semchangemethod); loadBranchSections($(o).attr("id"), branchddlid, semddlid, batchselectiontype, divsectionid, sectiondefaulttext, ''); });
+    else if (semchangemethod != null && semchangemethod != '')
+        $("#" + semddlid).change(function() { eval(semchangemethod); });
+    else if (divsectionid != null && divsectionid != '')
+        $("#" + semddlid).change(function () { loadBranchSections($(o).attr("id"), branchddlid, semddlid, batchselectiontype, divsectionid, sectiondefaulttext, ''); });
+    if (divsectionid != null && divsectionid != '')
+        loadBranchSections($(o).attr("id"), branchddlid, semddlid, batchselectiontype, divsectionid, sectiondefaulttext, '');
+
+    if (onlycurrentsemesters) {
+        var _oindex = 0;
+        $("#ddlsemester option").each(function() {
+            if ($(this).attr("title") == '' && (!semdefaultall || (semdefaultall && _oindex > 0)))
+                $(this).remove();
+            _oindex++;
+        });
+    }    
+   
+}
+function loadBranchesDropDown(o, divbranchid, branchddlid, branchchangemethod, branchdefaultall) {
+    _posturl = "../jqmethods.aspx/LoadBranchesDropDown";
+    _postdata = "{'courseid':" + $(o).val() + ",'branchcontrolid':'" + branchddlid + "','branchonchangemethod':'','branchdefaultall':" + branchdefaultall + "}";
+    executeAjaxForFillData(_posturl, _postdata, divbranchid);
+    if (branchchangemethod != null && branchchangemethod != '')
+        $("#" + branchddlid).change(function() { eval(branchchangemethod) });
+}
+function loadBranchSections(courseddlid, branchddlid, batchddlid, batchselecttype,sectiondivid,defaulttext,sectiononchange) {
+    //batchselecttype T: batch as title of option, V:batch as value of option, X:batch as text of option
+
+    var batch = 0;
+      
+        if ( (batchselecttype == 'T' || batchselecttype==null) && !isNaN($("#" + batchddlid).find("option:selected").attr("title")))
+            batch = $("#" + batchddlid).find("option:selected").attr("title");
+        else if (batchselecttype == 'V')
+            batch = $("#" + batchddlid).val();
+        else
+            batch = isNaN($("#" + batchddlid).find("option:selected").text()) ? 0 : $("#" + batchddlid).find("option:selected").text();
+            //batch = $("#" + batchddlid).find("option:selected").text();
+
+
+    batch =batch==null || batch == '' ? 0 : batch;
+    _posturl = "../jqmethods.aspx/LoadBranchSections";
+    _postdata = "{'courseid':" + $("#" + courseddlid).val() + ",'branchid':" + $("#" + branchddlid).val() + ",'batch':" + batch + ",'defaulttext':'" + defaulttext + "'}";
+    executeAjaxForFillData(_posturl, _postdata, sectiondivid);
+    if (sectiononchange != null && sectiononchange != '')
+        $("#ddlsection").change(function() { eval(sectiononchange) });
+    $("#ddlsection").attr("selectedIndex", 0);    
+}
+
+function loadRegulations(o, regulationdivid, regulationddlid, defaultall) {
+    _posturl = "../jqmethods.aspx/LoadRegulations";
+    _postdata = "{'courseid':" + $(o).val() + ",'controlid':'" + regulationddlid + "','isdefaultall':" + defaultall + "}";
+    executeAjaxForFillData(_posturl, _postdata, regulationdivid);
+}
+function loadSemAndBranchCheckList(ddlcourseid,branchdivid,semdivid) {
+    /*var response = AjaxGeneral.LoadBranchAndSemestersCheckList($("#" + ddlcourseid).val());
+    if (response.error == null) {
+        var _arr = response.value;
+        $("#" + branchdivid).html(_arr[0]);
+        $("#" + semdivid).html(_arr[1]);
+        $("#tbl_jq_branches tr:gt(0):even").addClass("evenRow");
+        $("#tbl_jq_semesters tr:gt(0):even").addClass("evenRow");
+    }
+    else
+        Raiserror(response.error);*/
+    $("#" + branchdivid).html('');
+    $("#" + semdivid).html('');
+    if ($("#" + ddlcourseid).val() > 0) {
+        _posturl = "../jqmethods.aspx/LoadBranchAndSemestersCheckList";
+        _postdata = "{'courseid':" + $("#" + ddlcourseid).val() + ",'branchcontrolid':'tbl_jq_branches','semestercontrolid':'tbl_jq_semesters'}";
+        var _arrid = [];
+        _arrid.push(branchdivid);
+        _arrid.push(semdivid);
+        executeAjaxForFillDataWithMultipleDiv(_posturl, _postdata, _arrid);
+        $("#tbl_jq_branches tr:gt(0):even").addClass("evenRow");
+        $("#tbl_jq_semesters tr:gt(0):even").addClass("evenRow");
+    }
+    ResizeIFrame();
+}
+function loadBatches(divbatchid, belownoofyears, abovenoofyears,defaulttext) {
+    _posturl = "../jqmethods.aspx/LoadBatches";
+    _postdata = "{'belownoofyears':" + belownoofyears + ",'abovenoofyears':" + abovenoofyears + ",'defaulttext':'" + defaulttext + "'}";
+    executeAjaxForFillData(_posturl, _postdata, divbatchid);
+}
+function loadCourseBatches(divbatchid,courseid ,defaulttext) {
+    _posturl = "../jqmethods.aspx/LoadCourseBatches";
+    _postdata = "{'courseid':" + courseid + ",'defaulttext':'" + defaulttext + "'}";
+    executeAjaxForFillData(_posturl, _postdata, divbatchid);
+}
+//end of common functions
+
+function onNewResourceTypeClick() {
+    $("#tblresources tr:last").before("<tr name='0'><td></td><td align='left'><input type='text' id='txtname'/></td><td><div class='saveimage' onclick='onSaveResourceTypeClick(this)' title='save'></div></td><td><div class='cancelimage' onclick=\"$(this).parent().parent().remove()\" title='cancel'></div></td></tr>");
+}
+function onSaveResourceTypeClick(e) {
+    if (!checkEmpty("txtname", "resource type"))
+        return false;
+    if (confirm("Do you want to " + $(e).text() + " resource type?")) {
+        _postdata = "{'Resourceid':'" + $(e).parent().parent().attr("name") + "','ResourceName':'" + $("#txtname").val() + "'}";
+        executeAjaxMethod("ResourcesTypes.aspx/Save_NewResourceType", _postdata, "RT");
+    }
+}
+function onEditResourceTypeClick(e) {
+    var _row = $(e).parent().parent();
+    $(_row).find("td:eq(1)").html("<input type='text' id='txtname' value='" + $(_row).find("td:eq(1)").text() + "'/>");
+    $(_row).find("td:eq(2)").html("<div class='updateimage' onclick='onSaveResourceTypeClick(this)' title='update'></div>");
+    $(_row).find("td:eq(3)").html("<div class='cancelimage' onclick='onResourceEditCancelClick(this)' title='cancel'></div>");
+    $("#txtname").focus();
+}
+function onDeleteResourceTypeClick(e) {
+    if (confirm("Are you sure to delete resource type ?")) {
+        executeAjaxMethod("ResourcesTypes.aspx/Delete_ResourceType", "{'Resourceid':" + $(e).parent().parent().attr("name") + "}","RTD");
+    }
+}
+function onResourceEditCancelClick(e) {
+    var _row = $(e).parent().parent();
+    $(_row).find("td:eq(1)").text($(_row).find("td:eq(1)").attr("name"));
+    $(_row).find("td:eq(2)").html("<div class='editimage' onclick='onEditResourceTypeClick(this)' title='edit'></div>");
+    $(_row).find("td:eq(3)").html("<div class='deleteimage' onclick='onDeleteResourceTypeClick(this)' title='delete'></div>");
+}
+function fillCertificatesCheckList() {
+    _posturl = "../jqmethods.aspx/LoadCertificatesCheckList";
+    _postdata = "{'showsavebutton':true,'savemethod':'onCourseCertificateSaveClick()'}";
+    executeAjaxForFillData(_posturl, _postdata, "divcertificates");
+    $("#tblcertificates tr:gt(0):even").addClass("evenRow");
+}
+function bindCourseCertificates() {
+    $("#divcertificates").hide();
+    if ($("#ddlcourse").attr("selectedIndex") > 0) {
+        _posturl = "../jqmethods.aspx/GetCourseCertificates";
+        _postdata = "{'courseid':" + $("#ddlcourse").val() + "}";
+        executeAjaxForReturnString(_posturl, _postdata,"BCC");
+    }
+}
+function onCourseCertificateSaveClick() {
+    var _arrcertificateid = [];
+    $("#tblcertificates tr:gt(0)").find("input:checkbox:checked").each(function() {
+        _arrcertificateid.push($(this).val());
+    });
+    var _mode=$("input:button[name=btnsave]").val();
+    if (_arrcertificateid.length == 0) {
+        if (_mode == "Save") {
+            alert("Please select any certificate");
+            return false;
+        }
+        else
+            _arrcertificateid.push(0);
+    }
+    if (confirm("Do you want to " + _mode + " ?")) {
+        _posturl = "../jqmethods.aspx/SaveCoursesCertificates";
+        _postdata = "{'courseid':" + $("#ddlcourse").val() + ",'arrcertificateid':" + JSON.stringify(_arrcertificateid) + "}";
+        executeAjaxMethod(_posturl, _postdata, "CCS");
+    }
+}
+//start student certificates
+function onShowStudentCertificatesClick() {
+    if (!checkEmpty("txtrollno", "roll number"))
+        return false;
+    _posturl = "../jqmethods.aspx/ShowStudentCertificates";
+    _postdata = "{'rollno':'" + $("#txtrollno").val() + "'}";
+    executeAjaxForFillData(_posturl, _postdata, "divdetails");
+    $("#tblcertificates tr:gt(0):even").addClass("evenRow");
+    
+}
+function onStudentCertificateCheckBoxClick(o) {
+    $(o).parent().parent().find("input:button").attr("disabled", !$(o).attr("checked"));
+}
+function onStudentCertificatesSaveClick() {
+    var _arrcertificateid = [];
+    var _arrfilename = [];
+    var _arrmode = [];
+    var _arrdeletedfiles = [];
+    var _flag = true;
+    $("#tblcertificates tr:gt(0)").find("input:checkbox:checked").each(function() {
+        if (_flag) {
+            var _certficateid = $(this).val();
+            if ($("#spn_" + _certficateid).find("img").length == 0) {
+                var _filename = $("#spn_" + _certficateid).attr("name");
+                if (_filename != '') {
+                    _arrcertificateid.push(_certficateid);
+                    _arrfilename.push(_filename);
+                    _arrmode.push('N');
+                }
+                else {
+                    alert("Please attach file for " + $(this).attr("title"));
+                    _flag = false;
+                }
+            }
+            else {
+                _arrcertificateid.push(_certficateid);
+                _arrfilename.push($("#spn_" + _certficateid).find("img").attr("name"));
+                _arrmode.push('U');
+            }
+        }
+    });
+    $("#tblcertificates tr:gt(0)").find("input:checkbox").not(":checked").each(function() {
+        if ($("#spn_" + $(this).val()).find("img").length > 0) {
+            _arrdeletedfiles.push($("#spn_" + $(this).val()).find("img").attr("name"));
+        }
+    });
+    if (_arrdeletedfiles.length == 0)
+        _arrdeletedfiles.push("-");
+    if (_flag) {
+        var _mode = $("input:button[name=btnsave]").val();
+        if (_arrcertificateid.length == 0) {
+            if (_mode == "Save") {
+                alert("Please select any certificate");
+                return false;
+            }
+            else {
+                _arrcertificateid.push(0);
+                _arrfilename.push('');
+                _arrmode.push('-');
+                _mode = "delete";
+            }
+        }
+        if (confirm("Do you want to  upload certificates ?")) {
+            _posturl = "../jqmethods.aspx/SaveStudentCertificates";
+            _postdata = "{'studentid':" + $("#tblstudent").attr("name") + ",'rollno':'" + $("#tdrollno").text() + "','arrcertificateid':" + JSON.stringify(_arrcertificateid) + ",'arrfilename':" + JSON.stringify(_arrfilename) + ",'arrmode':" + JSON.stringify(_arrmode) + ",'arrdeletedfiles':" + JSON.stringify(_arrdeletedfiles) + "}";
+            executeAjaxMethod(_posturl, _postdata, "SCS");
+        }
+    }
+}
+function onStudentCertificateDeleteClick() {
+    if (confirm("Are you sure to remove scanned certificates ?")) {
+        var _arrfile = [];
+        $("#tblcertificates tr:gt(0)").find("input:checkbox").each(function() {
+            if ($("#spn_" + $(this).val()).find("img").length > 0) {
+                _arrfile.push($("#spn_" + $(this).val()).find("img").attr("name"));
+            }
+        });
+        _posturl = "../jqmethods.aspx/RemoveStudentCertificates";
+        _postdata = "{'studentid':" + $("#tblstudent").attr("name") + ",'arrfilename':" + JSON.stringify(_arrfile) + "}";
+        executeAjaxMethod(_posturl, _postdata, "DUC");
+    }
+}
+//end of student certificates
+//start staff certificates
+function onShowStaffCertificatesClick() {
+    if (!checkEmpty("txtcode", "employee code"))
+        return false;
+    _posturl = "../jqmethods.aspx/ShowStaffCertificates";
+    _postdata = "{'employeecode':'" + $("#txtcode").val() + "'}";
+    executeAjaxForFillData(_posturl, _postdata, "divdetails");
+    $("#tblcertificates tr:gt(0):even").addClass("evenRow");
+
+}
+function onStaffCertificateCheckBoxClick(o) {
+    $(o).parent().parent().find("input:button").attr("disabled", !$(o).attr("checked"));
+}
+
+function onStaffCertificatesSaveClick() {
+    var _arrcertificateid = [];
+    var _arrfilename = [];
+    var _arrmode = [];
+    var _arrdeletedfiles = [];
+    var _flag = true;
+    $("#tblcertificates tr:gt(0)").find("input:checkbox:checked").each(function() {
+        if (_flag) {
+            var _certficateid = $(this).val();
+            if ($("#spn_" + _certficateid).find("img").length == 0) {
+                var _filename = $("#spn_" + _certficateid).attr("name");
+                if (_filename != '') {
+                    _arrcertificateid.push(_certficateid);
+                    _arrfilename.push(_filename);
+                    _arrmode.push('N');
+                }
+                else {
+                    alert("Please attach file for " + $(this).attr("title"));
+                    _flag = false;
+                }
+            }
+            else {
+                _arrcertificateid.push(_certficateid);
+                _arrfilename.push($("#spn_" + _certficateid).find("img").attr("name"));
+                _arrmode.push('U');
+            }
+        }
+    });
+    $("#tblcertificates tr:gt(0)").find("input:checkbox").not(":checked").each(function() {
+        if ($("#spn_" + $(this).val()).find("img").length > 0) {
+            _arrdeletedfiles.push($("#spn_" + $(this).val()).find("img").attr("name"));
+        }
+    });
+    if (_arrdeletedfiles.length == 0)
+        _arrdeletedfiles.push("-");
+    if (_flag) {
+        var _mode = $("input:button[name=btnsave]").val();
+        if (_arrcertificateid.length == 0) {
+            if (_mode == "Save") {
+                alert("Please select any certificate");
+                return false;
+            }
+            else {
+                _arrcertificateid.push(0);
+                _arrfilename.push('');
+                _arrmode.push('-');
+                _mode = "delete";
+            }
+        }
+        if (confirm("Do you want to  upload certificates ?")) {
+            _posturl = "../jqmethods.aspx/SaveStaffCertificates";
+            _postdata = "{'employeeid':" + $("#tblstaff").attr("name") + ",'arrcertificateid':" + JSON.stringify(_arrcertificateid) + ",'arrfilename':" + JSON.stringify(_arrfilename) + ",'arrmode':" + JSON.stringify(_arrmode) + ",'arrdeletedfiles':" + JSON.stringify(_arrdeletedfiles) + "}";
+            executeAjaxMethod(_posturl, _postdata, "ECS");
+        }
+    }
+}
+function onStaffCertificateDeleteClick() {
+    if (confirm("Are you sure to remove scanned certificates ?")) {
+        var _arrfile = [];
+        $("#tblcertificates tr:gt(0)").find("input:checkbox").each(function() {
+            if ($("#spn_" + $(this).val()).find("img").length > 0) {
+                _arrfile.push($("#spn_" + $(this).val()).find("img").attr("name"));
+            }
+        });
+        _posturl = "../jqmethods.aspx/RemoveStaffCertificates";
+        _postdata = "{'employeeid':" + $("#tblstaff").attr("name") + ",'arrfilename':" + JSON.stringify(_arrfile) + "}";
+        executeAjaxMethod(_posturl, _postdata, "DSUC");
+    }
+}
+//end of staff certificates
+function getPublisherPlacesArray() {
+    _posturl = "../jqmethods.aspx/GetPlacesArray";
+    _postdata = "{}";
+    executeAjaxForReturnString(_posturl, _postdata, "GPP");
+}
+function getLibrarySubjectsArray() {
+    _posturl = "../jqmethods.aspx/GetLibrarySubjectsArray";
+    _postdata = "{}";
+    executeAjaxForReturnString(_posturl, _postdata, "GLS");
+}
+//agents
+var _agentid = 0;
+function fillAgentsDropDown(agenddivid, defaulttext) {
+    _posturl = "../jqmethods.aspx/FillAgentsDropDown";
+    _postdata = "{'defaulttext':'" + defaulttext + "'}";
+    executeAjaxForFillData(_posturl, _postdata, agenddivid);
+}
+function fillAgentsGrid() {
+    _posturl = "../jqmethods.aspx/FillAgentsGrid";
+    _postdata = "{}";
+    executeAjaxForFillData(_posturl, _postdata, "divagents");
+}
+function onAgentNewClick() {
+    _agentid = 0;
+    $("input:text").val('');
+    $("textarea").val('');
+    showDialogWithoutTitle('divnew', 600, 250, 'ResizeIFrame()', 'New Agent');
+    IncreaseIFrameHeight(275); $('#btnsave').val('Save');
+}
+function onAgentSaveClick() {
+    if (confirm("Do you want to " + $("#btnsave").val() + " ?")) {
+        _posturl = "../jqmethods.aspx/SaveAgent";
+        _postdata = "{'agentid':" + _agentid + ",'agentcode':'" + $("#txtcode").val() + "','agentname':'" + $("#txtname").val() + "','agentaddress':'" + $("#txtaddress").val() + "','contactno1':'" + $("#txtcno1").val() + "','contactno2':'" + $("#txtcno2").val() + "'}";
+        executeAjaxMethod(_posturl, _postdata, "AGS");
+    }
+}
+function onAgentEditClick(o) {
+    $("input:text").val('');
+    $("textarea").val('');
+    var _row = $(o).parent().parent();
+    _agentid = $(_row).attr("name");
+    $("#txtcode").val($(_row).find("td:eq(1)").text());
+    $("#txtname").val($(_row).find("td:eq(2)").text());
+    $("#txtaddress").val($(_row).attr("title"));
+    $("#txtcno1").val($(_row).find("td:eq(3)").text());
+    $("#txtcno2").val($(_row).find("td:eq(4)").text());
+    $("#btnsave").val("Update");
+    showDialogWithoutTitle("divnew", 600, 250, "ResizeIFrame()", "Update Agent");
+    IncreaseIFrameHeight(275);
+}
+function onAgentDeleteClick(o) {
+    if (confirm("Are you sure to delete agent ?")) {
+        _posturl = "../jqmethods.aspx/RemoveAgent";
+        _postdata = "{'agentid':" + $(o).parent().parent().attr("name") +"}";
+        executeAjaxMethod(_posturl, _postdata, "AGD");
+    }
+}
+function fillAgentsList() {
+    _posturl = "../jqmethods.aspx/ShowAgentsList";
+    _postdata = "{}";
+    executeAjaxForFillData(_posturl, _postdata, "divreport");
+}
+function fillAlumniMasters() {
+    _posturl = "../jqmethods.aspx/GetAlumniHistoryMasters";
+    _postdata = "{}";
+    executeAjaxForReturnString(_posturl, _postdata, "AML");
+}
+function setAlumniMasters() {
+
+    $("#txtcompany").autocomplete(
+        {
+
+            source: _arramlcompanies,
+            minLength:3,
+            select: function(e, i) {
+                _amlcompanyid = i.item.title;
+            }
+        });
+        $("#txtcouese").autocomplete(
+        {
+            source: _arramlcourses,
+            minLength: 3,
+            select: function(e, i) {
+            _amlcourseid = i.item.title;
+            }
+        });
+
+        $("#txtcollege").autocomplete(
+        {
+            source: _arramlcolleges,
+            minLength: 3,
+            select: function(e, i) {
+            _amlcollegeid = i.item.title;
+            }
+        });
+        $("#txtcollege").autocomplete(
+        {
+            source: _arramlcolleges,
+            minLength: 3,
+            select: function(e, i) {
+                _amlcollegeid = i.item.title;
+            }
+        });
+        $("#txtlocation").autocomplete(
+        {
+            source: _arramllocations,
+            minLength: 3,
+            select: function(e, i) {
+            _amllocationid = i.item.title;
+            }
+        });
+        $("#txtdesignation").autocomplete(
+        {
+            source: _arramldesignations,
+            minLength: 3,
+            select: function(e, i) {
+            _amldesigid = i.item.title;
+            }
+        });
+
+
+    }
+    function getFilePath(foldername, filename, isfromparent) {
+        if (isfromparent)
+            _posturl = "jqmethods.aspx/GetFilePath";
+        else
+            _posturl = "../jqmethods.aspx/GetFilePath";
+        _postdata = "{foldername:'" + foldername + "',filename:'" + filename + "'}";
+        executeAjaxForReturnString(_posturl, _postdata, "GFP");
+
+    }
+
+//end of agents
+//renuka methods
+//smslogindetails
+function savesmslogindetails() {
+    if (!checkEmpty("txtuserid", "user id"))
+        return false;
+    else if (!checkEmpty("txtpwd", "password"))
+        return false;
+    else if (!checkEmpty("txtsenderid", "sender id"))
+        return false;
+    if (confirm("Do you want to " + $("#btnsave").val() + " ?")) {
+        _posturl = "../jqmethods.aspx/savesmslogin";
+        _postdata = "{'rowid':'1','USERID':'" + $("#txtuserid").val() + "','SENDERID':'" + $("#txtsenderid").val() + "','PASSWORD':'" + $("#txtpwd").val() + "'}";
+        executeAjaxMethod(_posturl, _postdata, "sms");
+    }
+}
+
+function filllogindetails() {
+    _posturl = "../jqmethods.aspx/getlogin";
+    _postdata = "{}";
+    executeAjaxForFillData(_posturl, _postdata, "divdetails");
+}
+function gettctakennottaken(divid, batch, courseid, branchid, takenstatus, selectedradiovalue) {
+    _posturl = "../jqmethods.aspx/GetTcTakennotTekenreport";
+    _postdata = "{'Batch':'" + batch + "','Courseid':'" + courseid + "','Branchid':'" + branchid + "','Takenstatus':'" + takenstatus + "','Selectedradiovalue':'" + selectedradiovalue + "'}";
+    executeAjaxMethod(_posturl, _postdata, divid);
+}
+//end smslogindetails
+function showsyllabuscoveragereport(courseid, branchid, semesterid, sectionid, fromdate, todate) {
+    _posturl = "../jqmethods.aspx/showsyllabuscoverage";
+    _postdata = "{'Courseid':'" + courseid + "','Branchid':'" + branchid + "','Semesterid':'" + semesterid + "','Sectionid':'" + sectionid + "','Fromdate':'" + fromdate + "','Todate':'" + todate + "'}";
+    //alert(_postdata);
+    executeAjaxForFillData(_posturl, _postdata, "divreport");
+}
+//end of renuka methods
+function getHostelItemsByCategoryArray(ddlcategory) {
+    _posturl = "../jqmethods.aspx/GetHostelItemsArray";
+    _postdata = "{categoryid:" + $(ddlcategory).val() + "}";
+    executeAjaxForReturnString(_posturl, _postdata, "HIS");
+}

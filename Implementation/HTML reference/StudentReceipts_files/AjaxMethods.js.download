@@ -1,0 +1,511 @@
+﻿// JScript File
+//Functions For User Level Permissions Screen
+function GetScreens()
+{
+    var moduleid=$('<%=ddlModule.ClientID %>').val();
+    $("#btnAdd").hide();
+    if(moduleid!="-1")
+    {
+        var response=UserLevels.GetScreens(moduleid);
+        if(response.error==null)
+        {
+            $("#divScreens").html(response.value);
+            if($("#tblScreens tr").length>1)
+                $("#btnAdd").show();
+        }
+        else
+        {
+            alert(response.error);
+        }
+    }
+}
+function AddScreens() {
+    var flag = false;
+    var ctlmodule = document.getElementById('<%=ddlModule.ClientID%>');
+    var screennames = '';
+    var screenids = '';
+    $("#tblScreens input:checkbox:checked").each(function() {
+            screennames += $(this).attr("title") + ',';
+            screenids +=$(this).parent().parent().find("span").text() + ',';
+            flag = true;
+    });
+    if (flag) {
+        var response = UserLevels.AddScreens($(ctlmodule).find("option:selected").text(),screennames, screenids, $(ctlmodule).val());
+        if (response.error == null) {
+            $("#divAll").html(response.value);
+            $('#<%=btnSave.ClientID %>').attr("disabled", false);
+            $("#tblScreens input:checkbox").attr("checked", false);
+        }
+        else
+            alert(response.error);
+    }
+    else {
+        alert("Please check any screen");
+    }
+}
+ function DeleteScreen(rowno)
+ {
+        var response=UserLevels.DeleteScreen(rowno);
+        if(response.error==null)
+            $('#divAll').html(response.value);
+        else
+            alert(response.error);
+       
+ }
+   function CheckSave()
+   {
+        if(!checkEmpty('<%=txtUserLevel.ClientID %>','User Level Name'))
+            return false;
+        else if($('#tblAll').length==0)
+        {
+            alert("Please select any screen(s)");
+            return false;
+        }
+    
+    }   
+    
+//End Of User Level Permissions Functions
+
+//Functions For CourseBranchSemester Web Custom Control Page
+//End Of CourseBranchSemester Web Custom Control Page
+
+
+
+function SaveText(FileName,Data)
+// use FSO to write file, so you should have the permission on the drive
+{
+    var ExcelApp   = new ActiveXObject("Scripting.FileSystemObject");
+    
+    var ExcelSheet = ExcelApp.CreateTextFile("d:\\"+FileName, true,true);
+    var content = Data;
+   
+    ExcelSheet.WriteLine(content); 
+    ExcelSheet.close(); 
+
+    alert('Export Excel to D:\\'+FileName+' !');
+
+} 
+
+
+
+function toExcel(po_div_id,ch_no) //'write excel function
+{
+   
+   //var headerString  = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"> <head> <meta http-equiv=Content-Type content="text/html; charset=gb2312"> <meta name=ProgId content=Excel.Sheet> <meta name=Generator content="Microsoft Excel 9"> <link rel=File-List href="./222.files/filelist.xml"> <link rel=Edit-Time-Data href="./222.files/editdata.mso"> <link rel=OLE-Object-Data href="./222.files/oledata.mso"> <!--[if gte mso 9]><xml> <o:DocumentProperties> <o:Author>xky</o:Author> <o:LastAuthor>xky</o:LastAuthor> <o:Created>2002-05-27T17:51:00Z</o:Created> <o:LastSaved>2002-06-22T10:03:03Z</o:LastSaved> <o:Company>zydn</o:Company> <o:Version>9.2812</o:Version> </o:DocumentProperties> <o:OfficeDocumentSettings> <o:DownloadComponents/> <o:LocationOfComponents Ref="file:///E:/msowc.cab"/> </o:OfficeDocumentSettings> </xml><![endif]--> <style> <!--table {mso-displayed-decimal-separator:"\."; mso-displayed-thousand-separator:"\,";} @page {margin:1.0in .75in 1.0in .75in; mso-header-margin:.5in; mso-footer-margin:.5in;} tr {mso-height-source:auto; mso-ruby-visibility:none;} col {mso-width-source:auto; mso-ruby-visibility:none;} br {mso-data-placement:same-cell;} .style0 {mso-number-format:General; text-align:general; vertical-align:bottom; white-space:nowrap; mso-rotate:0; mso-background-source:auto; mso-pattern:auto; color:windowtext; font-size:9.0pt; font-weight:400; font-style:normal; text-decoration:none; font-family:宋体; mso-generic-font-family:auto; mso-font-charset:134; border:none; mso-protection:locked visible; mso-style-name:常规; mso-style-id:0;} td {mso-style-parent:style0; padding-top:1px; padding-right:1px; padding-left:1px; mso-ignore:padding; color:windowtext; font-size:9.0pt; font-weight:400; font-style:normal; text-decoration:none; font-family:宋体; mso-generic-font-family:auto; mso-font-charset:134; mso-number-format:General; text-align:general; vertical-align:bottom; border:none; mso-background-source:auto; mso-pattern:auto; mso-protection:locked visible; white-space:nowrap; mso-rotate:0;} .xl24 {mso-style-parent:style0; border:.5pt solid windowtext;} .xl25 {mso-style-parent:style0; mso-number-format:"Long Date"; text-align:left; border:.5pt solid windowtext;} ruby {ruby-align:left;} rt {color:windowtext; font-size:9.0pt; font-weight:400; font-style:normal; text-decoration:none; font-family:宋体; mso-generic-font-family:auto; mso-font-charset:134; mso-char-type:none; display:none;} --> </style> <!--[if gte mso 9]><xml> <x:ExcelWorkbook> <x:ExcelWorksheets> <x:ExcelWorksheet> <x:Name>Sheet1</x:Name> <x:WorksheetOptions> <x:DefaultRowHeight>225</x:DefaultRowHeight> <x:Print> <x:ValidPrinterInfo/> <x:PaperSizeIndex>9</x:PaperSizeIndex> <x:HorizontalResolution>-3</x:HorizontalResolution> <x:VerticalResolution>0</x:VerticalResolution> </x:Print> <x:Selected/> <x:Panes> <x:Pane> <x:Number>3</x:Number> <x:ActiveRow>24</x:ActiveRow> <x:ActiveCol>5</x:ActiveCol> </x:Pane> </x:Panes> <x:ProtectContents>False</x:ProtectContents> <x:ProtectObjects>False</x:ProtectObjects> <x:ProtectScenarios>False</x:ProtectScenarios> </x:WorksheetOptions> </x:ExcelWorksheet> <x:ExcelWorksheet> <x:Name>Sheet2</x:Name> <x:WorksheetOptions> <x:DefaultRowHeight>225</x:DefaultRowHeight> <x:ProtectContents>False</x:ProtectContents> <x:ProtectObjects>False</x:ProtectObjects> <x:ProtectScenarios>False</x:ProtectScenarios> </x:WorksheetOptions> </x:ExcelWorksheet> <x:ExcelWorksheet> <x:Name>Sheet3</x:Name> <x:WorksheetOptions> <x:DefaultRowHeight>225</x:DefaultRowHeight> <x:ProtectContents>False</x:ProtectContents> <x:ProtectObjects>False</x:ProtectObjects> <x:ProtectScenarios>False</x:ProtectScenarios> </x:WorksheetOptions> </x:ExcelWorksheet> </x:ExcelWorksheets> <x:WindowHeight>6600</x:WindowHeight> <x:WindowWidth>12000</x:WindowWidth> <x:WindowTopX>0</x:WindowTopX> <x:WindowTopY>1395</x:WindowTopY> <x:ProtectStructure>False</x:ProtectStructure> <x:ProtectWindows>False</x:ProtectWindows> </x:ExcelWorkbook> </xml><![endif]--> </head> <body link=blue vlink=purple> '; 
+   //var bottomString  = "<table x:str border=0 cellpadding=0 cellspacing=0 width=288 style='border-collapse: collapse;table-layout:fixed;width:216pt'> <![if supportMisalignedColumns]> <tr height=0 style='display:none'> <td width=72 style='width:54pt'></td> <td width=72 tyle='width:54pt'></td> <td width=72 style='width:54pt'></td> <td width=72 style='width:54pt'></td> </tr> <![endif]> </table>  ";
+
+   var divContent = $("#" + po_div_id).html();  // get the Ext  grid's  content
+   
+   var excel_ch_no  = ch_no; // this is optinal , just for filename
+   var fileName = "Report.xls";
+ 
+   //var toExcelString = headerString + divContent + bottomString ;
+   
+    SaveText(fileName,divContent) ;
+
+} 
+function fillCurrentExamHeldDetails(ddlid, divbranchid, defaulttext, fixstatus, regulationddlid,subjecodeddl,subject_type,fillbranchsections) {
+    $("#" + ddlid).find("option:gt(0)").remove();
+    fixstatus = (fixstatus == null || fixstatus == "" ? "-" : fixstatus);
+    try {
+
+        var response = AjaxGeneral.GetExamsHeldData(fixstatus);
+        if (response.error == null) {
+            if (response.value != "SE") {
+                var jsonobject = JSON.parse(response.value);
+                $.each(jsonobject, function (i, v) {
+                    $("#" + ddlid).append("<option value='" + v.courseid + "' name='" + v.semesterid + "' title='" + v.examtype + "' id='" + v.heldserialno + "'>" + v.semestername + ", " + v.examname + "- " + v.monthyear + "</option>");
+                })
+		if ((divbranchid != null && divbranchid != "") || (regulationddlid != null && regulationddlid != "") || (subjecodeddl != null && subjecodeddl!="")) {
+    $("#" + ddlid).change(function () {
+        if (divbranchid != null && divbranchid != "")
+            $("#" + divbranchid).html("<select id='ddlbranch'><option value='0'>" + (defaulttext == null ? "All" : defaulttext) + "</option></select>");
+        if (regulationddlid != null && regulationddlid != "")
+            $("#" + regulationddlid).find("option:gt(0)").remove();
+        if ($("#" + ddlid).val() > 0) {
+            if (divbranchid != null && divbranchid != "") {
+
+                if ($("#" + ddlid).val() > 0) {
+                    loadBranchesDropDown($("#" + ddlid), divbranchid, "ddlbranch", null, true);
+                    if (defaulttext != null)
+                        $("#ddlbranch option:eq(0)").text(defaulttext);
+		    if ((subjecodeddl != null && subjecodeddl != "") || (fillbranchsections)) {
+ 			   $("#ddlbranch").change(function () {
+			        if (subjecodeddl != null && subjecodeddl!="")
+			           fillExamHeldSubjects(subjecodeddl, "ddlbranch", $("#" + ddlid + " option:selected").attr("id"), (subject_type == null ? "-" : subject_type));
+			     if (fillbranchsections)
+		            fillExamSections(ddlid, 'D', 'divsection');
+		    	});
+		   }
+                }
+            }
+            if (regulationddlid != null && regulationddlid != "") {
+                fillExamHeldRegulations(regulationddlid, $("#" + ddlid).find("option:selected").attr("id"));
+            }
+	    if (subjecodeddl != null && subjecodeddl != "")
+	    {
+		    fillExamHeldSubjects(subjecodeddl, "", $("#" + ddlid + " option:selected").attr("id"), "-");
+	    }
+
+        }
+    });
+
+}                
+
+            }
+            else Raiserror("SE");
+        }
+        else alert(response.error);
+    }
+    catch (e) {
+        alert(e.error);
+    }
+}
+function loadSemesterSubjects() {
+    $("#ddlsubject option:gt(0)").remove();
+    if ($("#ddlbranch").val() > 0 && $("#ddlsemester").val() >= 0) {
+        try {
+            var response = AjaxGeneral.ShowSubjects($("#ddlcourse").val(), $("#ddlbranch").val(), $("#ddlsemester").val());
+            if (response.error == null) {
+                $.each(JSON.parse(response.value), function (i, v) {
+                    if (v.subjecttype != 'O')
+                        $("#ddlsubject").append("<option value='" + v.subjectid + "'>" + v.subjectname +"-("+v.subjectcode + ")</option>");
+                })
+            }
+            else console.log(response.error);
+        }
+        catch (e) {
+            console.log(e.error);
+        }
+    }
+}
+
+function fillExamHeldSubjects(ddlsubid, ddlbranchid, heldslno, subtype) {
+    $("#" + ddlsubid).find("option gt(0)").remove();
+    let branchid = 0;
+    if (ddlbranchid != null && ddlbranchid!="")
+       branchid= $("#" + ddlbranchid).val();
+
+    if (heldslno != null && heldslno > 0) {
+        try {
+            var response = AjaxGeneral.GetSubjectsByExamHeld(heldslno, branchid, subtype);
+            if (response.error == null) {
+                var jsonobject = JSON.parse(response.value);
+                $.each(jsonobject, function (i, v) {
+                    $("#" + ddlsubid).append("<option value='" + v.codeid + "'>" + v.subject_name + "(" + v.subject_code + ")</option>");
+                });
+            }
+            else alert("Error while fill courses-" + response.error);
+        }
+        catch (e) {
+            alert(e.error);
+        }
+    }
+}
+
+function fillStudentExamHeldDetails() {
+    try {
+        showProcessDialog("divprocess", true);
+        setTimeout(function () {
+            try {
+                var response = AjaxGeneral.FillStudentExamHeldDetails();
+                if (response.error == null) {
+                    var jsonobject = JSON.parse(response.value);
+                    $.each(jsonobject, function (i, v) {
+                        $("#ddlsemester").append("<option value='" + v.semesterid + "' title='" + v.examtype + "' name='" + v.encdata + "'>" + v.semester + " " + v.examname + ", " + v.monthyear + "</option>");
+                    });
+                }
+                else alert("Error while get exam held details:" + response.error);
+            }
+            catch (e) { alert(e.error); }
+            finally {
+                showProcessDialog("divprocess", false);
+            }
+
+        }, 500);
+    }
+    catch (e) {
+        console.log(e.error);
+    }
+}
+
+function fillExamSections(ddlheldid, sectiontypefill, divsectionid) {
+
+    $("#" + divsectionid).html("No Section(s)");
+
+    if ($("#ddlbranch").val() >= 0) {
+        var selectedoption = $("#" + ddlheldid).find("option:selected");
+        if (selectedoption.attr("title") == "R") {
+            var brresponse = AjaxGeneral.GetSectionsByExam(selectedoption.attr("id"), $("#ddlbranch").val());
+            if (brresponse.error == null) {
+                var brjsonobject = JSON.parse(brresponse.value);
+                var str = "";
+                if (sectiontypefill == 'C')
+                    str = "<table id='tblsections'><tr>";
+                else str = "<select id='ddlsection'><option value='0'>Select</option>";
+
+                $.each(brjsonobject, function (i, v) {
+                    if (sectiontypefill == 'C')
+                        str += "<td><input type='checkbox' value='" + v.sectionid + "'/>&nbsp;" + v.section + "</td><td>&nbsp;</td>";
+                    else
+                        str += "<option value='" + v.sectionid + "'>" + v.section + "</option>";
+                });
+
+                if (sectiontypefill == 'C')
+                    str += "</tr></table>";
+                else str += "</select>";
+
+                $("#" + divsectionid).html(str);
+            }
+            else alert("Error while load exam sections");
+        }
+        else {
+            var str1 = "";
+            if (sectiontypefill == 'C')
+                str1 = "<table id='tblsections'><tr><td><input type='checkbox' value='100' checked='checked'/>&nbsp;Supply</td></tr>";
+            else str1 = "<select id='ddlsection'><option value='0'>Select</option><option value='100'>Supply</option></select>";
+            $("#" + divsectionid).html(str1);
+        }
+    }
+
+}
+
+
+function fillSchedule_AjaxGeneral() {
+	$("#ddlschedule option:gt(0)").remove();
+    if ($("#ddlsemester option:selected").attr("name") >= 0) {
+        try {
+
+            var resp = AjaxGeneral.GetExamSchedules($("#ddlsemester").val(), $("#ddlsemester option:selected").attr("name"));
+            if (resp.error == null) {
+
+                var dt = JSON.parse(resp.value);
+                var _item = '';
+                //console.log(dt.length);
+                if (!isEmpty(dt) && dt.length > 0) {
+                    $.each(dt, function (i, item) {
+                        _item += `<option id="${item.ExamDay}" name="${item.FExamDate}"  value="${item.SerialNo}"> ${item.FExamDate} - ${item.FromTime} - ${item.ToTime} ( ${item.regulation} )</option>`;
+
+                    });
+                }
+                else
+                    _item = '<option value="0">- no data -</option>';
+                $("#ddlschedule").append(_item);
+
+            }
+            else
+                alert(resp.error);
+
+
+        }
+        catch (ex) {
+
+        }
+    }
+}
+
+function fillRooms_AjaxGeneral() {
+
+    if ($("#ddlschedule").val() > 0) {
+        try {
+            var resp = AjaxGeneral.GetSeatingPlanRooms($("#ddlschedule").val(), $("#ddlsemester option:selected").attr("name"));
+            if (resp.error == null) {
+                var dt = JSON.parse(resp.value);
+                var _item = '';
+                if (!isEmpty(dt) && dt.length > 0) {
+                    $.each(dt, function (i, item) {
+                        _item += `<option value='${item.roomid}'> ${item.Block + ' ' + item.RoomNo} </option>`;
+                    });
+                }
+                else
+                    _item = '<option value="0">- no data -</option>';
+
+                $("#ddlroom").append(_item);
+            }
+            else
+                alert(resp.error);
+
+        }
+        catch (ex) {
+        }
+    }
+}
+
+
+function fillSemesterExamHeldDetails(ctlsemid, ctlhelddataid, isall) {
+  isall = (isall == null ? false : isall);
+    var _ddl_held = $("#" + ctlhelddataid)
+    _ddl_held.find("option:gt(0)").remove();
+    var _held_sem_id = parseInt($("#" + ctlsemid).val());
+    if (_held_sem_id >= 0) {
+        try {
+            var response = AjaxGeneral.GetExamsHeldDataBySemester(_held_sem_id,isall);
+            if (response.error == null) {
+                var jsonobject = JSON.parse(response.value);
+                $.each(jsonobject, function (i, v) {
+                    _ddl_held.append(`<option value="${v.heldserialno}" data-info="${v.heldmonth}|${v.heldyear}|${v.examtype}">${v.monthyear} ${v.examname}</option>`);
+                })
+            }
+            else console.log(response.error);
+        }
+        catch (e) {
+            console.log(e.error);
+        }
+    }
+}
+
+
+
+function callWebMethod(options) {
+
+    if (options.showprocess == null || options.showprocess)
+        showProcessDialog("divprocess", true);
+
+    $.ajax({
+        url: options.url,
+        type: "POST",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        data: JSON.stringify(options.data || {}),
+
+        beforeSend: function (xhr) {
+            
+            if (options.token)
+                xhr.setRequestHeader("X-Auth-Token", options.token);
+            else {
+                if (window.AUTH_TOKEN) {
+                    xhr.setRequestHeader("X-Auth-Token", window.AUTH_TOKEN);
+                } else {
+                    console.warn("Token missing");
+                }
+            }
+        },
+
+        success: function (res, status, xhr) {
+
+            // 🔁 ALWAYS update token FIRST
+            try {
+                
+                if (xhr && xhr.getResponseHeader) {
+                    var newToken = xhr.getResponseHeader("X-New-Token");
+                    if (newToken) {
+                        window.AUTH_TOKEN = newToken;
+                    }
+                }
+            } catch (e) {
+                console.warn("Token update failed:", e);
+            }
+
+            // 👉 THEN call user logic
+            try {
+                if (options.success)
+                    options.success(res.d);
+            } catch (e) {
+                console.error("User success error:", e);
+                if (options.error)
+                    options.error(e);
+            }
+        },
+
+        error: function (xhr, status, error) {
+
+            // 🔁 ALSO update token on error (VERY IMPORTANT)
+            try {
+                if (xhr && xhr.getResponseHeader) {
+                    var newToken = xhr.getResponseHeader("X-New-Token");
+                    if (newToken) {
+                        window.AUTH_TOKEN = newToken;
+                    }
+                }
+            } catch (e) {
+                console.warn("Token update failed (error):", e);
+            }
+
+            try {
+                var err = JSON.parse(xhr.responseText);
+                alert(err.Message || "Error occurred");
+            } catch (e) {
+                alert(xhr.responseText);
+            }
+
+            if (options.error)
+                options.error(xhr, status, error);
+        },
+
+        complete: function () {
+            if (options.showprocess == null || options.showprocess)
+                showProcessDialog("divprocess", false);
+
+            ResizeIFrame();
+
+            if (options.complete)
+                options.complete();
+        }
+    });
+}
+
+
+
+function callWebMethod_Old(options) {
+    //$("#loader").show();
+    if (options.showprocess == null || options.showprocess) 
+    showProcessDialog("divprocess", true);
+    $.ajax({
+        url: options.url,
+        type: "POST",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        data: JSON.stringify(options.data || {}),
+        
+        beforeSend: function (xhr) {
+            /*if (options.headers) {
+                for (var key in options.headers) {
+                    xhr.setRequestHeader(key, options.headers[key]);
+                }
+            }*/
+            if (options.token!=null)
+                xhr.setRequestHeader("X-Auth-Token", options.token);
+        },
+        
+
+        
+
+        success: function (res) {
+            //if (options.success) options.success(res.d);
+
+            try {
+                if (options.success)
+                    options.success(res.d);
+            } catch (e) {
+                console.error("Wrapper caught error:", e);
+
+                if (options.error)
+                    options.error(e);
+            }
+            finally {
+                ResizeIFrame();
+            }
+
+        },
+
+        error: function (xhr, status, error) {
+            try {
+                var err = JSON.parse(xhr.responseText);
+                alert(err.Message || "Error occurred");
+            } catch (e) {
+                alert(xhr.responseText);
+            }
+        },
+        complete: function () {
+            // ✅ Global finally
+	     if (options.showprocess == null || options.showprocess)
+            showProcessDialog("divprocess", false);
+
+            // ✅ Page-specific finally
+            if (options.complete) {
+                options.complete();
+            }
+        }
+
+    });
+}

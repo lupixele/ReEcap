@@ -1,0 +1,39 @@
+﻿function ResizeIFrame() {
+    try {
+        const body = document.body;
+        const html = document.documentElement;
+
+        // Temporarily reset body's min-height so we don't measure the inflated space
+        body.style.minHeight = "0";
+
+        // Measure actual scrollable content height
+        const contentHeight = Math.max(
+            body.scrollHeight,
+            html.scrollHeight,
+            body.offsetHeight,
+            html.offsetHeight
+        );
+
+        const newHeight = contentHeight + 150; // small buffer
+
+        if (window.parent && window.parent.document) {
+            const iframe = window.parent.document.getElementById("capIframeId");
+            if (iframe) {
+                const currentHeight = parseInt(iframe.style.height, 10) || 0;
+
+                // Only change if there's a meaningful difference
+                if (Math.abs(currentHeight - newHeight) > 5) {
+                    iframe.style.height = newHeight + "px";
+                }
+            }
+        }
+
+        // Fallback postMessage for cross-domain
+        if (window.parent) {
+            window.parent.postMessage({ type: "resize", height: newHeight }, "*");
+        }
+
+    } catch (e) {
+        console.warn("ResizeIFrame failed:", e);
+    }
+}

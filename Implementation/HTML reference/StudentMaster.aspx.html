@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0047)https://info.aec.edu.in/aus/StudentMaster.aspx# -->
+<html xmlns="http://www.w3.org/1999/xhtml"><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/content/location/location.js" id="eppiocemhmnlbhjplcgkofciiegomcon"></script><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/libs/extend-native-history-api.js"></script><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/libs/requests.js"></script><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link href="./StudentMaster.aspx_files/style.css" rel="stylesheet" type="text/css"><link href="./StudentMaster.aspx_files/CssCAP.css" rel="Stylesheet" type="text/css">
+    <script language="javascript" src="./StudentMaster.aspx_files/jquery-1.3.2.js.download" type="text/javascript"></script><script bis_use="true" type="text/javascript" charset="utf-8" nonce="" data-dynamic-id="d2abdf55-66c3-42e1-b80e-871b5b9c6199" src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/200.js"></script><script bis_use="true" type="text/javascript" charset="utf-8" nonce="" data-dynamic-id="d2abdf55-66c3-42e1-b80e-871b5b9c6199" src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/101.js"></script>
+    <script language="javascript" type="text/javascript">
+        $(document).ready(function () {
+            try {
+                var response = StudentMaster.GetPhotoPath();
+                if (response.error == null && response.value != '') {
+                    var _imgleft = $("#imgHead").position().left;
+                    var _left = ($("#imgHead").attr("width") + _imgleft) - 100;
+                    var _top = $("#imgHead").position().top; // +85;
+                    $("#imgstudent").attr("src", response.value);
+                    $("#divimg").css({
+                        "position": "absolute",
+                        "left": _left,
+                        "top": _top
+                    });
+                    $("#imgHead").css("z-index", -1);
+                    $("#imgstudent").css("z-index", 999);
+                }
+                var response = StudentMaster.FillScreens();
+                if (response.error == null) {
+                    $("#divscreens").html(response.value);
+
+                    if ($("#tblscreens").attr("name") == "Y")
+                        $("#capIframeId").attr("src", "Academics/StudentProfile.aspx?scrid=17");
+                    else
+                        $("#capIframeId").attr("src", "empty.html");// $("#tblscreens tr:eq(0)").attr("name"));
+                    ResizeIFrame();
+                }
+
+            }
+            catch (e) {
+                alert(e.error);
+            }
+        });
+        function ResizeIFrame() {
+            var sourceHeight = document.body.scrollHeight + 50;
+            //document.parentWindow.frames[0].height=sourceHeight;
+            $("#capIframeId", parent.document).css("height", sourceHeight);
+        }
+        function closeDiv() {
+            hideDialg("divGreetings", true);
+        }
+    </script>
+
+    <style type="text/css">
+
+</style>
+    <title>
+
+</title></head>
+<body style="margin: 0;" class="bodyStyle" bis_register="W3sibWFzdGVyIjp0cnVlLCJleHRlbnNpb25JZCI6ImVwcGlvY2VtaG1ubGJoanBsY2drb2ZjaWllZ29tY29uIiwiYWRibG9ja2VyU3RhdHVzIjp7IkRJU1BMQVkiOiJlbmFibGVkIiwiRkFDRUJPT0siOiJlbmFibGVkIiwiVFdJVFRFUiI6ImVuYWJsZWQiLCJSRURESVQiOiJlbmFibGVkIiwiUElOVEVSRVNUIjoiZW5hYmxlZCIsIklOU1RBR1JBTSI6ImVuYWJsZWQiLCJUSUtUT0siOiJkaXNhYmxlZCIsIkxJTktFRElOIjoiZW5hYmxlZCIsIkNPTkZJRyI6ImRpc2FibGVkIn0sInZlcnNpb24iOiIyLjEuMiIsInNjb3JlIjoyMDEwMjB9XQ==" __processed_ee1c9068-5596-4c53-8229-85a4951011b4__="true">
+    <form name="form1" method="post" action="https://info.aec.edu.in/aus/StudentMaster.aspx" id="form1">
+<div bis_skin_checked="1">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="">
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="0e/8PSbosyryv0VmwrfdxMHM++KC9Tn3CRV5TTd24eFHt81pnzuGyTSxQr09dxQzpSpTfpjCrz+h2xlGGncOt5KkwOlrXqg6+ZKzKUCeriyc4rZ2G39CSBEv+yuKuGQ6IGSh8kk30r0cPgDcpGxRnsWpmJ92XbcgHWkYicJ+S0lZ0EvZw3jfDMnJsptI9aIOJTLcLIRAz+clx68BrvEJdQ==">
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script type="text/javascript" src="./StudentMaster.aspx_files/common.ashx"></script><script type="text/javascript" src="./StudentMaster.aspx_files/StudentMaster,App_Web_studentmaster.aspx.cdcab7d2.ashx"></script>
+<div bis_skin_checked="1">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="285EB31F">
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="">
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="VwxO8WTobyqfEzziyGNPzgrPEwZpViWheSXzq6cx9lhZuDVnFLd5YhSeZCe7HZM9korHasdr4BbESX5Po4BXfcGAhb+QRSnvKV5OvCNPIgALvhrB9qwI4lTAaw7BL0gSxJyrRPYXrbCSv6sd29vkeg==">
+</div>
+        <center>
+            <div align="center" style="width: 1200px; padding: 10px; background-color: #fff;" bis_skin_checked="1">
+      <table width="1200px" border="0" cellpadding="0" cellspacing="0">
+                    <tbody><tr>
+                        <td>
+                            <img src="./StudentMaster.aspx_files/title_head.jpg" alt="" id="imgHead" width="1200" style="z-index: -1;"></td>
+                    </tr>
+                    <tr>
+                        <td class="newsBG">
+                            <div id="divNews" bis_skin_checked="1"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center"><span style="font-family: Verdana; font-size: 12px; font-weight: bold; color: blue">Please check the payment status at Online Transactions link</span></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                    </tr>
+                    <tr class="userData">
+                        <td valign="top">
+                            <table width="100%">
+                                <tbody><tr>
+                                    <td align="left" style="width: 85%">
+                                        <span id="lblUser">Hi...GURALA RATAN TEJA</span></td>
+                                    <td style="width: 10%">
+                                        <a href="https://info.aec.edu.in/aus/Admin/changepassword.aspx?ctype=S" target="capIframe" class="welcomeLink">Change
+                                            Password</a></td>
+                                    <td align="right" style="width: 5%">
+                                        <a id="lnkLogOut" class="welcomeLink" href="javascript:__doPostBack(&#39;lnkLogOut&#39;,&#39;&#39;)">Logout</a>
+                                    </td>
+                                </tr>
+                            </tbody></table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table width="100%" cellspacing="0" cellpadding="0">
+                                <tbody><tr>
+                                    <td style="width: 178px; padding-left: 4px;" class="linksBG" align="left" valign="top">
+                                        <div id="divscreens" bis_skin_checked="1"><div class="LeftMenuHead" id="tblscreens" name="Y" style="text-align:center;vertical-align:middle" bis_skin_checked="1"><b>MENU</b></div><div bis_skin_checked="1"><ul id="menu" class="menu"><li><a class="menuLink" href="https://info.aec.edu.in/aus/Academics/StudentAttendance.aspx?scrid=3&amp;showtype=SA" target="capIframe">ATTENDANCE</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Academics/studentbacklogs.aspx?scrid=4" target="capIframe">BACKLOGS</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Library/BookSearch1.aspx?scrid=5" target="capIframe">BOOK SEARCH</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Academics/studenttimetableoption.aspx" target="capIframe">CHOOSE TIMETABLE</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/academics/studentcourseregistration.aspx?scrid=255" target="capIframe">COURSE REGISTRATION</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Examinations/studentexamtimetable.aspx?scrid=9" target="capIframe">EXAMS DETAILS</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/FeePayments/studentpayments.aspx?scrid=11" target="capIframe">FEE DETAILS</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/examinations/studenthallticket.aspx?scrid=30" target="capIframe">HALLTICKET</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Hostel/HostelAdmission.aspx" target="capIframe">HOSTEL ROOM BOOKING</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/academics/lpreport.aspx?scrid=22&amp;rtype=S" target="capIframe">LESSON PLAN</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Library/studentsbooks.aspx?scrid=14" target="capIframe">LIBRARY BOOKS</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Academics/StudentMarksReport.aspx?scrid=15" target="capIframe">MARKS</a></li><li class="has-submenu"><a href="https://info.aec.edu.in/aus/StudentMaster.aspx#" id="MenuLink_23">ONLINE PAYMENT&nbsp; <span class="myAquo">»</span></a><ul class="submenu"><li><a class="menuLink" href="https://info.aec.edu.in/aus/Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe">COLLEGE FEE</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/studentexamfeeonline.aspx?scrid=24" target="capIframe">EXAM FEE</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/examinations/revaluationregistrationstudent.aspx?scrid=257" target="capIframe">RE-VALUATION</a></li></ul></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/feepayments/optransactions.aspx" target="capIframe">ONLINE TRANSACTIONS</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Academics/StudentProfile.aspx?scrid=17" target="capIframe">PROFILE</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/FeePayments/studentreceipts.aspx?scrid=28" target="capIframe">RECEIPTS</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Academics/TimeTableReport.aspx?scrid=18" target="capIframe">TIME TABLE</a></li><li><a class="menuLink" href="https://info.aec.edu.in/aus/Examinations/RevalutionScriptViewer.aspx" target="capIframe">VIEW ANSWER SHEET</a></li></ul></div></div>
+
+                                    </td>
+                                    <td style="width: 5px">&nbsp;</td>
+                                    <td valign="top">
+                                        <table width="100%" cellspacing="0">
+                                            <tbody><tr>
+                                                <td>
+                                                    <iframe id="capIframeId" allowtransparency="true" name="capIframe" width="100%" onload="ResizeIFrame(capIframe)" scrolling="no" frameborder="0" src="./StudentMaster.aspx_files/StudentProfile.html" style="height: 3322px;" bis_size="{&quot;x&quot;:390,&quot;y&quot;:259,&quot;w&quot;:969,&quot;h&quot;:2422,&quot;abs_x&quot;:390,&quot;abs_y&quot;:259}"></iframe>
+                                                </td>
+                                            </tr>
+                                        </tbody></table>
+                                    </td>
+                                    
+                                </tr>
+                            </tbody></table>
+                        </td>
+                    </tr>
+                </tbody></table>
+
+                <div id="divGreetings" style="background-color: White; border-width: 1px; border-color: Gray; border-style: solid; z-index: 1px; position: absolute; width: 600px; height: 490px; left: 236px; top: 27px; display: none" bis_skin_checked="1">
+                </div>
+            </div>
+        </center>
+        <div id="divimg" style="position: absolute; left: 1268px; top: 10px;" bis_skin_checked="1">
+            <img id="imgstudent" alt="" src="./StudentMaster.aspx_files/25B11DS190.jpg" width="105px" height="105px" style="z-index: 999;">
+        </div>
+    </form>
+
+
+</body></html>

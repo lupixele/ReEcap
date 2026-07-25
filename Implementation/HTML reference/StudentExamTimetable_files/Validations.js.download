@@ -1,0 +1,1036 @@
+var strDelete="This data will be deleted permanently !";
+var strSave="This Data will be Saved";
+var strUpdate="This Data will be Updated";
+var strApprove="This Row(s) will be Approved";
+
+function selectContent(obj)
+{
+    obj.select();    
+}
+function validate(evt) 
+{
+  var theEvent = evt || window.event;
+  var key = theEvent.keyCode || theEvent.which;
+  key = String.fromCharCode( key );
+  var regex = /[0-9]|\./;
+  if(!regex.test(key) ) 
+  {    
+    
+    theEvent.returnValue = false;    
+    if(theEvent.preventDefault)
+    theEvent.preventDefault();
+  }
+}
+function validateEmpty(s)
+{
+     if((s.value == null) || (s.value.length == 0) || s.value=='')   
+   s.value=0;
+}
+
+
+
+function validationMain(txtName)
+{
+    var txtValue=$("#" + txtName).val();
+    if((isEmpty(txtValue)==true)|| (isAlphawithspaces(txtValue)==false) )
+    {	
+    	alert("Name Should contain valid characters");
+		$("#" + txtName).focus();
+		return false;
+	}
+
+    return confirm("Do you want to save");
+    
+}
+
+function Confirmation(mode,msg)
+{
+var message;
+    if(mode=='S' || mode=='I')
+        message='Do you want to save ';//+msg;
+    else if(mode=='U' || mode=='M')
+        message='Do you want to save changes';
+    else if(mode=='D')
+        message='Do you want to delete ';//+msg;
+        
+    return confirm(message);
+}
+function AfterSave(mode,msg)
+{
+    var alertMsg;
+    if(mode=='S' || mode=='I')
+        alertMsg=msg+' saved';
+    else if(mode=='U' || mode=='M')
+        alertMsg=msg+' updated';
+    alert(alertMsg);
+}
+
+function deletedAlert()
+{
+    alert("Record Deleted");
+}
+
+function isAlphawithspaces (s)
+		{   var i;
+			for (i = 0; i < s.length; i++)
+			{   // Check that current character is letter.
+				var c = s.charAt(i);
+				if (c==",")
+					continue;
+				if (c==".")
+					continue;
+				if (c==" ")
+					continue;
+				if (!isLetter(c))
+				return false;
+			}
+			return true;
+		}
+
+
+function isAlphabetic (s)
+{   var i;
+    for (i = 0; i < s.length; i++)
+	{   // Check that current character is letter.
+	    var c = s.charAt(i);
+		if (!isLetter(c))
+		return false;
+	}
+	return true;
+}
+
+
+
+function isEmpty(s)
+{   
+    return ((s == null) || (s.length == 0))
+}
+		
+		
+function isLetter (c)
+{   return ( ((c >= "a") && (c <= "z")) || ((c >= "A") && (c <= "Z")) )
+}
+function checkEmpty1(ctlId,message)
+{
+   //Old Coding
+ 
+ // var myReg=/\s+/g;
+  //if(ctl.value.replace(myReg,"")=="")
+   if($(ctlId).val().length==0)
+  {
+       alert("Enter the " + message);
+       $(ctlId).focus();
+        return false;
+  }
+    
+//  var ctl=document.getElementById(ctlName);
+//  var regExp=/\s+/g
+//  if(ctl.value.replace(regExp,"")=="")
+//  {
+//      alert("Please enter the " + message);
+//      ctl.focus();
+//      return false;
+ // }
+  return true;
+}
+function checkEmpty(ctlName,message,isSelect)
+{
+  try
+  {
+      var ctl;
+      
+        if(ctlName.toString()=="[object]" || ctlName.toString()=="[object Object]")
+            ctl=$(ctlName);
+        else    
+            ctl=$("#" + ctlName);
+        var myReg=/\s+/g;
+        var _enteredValue = $(ctl).val();
+      
+        if(_enteredValue.replace(myReg,"")=="")
+        {
+            if(isSelect==null)
+                alert("Enter " + message);
+            else
+                alert("Select " + message);
+            $(ctl).focus();
+            return false;
+        }
+  }
+  catch(e)
+  {
+    alert(e.message);
+    return false;
+  }
+  return true;
+}		
+
+function checkAlphabet(ctlName,message)
+{
+    var regExp=/^([a-zA-Z- ]+)$/
+    var ctl=$("#" + ctlName);
+    if(!regExp.test($(ctl).val()))
+    {
+        alert("Enter valid " + message);
+        $(ctl).focus();
+        return false;
+    }
+    return true;
+}
+	
+//Check Only Number(Between 1-9)
+function checkNumber(ctlName,message)
+{
+    var regExp=/^([1-9]+)$/
+    var ctl=$("#" + ctlName);
+    if(!regExp.test($(ctl).val()))
+    {
+        alert(message);
+        //ctl.focus();
+        $(ctl).select();
+        return false;
+    }
+    return true;
+}
+
+//Check For Numeric
+function checkNumeric(ctlName,message,isCheckNegativeValue)
+{
+    var objCtl;
+    if(ctlName.toString()=="[object]" || ctlName.toString()=="[object Object]")
+        objCtl=$(ctlName);
+    else    
+        objCtl=$("#" + ctlName);
+    var flag=checkEmpty(ctlName,message);
+    if(flag)
+     {
+         if(isCheckNegativeValue==true)
+         {
+            if(parseFloat($(objCtl).val())<0)
+            {
+                alert("Negative value will not be acepted");
+                $(objCtl).select();
+                return false
+            }
+         }
+         var enteredValue=$(objCtl).val();      //Get the Entered Value
+         var valueLength=enteredValue.length;                            //Get the length of the entered value
+         if(valueLength==0)
+         {
+              alert("You should enter " + message);
+             //objCtl.focus(); 
+             $(objCtl).select(); 
+             return false;
+         }
+         var noOfDots=0;
+            for(var i=0;i<valueLength;i++)
+            {
+                 var testValue=enteredValue.charAt(i);
+                 if(testValue==".")  noOfDots++;
+                 if((isNaN(testValue) && testValue!="-" && testValue!=".") || (i>0 && testValue=="-") || noOfDots>1 )
+                 {
+                        alert(message + " should be valid number");
+                        //objCtl.focus();
+                        $(objCtl).select(); 
+                        return false;
+                 }
+             }
+    }
+    else
+    {
+        return false;
+    }
+    return true;
+}
+
+//Check Sql Server Money Data Type(i.e -922337203685477.5808 to 922337203685477.5807)
+function checkMoneyType(ctlName,message)
+{
+    var flag=true;
+    flag=checkNumeric(ctlName,message,true);
+    if(flag)
+    {
+        var enteredValue = $("#" + ctlName).val();
+        var splitValue=enteredValue.split(".");
+        if(parseInt(splitValue[0])>922337203685477)
+        {
+            flag=false;
+        }
+        if(flag)
+        if(splitValue[1]!="")
+        {
+            if(parseInt(splitValue[0])==922337203685477)
+            {
+                if(parseInt(splitValue[1])>5807)
+                    flag=false;
+            }
+        }
+    
+        if(!flag)
+        {
+            alert(message + " was too large !");
+            $("#" + ctlName).focus();
+        }
+    }
+    return flag;
+}
+
+//Check Sql Server Int Data Type()(i.e -2147483648 to 2147483647)
+function checkIntType(ctlName,message)
+{
+    var flag=true;
+    flag=checkNumeric(ctlName,message);
+    var objCtl=$("#" + ctlName);
+    var enteredValue=$(objCtl).val();
+    if(flag)
+    {
+        if(parseInt(enteredValue)<-2147483648 || parseInt(enteredValue)>2147483648)
+        {
+            alert(message + " was too large");
+            $(objCtl).focus();
+            flag=false;
+        }
+    }
+    return flag;
+}
+
+//Check Sql Server TinyInt Data Type
+function checkTinyIntType(ctlName,message)
+{
+    var flag=true;
+    var enteredValue = $("#" + ctlName).val();
+    flag=checkNumeric(ctlName,message);
+    if(flag)
+    {
+        if(parseInt(enteredValue)<0 || parseInt(enteredValue)>255)
+        {
+            alert(message + " overflow");
+            $("#" + ctlName).focus();
+            flag=false;
+        }
+    }
+    return flag;
+}
+
+//Check Percentage (if Percentage value is greate than 100)
+function checkPercentage(ctlName,message)
+{
+    var flag=true;
+    var objCtl=$("#" + ctlName);
+    flag=checkNumeric(ctlName,message);
+    if(flag)
+    {
+        if(parseFloat($(objCtl).val())>100)
+        {
+            alert(message + ' Should not greater than 100');
+            $(objCtl).focus();
+            flag=false;
+        }
+    }
+    return flag;
+}
+
+//Check Email Validation
+function checkEmail(ctlName)
+{ 
+  var flag=true;
+  var objCtl=$("#" + ctlName);  
+  var enteredValue=$(objCtl).val();
+  if(!enteredValue.length||$(objCtl).attr("disabled")) return true; // blank fields are the domain of requireValue 
+  //var regXp= /@(\w+\.)*example\.(com|net|org)$/i;
+  //if(regXp.test(enteredValue))
+  //{
+  //         flag=false;
+  //}
+  //else         
+  //{
+        var emailfmt= /^\w+([.-]\w+)*@\w+([.-]\w+)*\.\w{2,8}$/;
+        if(!emailfmt.test(enteredValue))
+            flag=false;
+   //}
+   if(!flag)
+   {
+        alert("You should enter valid Email address");
+        $(objCtl).focus();
+    }
+  return flag;
+}
+
+//Dates Comparision
+function CompareDates(date1,date2,msg1,msg2,showmessage)
+{
+    
+    try
+    { 
+        
+         var ctlDate1=null;
+         var ctlDate2=null;
+         var date1Val;
+         var date2Val;
+         if (date1.toString() == "[object]" || date1.toString() == "[object Object]") {
+             if($(date1).attr("type")=="text")
+                 date1Val = $(date1).val();
+             else
+                 date1Val = $(date1).text();
+         }
+         else
+             date1Val = date1;
+         if (date2.toString() == "[object]" || date2.toString() == "[object Object]") {
+             if ($(date2).attr("type") == "text")
+                 date2Val = $(date2).val();
+             else
+                 date2Val = $(date2).text();
+         }
+         else
+             date2Val = date2;    
+         
+         
+         
+         
+           
+            if(date1Val.length>0 && date2Val.length>0)
+            {
+                
+                var _arr1=date1Val.split(" ");
+                var _arr2=date2Val.split(" ");
+
+                var date1Split = _arr1[0].split(/[-.\/]/);
+
+                var date2Split = _arr2[0].split(/[-.\/]/);
+                var _h1=0,_m1=0,_s1=0;
+                var _h2=0,_m2=0,_s2=0;
+                if(_arr1.length>1)
+                {
+                    var _arr11=_arr1[1].split(" ");
+                    _arr11=_arr11[0].split(":");
+                    if(_arr11[0]!="")
+                        _h1=_arr11[0];
+                    if(_arr11.length>1)
+                        _m1=_arr11[1];
+                }
+                if(_arr2.length>1)
+                {
+                    var _arr21=_arr2[1].split(" ");
+                    _arr21=_arr21[0].split(":");
+                    if(_arr21[0]!="")
+                        _h2=_arr21[0];
+                    if(_arr21.length>1)
+                        _m2=_arr21[1];
+                }
+                //alert(date1Split[2]+"," + date1Split[1]-1 + "," + date1Split[0]+"," + _h1+"," + _m1+","+_s1);
+                var convertDate1=new Date(date1Split[2],date1Split[1]-1,date1Split[0],_h1,_m1,_s1);
+                var convertDate2=new Date(date2Split[2],date2Split[1]-1,date2Split[0],_h2,_m2,_s2);
+                if(convertDate1>convertDate2)
+                {
+                    if(showmessage!=null && showmessage==true)
+                        alert(msg1 +  " date should not greater than " + msg2 + " date !");
+                    return false;
+                }
+        }
+    }
+    catch(e)
+    {
+        alert(e.message);
+        return false;
+    }
+return true;
+}
+
+//Handle Enter Key Event
+function HandleEnterKey()
+{
+    var s=event.srcElement;
+    if(event.keyCode==13)
+    {
+        if(s.type!="textarea" && s.type!="button" && s.type!="image")
+        {
+            return false;
+        }
+    }
+return true;
+}
+
+function setFocus(focusControlName)
+{
+    $("#" + focusControlName).focus();
+}
+
+//********************************Others
+function getKeyCode1(e)
+        {
+         if (window.event)
+            return window.event.keyCode;
+         else if (e)
+            return e.which;
+         else
+            return null;
+        }
+function keyRestrict1(e, validchars) {
+            
+          
+            
+         var key='', keychar='';
+         key = getKeyCode1(e);
+         if (key == null) return true;
+         keychar = String.fromCharCode(key);
+         keychar = keychar.toLowerCase();
+         validchars = validchars.toLowerCase();
+         if (validchars.indexOf(keychar) != -1)
+          return true;
+         if ( key==null || key==0 || key==8 || key==9 || key==13 || key==27 )
+          return true;
+         return false;
+}
+        
+        
+//Check Phone Validation
+function checkPhone(ctlName)
+{ 
+  var flag=true;
+  var objCtl=$("#" + ctlName);
+  var enteredValue = $(objCtl).val();
+  if(!enteredValue.length||$(objCtl).attr("disabled")) return true; // blank fields are the domain of requireValue 
+  
+        var regPhone=/^\d*$/;
+        if(!regPhone.test(enteredValue))
+            flag=false;
+   
+   if(!flag)
+   {
+        alert("You should enter valid Phone");
+        $(objCtl).val('');
+        $(objCtl).focus();
+       
+    }
+  return flag;
+}
+
+
+
+
+
+
+//Functions To CheckBoxes Check/Uncheck in CheckedListBox Control
+function checkAllClick(ctlAll,ctlList)
+{
+    $("#" + ctlList).find("td").each(function() {
+        $(this).find("input:checkbox").attr("checked", $("#" + ctlAll).attr("checked"));
+    });
+    
+}
+function ItemCheck(ctlAll,ctlList)
+{
+    var flag=false;
+     $("#" + ctlList).find("td").each(function() {
+         if ($(this).find("input:checkbox:not(:checked").length>0) {
+                $("#" + ctlAll).attr("checked",false);
+                return;
+            }
+            else {
+                flag = true;
+            }
+    });
+    if(flag)
+        $("#" + ctlAll).attr("checked",true);
+}
+
+
+function ClearAllcontrols()
+{
+    $("input[type=text],textarea").val('');
+    $("input:checkbox").attr("checked", false);
+    $("span").text('');
+    $("select").attr("selectedIndex", 0);
+}
+
+//Check/UnCheck All CheckBoxes In The Grid When Clicking Header/Footer CheckBox
+function checkGridCheckBoxes(gridName,itemCheckBoxName,headerCheckBoxName)
+{
+    var headerChecked=$(headerCheckBoxName).attr("checked");
+    $("#" + gridName).find("input:checkbox").each(function() {
+                var index = $(this).attr("id").indexOf(itemCheckBoxName);
+                if (index > 0)
+                    $(this).attr("checked",headerChecked);
+    });        
+}
+
+//Check/UnCheck Header/Footer CheckBox When Clicking Any CheckBox In The Grid
+function checkHeaderCheckBox(gridName,headerCheckBoxName,itemCheckBoxName)
+{
+    var flag=true;
+    $("#" + gridName).find("input:checkbox").each(function() {
+            var index = $(this).attr("id").indexOf(itemCheckBoxName);
+            if (index > 0) {
+                if (!$(this).attr("checked")) {
+                    flag = false;
+                }
+            }
+            else {
+                index =$(this).attr("id").indexOf(headerCheckBoxName);
+                if (index > 0) {
+                    headerCheckBoxName = checkBoxName;
+                }
+            }
+    });
+    $("#" + headerCheckBoxName).attr("checked",flag);
+}
+
+//Check Without First Item
+function CheckDropDown(ctlName,message,checkWithZero)
+{
+    var _selval = $("#" + ctlName).val();
+    if(_selval=='-1' ||(checkWithZero!=null && checkWithZero==true && _selval=='0'))
+    {
+        alert("Select the " + message );
+        if ($("#" + ctlName).attr("disabled")== false)
+            $("#" + ctlName).focus();
+        return false;
+    }
+    return true;
+}
+
+//Check With First Item
+function CheckDropDown1(ctlName,message)
+{
+    if($("#" + ctlName).attr("selectedIndex")<0)
+    {
+        alert("Select " + message );
+        $("#" + ctlName).focus();
+        return false;
+    }
+    return true;
+}
+
+function getCurrentDateValues() {
+    var result = null;
+    try {
+        result = AjaxGeneral.ArrDateValues();
+    }
+    catch (e) {
+       // alert(e.error);
+    }
+    return result;
+}
+
+//Date check compare with not greater than today
+function DateCheck(ctlName,message,isCompareWithToDay)
+{
+  var objCtl;
+  if (ctlName.toString() == "[object]" || ctlName.toString() == "[object Object]")
+    objCtl=$(ctlName);
+  else    
+    objCtl=$("#" + ctlName);
+
+  var dateVal=$(objCtl).val();
+
+  if(!checkEmpty(ctlName,message,true))
+    return false;
+    
+var _arrDateTime = dateVal.split(" ");
+var splitDate = _arrDateTime[0].split(/[-.\/]/);
+//alert(splitDate[0] + "/" + splitDate[1] + "/" + splitDate[2]);
+  //var splitDate = _arrDateTime[0].split("/"); //dateVal.split(/[+=]/)
+  
+  //if (splitDate.length == 1) {
+      //splitDate = _arrDateTime[0].split(/[-.\/]/);
+    //  alert(splitDate.length);
+  //}
+var toDay = null;
+var _arr = getCurrentDateValues();
+if (_arr != null && _arr.length == 3)
+    toDay = new Date(_arr[2],_arr[1],_arr[0]);
+else {
+    var now = new Date();
+    toDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+//alert(now.getFullYear() + ","+ now.getMonth() + "," + now.getDate());
+if(splitDate.length<3 || isNaN(splitDate[2]) || isNaN(splitDate[1]-1) || isNaN(splitDate[0]==NaN))
+{
+    alert("Enter valid date !")
+    return false;
+}
+
+var _flag=CheckDateValues(parseFloat(splitDate[0]),parseFloat(splitDate[1]),parseFloat(splitDate[2]));
+
+if(!_flag)
+{
+    
+    alert("Enter valid date")
+    $(objCtl).focus();
+    return false;
+}
+
+dateVal=new Date(splitDate[2],splitDate[1]-1,splitDate[0]);
+if(isCompareWithToDay)
+{
+    if(dateVal>toDay)
+    {
+        alert("Date should not greater than today's date");
+        $(objCtl).focus();
+        return false;
+    }
+}
+return true;
+}
+
+
+function DateCheckNew(ctlName, message, isCompareWithToDay) {
+    var objCtl;
+    if (ctlName.toString() == "[object]" || ctlName.toString() == "[object Object]")
+        objCtl =$("#" + ctlName);
+    else
+        objCtl = $("#" + ctlName);
+
+    var dateVal = $(objCtl).val();
+
+    if (!checkEmpty(ctlName, message, true))
+        return false;
+
+    var _arrDateTime = dateVal.split(" ");
+    //var splitDate = _arrDateTime[0].split("/"); //dateVal.split(/[+=]/)
+    var splitDate = _arrDateTime[0].split(/[-.\/]/);
+    
+    var toDay = null;
+    var now = new Date();
+       var _arr =getCurrentDateValues();
+     if(_arr!=null && _arr.length==3)
+        toDay = new Date(_arr[2], _arr[1] - 1, _arr[0]);
+    else
+        toDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    //alert(now.getFullYear() + ","+ now.getMonth() + "," + now.getDate());
+    if (splitDate.length < 3 || isNaN(splitDate[2]) || isNaN(splitDate[1] - 1) || isNaN(splitDate[0] == NaN)) {
+        alert("Enter valid date !")
+        return false;
+    }
+
+    var _flag = CheckDateValues(parseFloat(splitDate[0]), parseFloat(splitDate[1]), parseFloat(splitDate[2]));
+
+    if (!_flag) {
+
+        alert("Enter valid date")
+        $(objCtl).focus();
+        return false;
+    }
+
+    dateVal = new Date(splitDate[2], splitDate[1] - 1, splitDate[0]);
+    if (isCompareWithToDay) {
+        if (dateVal > toDay) {
+            alert("Date should not greater than today's date");
+            $(objCtl).focus();
+            return false;
+        }
+    }
+    return true;
+}
+
+
+//Date check compare with not less than today
+function DateCheck1(ctlName, message) {
+
+    var objCtl = $("#" + ctlName);
+    var dateVal = $(objCtl).val();
+
+    if (!checkEmpty(ctlName, message, true))
+        return false;
+
+    //var splitDate = dateVal.split("/");
+    var splitDate = dateVal.split(/[-.\/]/);
+    var now = new Date();
+    var _arr = getCurrentDateValues();
+    var toDay = null;
+    if (_arr != null && _arr.length == 3)
+        toDay = new Date(_arr[2], _arr[1], _arr[0]);
+    else {
+        var now = new Date();
+        toDay = new Date(now.getYear(), now.getMonth(), now.getDate());
+    }
+    dateVal = new Date(splitDate[2], splitDate[1] - 1, splitDate[0]);
+    if (dateVal < toDay) {
+        alert("Date should not less than today's date");
+        $(objCtl).focus();
+        return false;
+    }
+
+    return true;
+}		    
+
+/*function DateCheck1(ctlName,message)
+{
+
+    var objCtl=document.getElementById(ctlName);
+    var dateVal=objCtl.value;
+
+    if(!checkEmpty(ctlName,message,true))
+        return false;
+        
+    var splitDate=dateVal.split("/");
+    var result = AjaxGeneral.ArrDateValues();
+    var toDay = null;
+    var now = new Date();
+    toDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+   
+    dateVal=new Date(splitDate[2],splitDate[1]-1,splitDate[0]);
+    if(dateVal<toDay)
+    {
+        alert("Date should not less than today's date");
+        objCtl.focus();
+        return false;
+    }
+
+return true;
+}*/		    
+
+function CheckDateValues(_day,_month,_year)
+{
+    var yl=1900; // least year to consider
+    var ym=2100; // most year to consider
+    
+    if (_month<1 || _month>12) return(false);
+    if (_day<1 || _day>31) return(false);
+    if (_year<yl || _year>ym) return(false);
+      
+    if (_month==4 || _month==6 || _month==9 || _month==11)
+    {
+        if (_day==31) return(false);
+    }
+    
+    if (_month==2)
+    {
+        var b=(_year/4);
+        if (isNaN(b)) return(false);
+        if (_day>29) return(false);
+        if (_day==29 && ((_year/4)!=parseFloat(_year/4))) return(false);
+    }
+   
+    return true;
+
+}
+
+
+    
+function ReplaceAll(stringvalues,firstchar,secondchar)
+{
+    var returnvalues='';
+    var l=stringvalues.length;
+   // tnames=tagnames.replaceAll('&','~');
+    for(var i=0;i<l;i++)
+    {
+        returnvalues+=stringvalues.charAt(i).replace(firstchar,secondchar);
+        //tnames+=tagnames.substring(i,i+1).replace('&','~');   
+    }
+    return returnvalues;
+}
+
+function AddPrecion(objId)
+{
+    var e=$("#" + objId).val();
+    var pos =e.indexOf(".")
+   
+    if(pos!="-1")
+    {
+        pos=pos + 1
+        var isPreExist=e.substring(pos,pos+2);
+        if(isPreExist.length==2)
+        {
+            
+        }
+        else
+        {
+            $(objId).val($("#" + objId).val() + "0");
+            
+        }
+    }
+    else if(e=="")
+    {
+       $("#" + objId).val("0.00"); 
+    }
+    else
+    {
+        $("#" + objId).val($("#" + objId).val() + ".00");
+    }
+    
+    
+}
+
+function PrintReport()
+{
+    window.open("../printreport.aspx","Print");
+}
+function PrintReportNew(tblid)
+{
+    window.open("../printreport.aspx?tblid=" + tblid,"Print");
+}
+/*function ExportToExcel()
+{
+    window.open("../exporttoexcel.aspx");
+}*/
+function CompareTime(fromTime,toTime,isShowMessage)
+{
+
+    var arrFromTime=fromTime.split(':');
+    var arrToTime=toTime.split(':');
+
+    var _date1=new Date();
+    var _date2=new Date();
+    
+    //Check Times
+    _date1.setDate(31);
+    _date1.setMonth(3);
+    _date1.setFullYear(2004);
+    
+    
+    var _ft=parseFloat(arrFromTime[0])+12;
+    var _tt=parseFloat(arrToTime[0]) +12;
+    
+    var _hrf=0;
+    if(arrFromTime[2]=="PM" && parseFloat(arrFromTime[0])!=12)
+        _hrf=_ft;
+    else if(arrFromTime[2]=="AM" && parseFloat(arrFromTime[0])==12)
+        _hrf='00';
+    else
+        _hrf=arrFromTime[0];
+    
+    var _hrt=0;
+    if(arrToTime[2]=="PM" && arrToTime[0]!=12)
+        _hrt=_tt;
+    else if(arrToTime[2]=="AM" && parseFloat(arrToTime[0])==12)
+        _hrt='00';
+    else
+        _hrt=arrToTime[0];
+    
+    _date1.setHours(_hrf,arrFromTime[1]);
+    
+    var _date2=new Date();
+    _date2.setDate(31);
+    _date2.setMonth(3);
+    _date2.setFullYear(2004);
+    _date2.setHours(_hrt,arrToTime[1]);
+    
+    if(_date1>_date2)
+    {
+        if(isShowMessage==null || isShowMessage==true)
+            alert("Check from time and to time");
+        return false;
+    }
+    return true;
+}
+
+function ValidateURL(urlctl)
+{
+    
+    var RegExp = /^(([\w]+:)?\/\/)?(([\d\w]|%[a-fA-f\d]{2,2})+(:([\d\w]|%[a-fA-f\d]{2,2})+)?@)?([\d\w][-\d\w]{0,253}[\d\w]\.)+[\w]{2,4}(:[\d]+)?(\/([-+_~.\d\w]|%[a-fA-f\d]{2,2})*)*(\?(&?([-+_~.\d\w]|%[a-fA-f\d]{2,2})=?)*)?(#([-+_~.\d\w]|%[a-fA-f\d]{2,2})*)?$/; 
+    if(RegExp.test($("#" + urlctl).val())) 
+        return true; 
+    else 
+    {
+        alert("Enter valid URL !");
+        $("#" + urlctl).focus();
+        return false; 
+    }
+}
+
+function CheckInteger(ctl)
+{
+   var test_result = /^\d+$/.test(ctl.value); 
+   if(!test_result)
+   {
+        alert("Enter interger value !");
+        $(ctl).select();
+        return false;
+   }
+   return true;
+}
+
+
+
+// added by vijay : 10 august 2009
+
+//Dates Comparision
+function CompareDatesVij(date1,date2,msg1,msg2,showmessage)
+{    
+
+    try
+    {
+    var ctlDate1=$("#" + date1);
+    var ctlDate2=$("#" + date2);
+    if($(ctlDate1).length>0 && $(ctlDate2).length>0)
+    {
+    var date1Val;
+    var date2Val;
+    if($(ctlDate1).prop('tagName')=='INPUT')
+        date1Val=$(ctlDate1).val();
+    else if($(ctlDate1).prop('tagName')=='SPAN')
+        date1Val=$(ctlDate1).text();
+
+    if ($(ctlDate2).prop('tagName') == 'INPUT')
+        date2Val = $(ctlDate2).val();
+    else if ($(ctlDate2).prop('tagName') == 'SPAN')
+        date2Val = $(ctlDate2).text();
+       
+    if(date1Val.length>0 && date2Val.length>0)
+    {
+        var date1Split=date1Val.split(/[-.\/]/);
+        var date2Split = date2Val.split(/[-.\/]/);
+        
+        var convertDate1=new Date(date1Split[2],date1Split[1]-1,date1Split[0]);
+        var convertDate2=new Date(date2Split[2],date2Split[1]-1,date2Split[0]);
+        
+        if(convertDate1>convertDate2)
+        {
+            if(showmessage!=null && showmessage==true)
+                alert(msg1 +  " date should not greater than " + msg2 + " date !");
+            return false;
+        }
+    }
+    }
+    else
+    {
+        alert("In-valid control name(s)");
+        return false;
+    }
+    }
+    catch(e)
+    {
+        alert(e.message);
+        return false;
+    }
+    return true;
+}
+
+
+//Date check compare with not greater than today
+function DateCheckVij(ctlName,message,isCompareWithToDay)
+{
+    var dateVal = $("#" + ctlName).val();
+
+    var splitDate = dateVal.split(/[-.\/]/);
+    var now=new Date();
+    var toDay=new Date(now.getYear(),now.getMonth(),now.getDate());
+
+    if(splitDate.length<3 || isNaN(splitDate[2]) || isNaN(splitDate[1]-1) || isNaN(splitDate[0]==NaN))
+    {
+        alert("Enter valid date !")
+        return false;
+    }
+
+    dateVal=new Date(splitDate[2],splitDate[1]-1,splitDate[0]);
+
+if(isCompareWithToDay)
+{
+    if(dateVal>toDay)
+    {
+        //alert("Date Should be not greater than today's date");
+        $("#" + ctlName).focus();
+        return false;
+    }
+}
+return true;
+}		
+
+function trim(str)
+{
+    if(!str || typeof str != 'string')
+        return null;
+
+    return str.replace(/^[\s]+/,'').replace(/[\s]+$/,'').replace(/[\s]{2,}/,' ');
+}

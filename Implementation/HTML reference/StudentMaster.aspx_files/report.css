@@ -1,0 +1,329 @@
+﻿/*@page {size: landscape}*/
+body 
+{
+	/*size: 8.5in 11in landscape;
+	margin: 0.25in;
+	margin-top:30px;
+	margin-bottom:20px;*/
+	
+}
+.reportMainHeading
+{
+	font-family:Arial;
+	font-size:15px;
+	font-weight:bold;
+}
+.reportHeading1
+{
+	font-family:Arial;
+	font-size:14px;
+	font-weight:bold;
+
+}
+.reportHeading2
+{
+	font-family:Arial;
+	font-size:12px;
+	font-weight:bold;
+	line-height:14px;
+	/*background-color:#CCCCCC;*/
+}
+.reportHeading2WithBackground
+{
+	font-family:Arial;
+	font-size:12px;
+	font-weight:bold;
+	line-height:14px;
+	background-color:#C4C4C4;
+}
+.reportHeading2WithoutBackground
+{
+    font-family:Arial;
+	font-size:12px;
+	font-weight:bold;
+	line-height:14px;
+	
+}
+.reportData1
+{
+	font-family:Verdana;
+	font-size:12px;
+}
+.reportData2
+{
+	font-family:Verdana;
+	font-size:12px;
+}
+
+.reportTable
+{
+	border-collapse:collapse;
+	border-style:solid;
+	border-color:Black;
+	border-width:1px;
+	
+}
+.receiptData
+{
+	font-family:Verdana;
+	font-size:14px;
+}
+
+.stdname 
+{
+	font-family:Palatino Linotype,Arial, Helvetica, sans-serif;
+	font-size: 13px;
+	font-style: normal;
+	line-height: normal;
+	font-weight: bold;	
+	text-transform: capitalize;
+	color: #990000;
+}
+.stdrollno {
+	font-family: Palatino Linotype,Arial, Helvetica, sans-serif;
+	font-size: small;
+	font-style: normal;
+	line-height: normal;
+	font-weight: bold;	
+	color: #0033CC;
+}
+.stddobId {
+	font-family: Palatino Linotype,Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-style: normal;
+	line-height: normal;
+	font-weight: bold;	
+	color: #000000;
+}
+.stdbranch {
+	font-family:Palatino Linotype,Arial, Helvetica, sans-serif;
+	font-size:medium;
+	font-style: normal;
+	line-height: normal;
+	font-weight: 900;
+	font-variant: small-caps;
+	text-transform: capitalize;
+	color: #990000;
+}
+
+.clgHead{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size:11px;
+	font-style: normal;
+	line-height: normal;
+	font-weight: 900;
+	font-variant: small-caps;
+	text-transform: capitalize;
+	color: #FFFFFF;
+}
+.clgAdd{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size:10px;
+	font-style: normal;
+	line-height: normal;
+	font-weight: 900;
+	font-variant: small-caps;
+	text-transform: capitalize;
+	color: #FFFFFF;
+}
+.clgPhone{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size:11px;
+	font-style: normal;
+	line-height: normal;
+	font-weight: 900;
+	font-variant: small-caps;
+	text-transform: capitalize;
+	color: #FFFFFF;
+}
+.stdrolno
+{
+	background-color:#B1B13A;	
+}
+.IdCardbodybg
+{
+	background-color:#E7E7B8;
+}
+.BirWishStyle1
+{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size:25px;
+	font-style:italic;
+	color:#35b3ca;
+	font-weight:bold;
+}
+.BirWishStyle2
+{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size:25px;
+	font-style:italic;
+	color:#ff72b4;
+	font-weight:bold;
+}
+.BirWishStyle3
+{
+	font-family:Verdana;
+	font-size:72px;	
+	color:#f1f0f0;
+	font-weight:bold;
+}
+.certificateMain
+{
+	font-family:Cambria;
+	font-size:18px;
+	font-weight:bold;
+}
+.certificateHead
+{
+	font-family:Cambria;
+	font-size:14px;
+	font-weight:bold;
+}
+.certificateData
+{
+	font-family:Cambria;
+	font-size:16px;
+}
+.cellBorder
+{
+	font-family:Verdana;
+	font-size:11px;
+	border-color:#999999;
+	border-style:solid;
+	border-width:1px;
+}
+.headcellBorder
+{
+	border-color:#999999;
+	border-style:solid;
+	border-width:1px;
+	font-family:Arial;
+	font-size:12px;
+	font-weight:bold;
+}
+.datacellBorder
+{
+	border-color:Black;
+	border-style:solid;
+	border-width:1px;
+	font-family:Verdana;
+	font-size:12px;
+}
+.styleState
+{
+	font-family:Arial;
+	font-size:13px;
+	color:Blue;
+	font-weight:bold;
+	font-style:italic;
+}
+.styleDist
+{
+	font-family:Arial;
+	font-size:13px;
+	color:Green;
+	font-weight:bold;
+}
+.styleMand
+{
+	font-family:Arial;
+	font-size:13px;
+	color:Purple;
+	font-weight:bold;
+	font-style:italic;
+}
+.styleVill
+{
+	font-family:Arial;
+	font-size:13px;
+	color:Maroon;
+	font-weight:bold;
+}
+.absent
+{
+	font-family:Verdana;
+	font-size:11px;
+	border-color:#999999;
+	border-style:solid;
+	border-width:1px;
+	color:Red;
+	font-weight:bold;
+}
+.stdprofileSubHeading
+{
+	font-family:Arial;
+	font-size:12px;
+	font-weight:bold;
+	line-height:14px;
+	background-color:Silver;
+}
+.htData
+{
+	font-family:Arial;
+	font-size:11px;
+	border-collapse:collapse;
+	border-style:solid;
+	border-color:Black;
+	border-width:1px;
+}
+.htDatali
+{
+	font-family:Arial;
+	font-size:10px;
+}
+.rightBorder
+{
+	font-family:Times New Roman;
+	/*font-size:14px;*/
+	font-size:12px;
+	border-color:#999999;
+	border-left:0px;
+	border-right:1px;
+	border-bottom:0px;
+	border-top:0px;
+	border-style:solid;
+}
+.bottomBorder
+{
+	font-family:Times New Roman;
+	/*font-size:14px;*/
+	font-size:12px;
+	border-color:#999999;
+	border-left:0px;
+	border-right:0px;
+	border-bottom:1px;
+	border-top:0px;
+	border-style:solid;
+}
+.divBox {
+	border:solid 1px #ccc;
+	height:25px;
+}
+.fbcellBorder
+{
+	font-family:Arial;
+	font-size:10px;
+	border-color:#999999;
+	border-style:solid;
+	border-width:1px;
+}
+.prcellBorder
+{
+	font-family:Arial;
+	font-size:9px;
+	border-color:#999999;
+	border-style:solid;
+	border-width:1px;
+}
+.dashedtd {
+ border-top-color:#666666; border-top-style:dashed; border-top-width:1px;
+	font-weight:bolder;
+	height:5px;
+	color:#3E508B;			
+
+}
+.hrdotted
+{
+	height:5px;
+	color:Black;
+}

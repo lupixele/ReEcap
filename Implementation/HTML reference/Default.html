@@ -1,0 +1,644 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0040)https://info.aec.edu.in/aus/default.aspx -->
+<html xmlns="http://www.w3.org/1999/xhtml"><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/content/location/location.js" id="eppiocemhmnlbhjplcgkofciiegomcon"></script><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/libs/extend-native-history-api.js"></script><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/libs/requests.js"></script><head id="Head1"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>
+	AUS | Campus Connect
+</title><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./Default_files/css2" rel="stylesheet"><link href="./Default_files/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous"><link rel="stylesheet" href="./Default_files/bootstrap-icons.min.css">
+
+    <style type="text/css">
+        body {
+            font-family: 'Poppins' !important;
+        }
+
+
+
+        /* Sparkles */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Fullscreen background canvas */
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+
+
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+            main .container {
+                width: 100%;
+            }
+
+
+
+        footer {
+            background-color: transparent;
+            padding: 1rem 0;
+        }
+
+        .Header {
+            background-color: transparent;
+        }
+
+        .logo-img {
+            max-width: clamp(220px, 25vw, 290px);
+            height: auto;
+            margin-top: 1%;
+        }
+
+        .campus-image {
+            width: clamp(100px, 22vw, 520px);
+            height: auto;
+        }
+
+
+
+        .theme-image {
+            width: clamp(280px, 100vw, 420px);
+            height: auto;
+        }
+
+        .links a::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            /* glass tint */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: 0.3s ease;
+            z-index: -1;
+        }
+
+        /* HOVER EFFECT */
+        .links a:hover {
+            background: linear-gradient(90deg, #d06c38, #0b5299);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            /* -webkit-text-fill-color: transparent; */
+            /* -webkit-text-stroke: 1px #ff5e00; */
+            color: #0D233B;
+            transform: scale(1.06);
+        }
+
+            /* SHOW BLUR ON HOVER */
+            .links a:hover::before {
+                opacity: 1;
+            }
+
+
+        .links a {
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            color: #f75600;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* CustomCard */
+
+        .login_card {
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            /* background-color: transparent; */
+            height: auto;
+            width: auto;
+            border-radius: 10px;
+            padding: 20px;
+            border: #065299 solid 1px;
+        }
+
+        .logintext {
+            color: #065299 !important;
+        }
+
+
+        .divider {
+            height: 1px;
+            background-color: #c7e4ff;
+            margin: 10px 0;
+        }
+
+
+        .radio-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+
+
+        .custom-radio {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            color: #0b5299;
+            /* default label color */
+        }
+
+            /* Hide default radio */
+            .custom-radio input[type="radio"] {
+                appearance: none;
+                width: 18px;
+                height: 18px;
+                border: 2px solid #ffffff;
+                border-radius: 50%;
+                position: relative;
+            }
+
+                /* Inner dot */
+                .custom-radio input[type="radio"]::before {
+                    content: "";
+                    width: 10px;
+                    height: 10px;
+                    background: transparent;
+                    border-radius: 50%;
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                }
+
+
+                .custom-radio input[type="radio"]:checked {
+                    border-color: #d06c38;
+                }
+
+                    .custom-radio input[type="radio"]:checked::before {
+                        background: #d06c38;
+                    }
+
+
+                    .custom-radio input[type="radio"]:checked + span {
+                        color: #0b5299;
+                        font-weight: 600;
+                    }
+
+        .input-group-text {
+            background-color: transparent !important;
+        }
+
+
+        .custominput {
+            background-color: transparent !important;
+            color: #0b5299 !important;
+        }
+
+        input::placeholder {
+            color: #6b6b6b !important;
+            opacity: 1 !important;
+        }
+
+
+        .submit {
+            background-color: #0b5299;
+            color: aliceblue;
+            height: 45px;
+            width: 160px;
+            border-radius: 8px;
+            border-width: 0px;
+            display: block;
+            margin: 0 auto;
+        }
+
+
+
+        /* Extra small devices */
+        @media (max-width: 480px) {
+
+            main {
+                align-items: flex-start;
+                /* stop vertical centering */
+                padding-top: 10px !important;
+                padding-bottom: 20px !important;
+            }
+
+                main .container {
+                    padding-left: 8px;
+                    padding-right: 8px;
+                }
+
+            .logo-img {
+                max-width: 60% !important;
+            }
+
+            .card {
+                max-width: 100% !important;
+                border-radius: 12px;
+            }
+
+            .row {
+                gap: 20px 0;
+            }
+
+            img.img-fluid {
+                max-width: 85%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .campus-image {
+                width: 140px !important;
+                height: auto;
+            }
+
+            main {
+                align-items: flex-start;
+                padding-top: 20px;
+                padding-bottom: 40px;
+            }
+        }
+    </style>
+
+    <script language="javascript" src="./Default_files/jquery-1.3.2.js.download" type="text/javascript"></script><script bis_use="true" type="text/javascript" charset="utf-8" nonce="" data-dynamic-id="d2abdf55-66c3-42e1-b80e-871b5b9c6199" src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/200.js"></script><script bis_use="true" type="text/javascript" charset="utf-8" nonce="" data-dynamic-id="d2abdf55-66c3-42e1-b80e-871b5b9c6199" src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/101.js"></script>
+    <script language="javascript" src="./Default_files/jsaes.js.download" type="text/javascript"></script>
+    <script src="./Default_files/api.js.download" type="text/javascript" async="" defer=""></script>
+
+</head>
+<body style="background-color: #edf3fb" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" onkeypress="return event.keyCode != 13;" bis_register="W3sibWFzdGVyIjp0cnVlLCJleHRlbnNpb25JZCI6ImVwcGlvY2VtaG1ubGJoanBsY2drb2ZjaWllZ29tY29uIiwiYWRibG9ja2VyU3RhdHVzIjp7IkRJU1BMQVkiOiJlbmFibGVkIiwiRkFDRUJPT0siOiJlbmFibGVkIiwiVFdJVFRFUiI6ImVuYWJsZWQiLCJSRURESVQiOiJlbmFibGVkIiwiUElOVEVSRVNUIjoiZW5hYmxlZCIsIklOU1RBR1JBTSI6ImVuYWJsZWQiLCJUSUtUT0siOiJkaXNhYmxlZCIsIkxJTktFRElOIjoiZW5hYmxlZCIsIkNPTkZJRyI6ImRpc2FibGVkIn0sInZlcnNpb24iOiIyLjEuMiIsInNjb3JlIjoyMDEwMjB9XQ==" __processed_7ce14daa-94f4-4818-8dfe-30da16e275aa__="true">
+
+    <form name="form1" method="post" action="https://info.aec.edu.in/aus/default.aspx" id="form1">
+<div bis_skin_checked="1">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="BmIvTQM5jhTze/aWGTi4SdUL78lLyVq5itFzJzWrDctPS8YfOIy0DNXCttIcD+MrrRoP5h6ZEYg/jg5OxNxlzX1JdAsHKbEzwQPev9893rMsVWT5k670BP8iV5VbOKLxG4mAJ7CzyO1kpT+7JQ8RylNsKR2hhGovW/CFfSFv+CT1Qas9OncNURyiKNCwHuI/0MwvIUvBZXyCcgQ3HRKHs3zgtkRSREY7QGtfEhcmIPGtfmV/qhPPSeP/A01wPGb1M0P79VqAeX5k5ZzgdEflLYLPNQyDYfseYiCjlyyvsuQFQxv+6IVBMtPgO9so2rZruUcvw9eUycvkVPzWxeLHA41auOtfCDQiRqz2L5GkzdQ9X0ZQBQDeIoE+969cqBeZ3D5HSP52X1w6ol0aOVNcflOuWz+CCfYX5jCMi05XPuhvB8aI5t1Vb9hxbUuK1//2g8eQiarsPUU829Mgcg8RjA==">
+</div>
+
+<div bis_skin_checked="1">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="0C423FDA">
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="">
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="7MmiSFFsBh0c7pnlbkMRdyP8tA39LgQfrMzfBxPyF9P8syc8YJUfta7A6oiYXKruMokjnZ8BodYgQzzaAb6OgPsQlEAR8h1s+N2hlwdCF6HEjIytG7XZ2z3uwgFzWK4rEhjxD/0OudvypY4YOdfiqpnK3IlUvaOjFAb6wom9m4rkYujRj9EV3EMC//RJMwD4YapOOK20z1aamlbVAxNv1vwPpg8bGeRAlgTQSzMOlBiALG00tlKfFzfwbJIssle50Pb9GKIiKzqkaC++s8tgf91b8C+ZjEh3G5jyCm9S+UWuxJ50Pf3PanMRyj6p5YW3GhprHTBQq5Ch4tDsmhXQDCbwRnHEu7LFEgMBGPYj7+JeKa4B4pW5sLwjVdUitdzB7iedMmou3/q9lqw1VAe0cQ==">
+</div>
+
+        <!-- Sparkles Canvas -->
+        <canvas id="particles" width="1536" height="695"></canvas>
+
+
+        <!-- Header with Logo -->
+        <header class="">
+            <div class="container-fluid" bis_skin_checked="1">
+                <div class="row" bis_skin_checked="1">
+                    <div class="col-12 d-flex justify-content-center justify-content-md-start w-100" bis_skin_checked="1">
+                        <img src="./Default_files/Small_logo.png" alt="Logo" class="logo-img">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="py-5  d-flex align-items-center">
+            <div class="container-fluid min-vh-80 d-flex align-items-center justify-content-center" bis_skin_checked="1">
+                <div class="row align-items-center justify-content-between gy-2" bis_skin_checked="1">
+                    <!-- Image Container -->
+                    <div class="col-12 col-md-12 col-lg-3 d-flex justify-content-center justify-content-lg-center" bis_skin_checked="1">
+                        <img src="./Default_files/CC_Logo.gif" alt="Image" class="img-fluid campus-image">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-5 d-flex justify-content-center align-items-center justify-content-lg-center d-none d-md-block" bis_skin_checked="1">
+                        <img src="./Default_files/cctheme.png" alt="Image" class="img-fluid theme-image">
+                    </div>
+
+                    <!-- Login Container -->
+                    <div class="col-12 col-md-6 col-lg-4 d-flex justify-content-center justify-content-lg-start" bis_skin_checked="1">
+                        <div class="login_card" data-protonpass-form="" bis_skin_checked="1">
+                            <div class="d-flex flex-column justify-content-center align-items-center" bis_skin_checked="1">
+                                <!-- <img src="./sources/CCLogo.png" style="width:50px;height:50px;margin-right:10px;"> -->
+                                <p class="h3 logintext fw-bold">LOGIN</p>
+                            </div>
+                            <div class="divider" bis_skin_checked="1"></div>
+
+                            <div class="radio-group" bis_skin_checked="1">
+                                <label class="custom-radio">
+                                    <input id="rbtParent" type="radio" name="userType" value="rbtParent" checked="checked"><span>Parent</span>
+                                </label>
+                                <label class="custom-radio">
+                                    <input id="rbtStudent" type="radio" name="userType" value="rbtStudent"><span>Student</span>
+                                </label>
+                                <label class="custom-radio">
+                                    <input id="rbtEmployee" type="radio" name="userType" value="rbtEmployee"><span>Employee</span>
+                                </label>
+                            </div>
+
+                            <div class="mb-3" bis_skin_checked="1">
+                                <div class="input-group" bis_skin_checked="1">
+                                    <span class="input-group-text"><i class="bi bi-person-fill text-primary"></i></span>
+
+                                    <input name="txtUserId" type="text" id="txtUserId" class="form-control custominput">
+                                </div>
+                            </div>
+
+                            <div class="mb-3" bis_skin_checked="1">
+                                <div class="input-group" bis_skin_checked="1">
+                                    <span class="input-group-text"><i class="bi bi-lock-fill text-success"></i></span>
+                                    <input name="txtPassword" type="password" id="txtPassword" class="form-control custominput" onkeypress="_onEmpKeyPress()" onkeyup="encryptJSText(1)" onblur="setValue(1)">
+                                </div>
+                            </div>
+                            <span id="lblResult" style="color:Red;"></span>
+                            <div class="mb-3 text-secondary text-center" style="display: none;" bis_skin_checked="1">
+                                <input name="ctl08" type="checkbox" class="me-2">Remember Me
+                            </div>
+
+                            <div class="cf-turnstile" data-sitekey="0x4AAAAAADWaG-6M0glAe8fI" data-appearance="always" data-theme="light" bis_skin_checked="1">
+                            <div bis_skin_checked="1"><template shadowrootmode="closed"><iframe src="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/av0/rch/3jphz/0x4AAAAAADWaG-6M0glAe8fI/light/fbE/new/normal?lang=auto" allow="cross-origin-isolated; fullscreen; autoplay; keyboard-map; gamepad; xr-spatial-tracking" sandbox="allow-same-origin allow-scripts allow-popups" id="cf-chl-widget-3jphz" tabindex="0" title="Widget containing a Cloudflare security challenge" style="border-width: medium; border-style: none; border-color: currentcolor; border-image: none; overflow: hidden; width: 300px; height: 65px;"></iframe></template><input type="hidden" name="cf-turnstile-response" id="cf-chl-widget-3jphz_response" value="1.746tObe3e_dJiosHkfLbF6OmREgdqrB9HCWfcCabj3CTkqmVqekKALMvssWzMJuLC8axQKQ5lh7q_x1LejZUcbh7WdhHn-2bsSeGn4cmKfQ_ABMuszUgh8i4xuMoKoqRI2H0_a2iRpJO4GAPEFHEqAadGUU0V8HW0nPxI0qfjzmoGSwK_0DwErXaSDJAapkhX55ZDFjqsN_i0k94uOLaKqDk67VN76DbqE6GlXdR6ns-pdm-M_GCRpNrq6W_8L2r7CUR6gyRvy3sm7GhxB1rCKgITclw1SQ2zklGAf9QGbyhbSUpZ9kk434j3TxJIoS1SHmnW3rO6woZWgRjZdp7yqdIsurRrhPocGskOYcdMG2yo_0fL8STA-NVZkJY7w6ynKNtRHCnJd_fDYa2bC4ZaAUZZdPbP2ZHSGd95fWwYlGNmfIP2b_aXObFVcl0w-uklh2-C0JWlOooudDAS179cfbsx6nmw-7FI0_-WFoiw0cT_rCQND15eayIO_HwnBIEsOTX9Eic5h7eOruJlumBDZ7AzXkUJPxcy-0pfR0ePTbL96a6UmsCTxvt0IN_Q5PBwBddjGFj5mCM8oMV6Z8Bt7cOUOyUaTVZpWYmogyHw8H_hBTpi-83OeF6QXn_Pqjgs-udh5YcPl0qwOPs0TkbbAILUu909AAFvl8RFczef7s.M3_lH941XYViBxe57TR1HQ.afdac22a82cbfdabc21635fe4b12fe6dce6ef6e0da630e117370cf734e778211"></div></div>
+                            <br>  
+                            <input type="submit" name="btnLogin" value="LOGIN" id="btnLogin" class="submit">
+
+                            <br>
+
+                            <span id="Label1"></span>
+
+                            <div style="text-align: center;" bis_skin_checked="1">
+                                <span id="lblError"></span>
+                            </div>
+                            <input name="hdnpwd" type="hidden" id="hdnpwd">
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="container" bis_skin_checked="1">
+                <div class="row" bis_skin_checked="1">
+                    <div class="links col-12 col-md-6 text-center text-md-start mb-2 mb-md-0" bis_skin_checked="1">
+
+                        <a href="https://info.aec.edu.in/aus/terms.html">Terms and Conditions</a>
+
+
+                    </div>
+                    <div class="links col-12 col-md-6 text-center text-md-end" bis_skin_checked="1">
+                        <a href="https://info.aec.edu.in/aus/olpayment.aspx">Online payment without login</a>
+
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <input name="hdnDPToken" type="hidden" id="hdnDPToken" value="4c0ead44-d55f-4140-ab64-8c09b953ab13">
+<input name="hdnonce" type="hidden" id="hdnonce" value="0dae0b7b-88f8-456f-b836-01d2edf62fc9">
+
+
+    </form>
+    <script src="./Default_files/bootstrap.bundle.min.js.download" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        const canvas = document.getElementById("particles");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let time = 0;
+        let scrollOffset = 0;
+        let ripples = [];
+        let isNight = false; // change true for night mode
+
+        // 🎨 Aditya University Colors
+        const ORANGE = "#d06c38";
+        const BLUE = "#BE9337";
+
+
+        // 🧲 Mouse
+        let mouse = { x: 0, y: 0, radius: 160 };
+        let targetMouseX = 0;
+        let targetMouseY = 0;
+
+        window.addEventListener("mousemove", (e) => {
+            targetMouseX = e.x;
+            targetMouseY = e.y;
+        });
+
+        window.addEventListener("click", (e) => {
+            ripples.push({
+                x: e.x,
+                y: e.y,
+                radius: 0,
+                alpha: 1
+            });
+        });
+
+        window.addEventListener("scroll", () => {
+            scrollOffset = window.scrollY;
+        });
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initWaves();
+        });
+
+        // 🌊 Waves
+        let waves = [];
+
+        function initWaves() {
+            waves = [];
+
+            for (let i = 0; i < 6; i++) {
+                waves.push({
+                    baseAmplitude: Math.random() * 30 + 40,
+                    wavelength: 0.002 + Math.random() * 0.001,
+                    offset: Math.random() * 2000,
+                    depth: i,
+                    opacity: 0.3 - i * 0.03
+                });
+            }
+        }
+
+        function drawWave(wave) {
+            ctx.beginPath();
+
+            for (let x = 0; x <= canvas.width; x++) {
+
+                let dynamicAmp =
+                    wave.baseAmplitude +
+                    Math.sin(time * 0.002) * 10;
+
+                let wave1 = Math.sin(x * wave.wavelength + time * 0.002 + wave.offset);
+                let wave2 = Math.sin(x * wave.wavelength * 2 + time * 0.001);
+
+                let combined = wave1 + wave2 * 0.5;
+
+                let parallax = scrollOffset * 0.03 * wave.depth;
+
+                let y =
+                    canvas.height - 100 +
+                    combined * dynamicAmp -
+                    parallax;
+
+                // 🧲 Magnetic distortion
+                let dx = x - mouse.x;
+                let dy = y - mouse.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    y -= dy * force * 0.3;
+                }
+
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+
+            // 🎨 Aditya Gradient (Orange + Blue)
+            let gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
+
+            if (!isNight) {
+                gradient.addColorStop(0, "rgba(0,50,120," + wave.opacity + ")");
+                gradient.addColorStop(0.5, "rgba(0,120,220," + wave.opacity + ")");
+                gradient.addColorStop(1, "rgba(245,113,37," + wave.opacity * 0.6 + ")");
+            } else {
+                gradient.addColorStop(0, "rgba(0,0,40," + wave.opacity + ")");
+                gradient.addColorStop(0.5, "rgba(0,60,150," + wave.opacity + ")");
+                gradient.addColorStop(1, "rgba(200,200,255," + wave.opacity * 0.3 + ")");
+            }
+
+            ctx.fillStyle = gradient;
+
+            ctx.shadowColor = "rgba(0,150,255,0.4)";
+            ctx.shadowBlur = 20;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // 🌊 Foam Edge
+            ctx.strokeStyle = "rgba(255,255,255,0.5)";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // 🌊 Ripple Propagation
+        function drawRipples() {
+            ripples.forEach((r, index) => {
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255,255,255,${r.alpha})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                r.radius += 2.5;
+                r.alpha -= 0.01;
+
+                if (r.alpha <= 0) ripples.splice(index, 1);
+            });
+        }
+
+        // 🌅 Sunset Reflection
+        function drawSunset() {
+            if (isNight) {
+                let gradient = ctx.createRadialGradient(
+                    canvas.width / 2,
+                    canvas.height - 300,
+                    50,
+                    canvas.width / 2,
+                    canvas.height - 200,
+                    400
+                );
+
+                gradient.addColorStop(0, "rgb(255, 94, 0)");
+                gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // 🌙 Moon Reflection
+        function drawMoon() {
+            if (isNight) {
+                ctx.beginPath();
+                ctx.arc(canvas.width - 200, 150, 40, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(255,255,255,0.8)";
+                ctx.fill();
+
+                ctx.shadowColor = "white";
+                ctx.shadowBlur = 40;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // 🎬 Optimized Animation Loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            mouse.x += (targetMouseX - mouse.x) * 0.08;
+            mouse.y += (targetMouseY - mouse.y) * 0.08;
+
+            drawSunset();
+            waves.forEach(w => drawWave(w));
+            drawRipples();
+            drawMoon();
+
+            time++;
+            requestAnimationFrame(animate);
+        }
+
+        initWaves();
+        animate();
+    </script>
+
+    <script type="text/javascript">
+        localStorage.removeItem('menuVisible');
+        localStorage.removeItem('m_menuVisible');
+
+
+        $(document).bind("contextmenu", function () { return false; });
+        function _onEmpKeyPress() {
+            if (event.keyCode == 13)
+                document.getElementById("btnLogin").click();
+        }
+
+        function encryptJSText(mode) {
+            var plaintext = $("#" + "txtPassword").val();
+
+            if (plaintext != "") {
+                var key = CryptoJS.enc.Utf8.parse('8701661282118308'); //CryptoJS.enc.Utf8.parse('8080808080808080');
+                var iv = CryptoJS.enc.Utf8.parse('8701661282118308');
+                var encrypteddata = CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plaintext), key,
+                    { keySize: 128 / 8, iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+
+                $("#" + "hdnpwd").val(encrypteddata);
+            }
+
+            //return encrypteddata;
+        }
+        function setValue(m) {
+
+            $("#" + "txtPassword").val($("#" + "hdnpwd").val());
+        }
+
+
+
+    </script>
+
+
+
+<protonpass-root-3a43 data-protonpass-role="root" data-protonpass-theme="os"><template shadowrootmode="closed"><iframe src="chrome-extension://ghmbeldphafepmbegfdlkpapadhbakde/dropdown.html#iframe=7181229c" allow="clipboard-write" style="--frame-animation: fadein;"></iframe></template></protonpass-root-3a43></body></html>
