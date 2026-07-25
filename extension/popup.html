@@ -1,18 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <title>Re:Ecap Settings</title>
+  <title>ReEcap Settings</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --radius: 14px;
+      --radius-sm: 9px;
+    }
+
+    html[data-theme="light"] {
+      --surface-page: #F6F4EE;
+      --surface-card: #FFFFFF;
+      --text-primary: #1B2430;
+      --text-secondary: #5A6577;
+      --text-faint: #9A9788;
+      --border: #DCD7C9;
+      --accent: #C1432E;
+      --success: #3F7A56;
+      --card-shadow: 0 1px 2px rgba(27,36,48,0.05), 0 6px 18px rgba(27,36,48,0.06);
+    }
+    
+    html[data-theme="dark"] {
+      --surface-page: #0D0D10;
+      --surface-card: #17171B;
+      --text-primary: #F1F1EE;
+      --text-secondary: #A3A3AC;
+      --text-faint: #66666F;
+      --border: #29292F;
+      --accent: #E0654C;
+      --success: #5FBE85;
+      --card-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 12px 32px rgba(0,0,0,0.4);
+    }
+    
+    html[data-theme="cappuccino"] {
+      --surface-page: #EDE1D3;
+      --surface-card: #FBF5EC;
+      --text-primary: #3D2B1F;
+      --text-secondary: #7A6353;
+      --text-faint: #A6907E;
+      --border: #DCC9AF;
+      --accent: #935729;
+      --success: #5E7A4A;
+      --card-shadow: 0 1px 2px rgba(61,43,31,0.06), 0 6px 18px rgba(61,43,31,0.08);
+    }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      width: 280px;
+      width: 290px;
       margin: 0;
       padding: 20px;
-      background-color: #f8fafc;
-      color: #1e293b;
+      background: var(--surface-page);
+      color: var(--text-primary);
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
     .header {
@@ -21,46 +63,59 @@
       gap: 12px;
       margin-bottom: 20px;
       padding-bottom: 14px;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 2px solid var(--text-primary);
     }
 
     .logo-mark {
       width: 38px;
       height: 38px;
-      background: linear-gradient(135deg, #4338ca, #6366f1);
-      border-radius: 10px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
       font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
       font-size: 18px;
-      box-shadow: 0 4px 10px rgba(67, 56, 202, 0.25);
+      box-shadow: var(--card-shadow);
+      transition: background 0.2s ease;
     }
 
     .title-group h1 {
-      font-size: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
       font-weight: 700;
       margin: 0;
-      color: #0f172a;
-      letter-spacing: -0.3px;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
     }
 
     .title-group p {
-      font-size: 12px;
-      color: #64748b;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       margin: 2px 0 0 0;
+      font-weight: 700;
     }
 
-    .toggle-container {
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
+    .card-container {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
       padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .toggle-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
 
     .label-group {
@@ -72,7 +127,7 @@
     .label-main {
       font-size: 14px;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--text-primary);
     }
 
     .label-status {
@@ -80,13 +135,8 @@
       font-weight: 500;
     }
 
-    .status-enabled {
-      color: #16a34a;
-    }
-
-    .status-disabled {
-      color: #64748b;
-    }
+    .status-enabled { color: var(--success); }
+    .status-disabled { color: var(--text-faint); }
 
     /* Modern Switch */
     .switch {
@@ -96,17 +146,13 @@
       height: 26px;
     }
 
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+    .switch input { opacity: 0; width: 0; height: 0; }
 
     .slider {
       position: absolute;
       cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #cbd5e1;
+      background-color: var(--border);
       transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 34px;
     }
@@ -124,23 +170,72 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
 
-    input:checked + .slider {
-      background: linear-gradient(135deg, #4338ca, #6366f1);
+    input:checked + .slider { background: var(--accent); }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2px 0;
     }
 
-    input:focus + .slider {
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    /* Theme Selector */
+    .theme-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .theme-row-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
     }
 
-    input:checked + .slider:before {
-      transform: translateX(22px);
+    .theme-switcher {
+      display: flex;
+      gap: 6px;
+      background: var(--surface-page);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 4px;
+    }
+
+    .theme-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 7px 11px;
+      border-radius: 100px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex: 1;
+    }
+
+    .theme-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    
+    .theme-btn:hover:not(.active) {
+      color: var(--text-primary);
+    }
+    
+    /* Disabled state for theme switcher when extension is toggled off */
+    body.disabled .theme-switcher {
+      opacity: 0.5;
+      pointer-events: none;
+      filter: grayscale(100%);
     }
 
     .footer {
       margin-top: 20px;
       text-align: center;
       font-size: 11px;
-      color: #94a3b8;
+      color: var(--text-faint);
       line-height: 1.4;
     }
   </style>
@@ -150,24 +245,37 @@
   <div class="header">
     <div class="logo-mark">R</div>
     <div class="title-group">
-      <h1>Re:Ecap</h1>
+      <h1>ReEcap</h1>
       <p>AEC Portal Reskin</p>
     </div>
   </div>
 
-  <div class="toggle-container">
-    <div class="label-group">
-      <span class="label-main">Modern Theme</span>
-      <span id="statusText" class="label-status status-enabled">Active</span>
+  <div class="card-container">
+    <div class="toggle-row">
+      <div class="label-group">
+        <span class="label-main">Modern Theme</span>
+        <span id="statusText" class="label-status status-enabled">Active</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="toggleSwitch" checked>
+        <span class="slider"></span>
+      </label>
     </div>
-    <label class="switch">
-      <input type="checkbox" id="toggleSwitch" checked>
-      <span class="slider"></span>
-    </label>
+    
+    <div class="divider"></div>
+    
+    <div class="theme-row">
+      <span class="theme-row-label">Theme</span>
+      <div class="theme-switcher">
+        <button class="theme-btn" data-theme-btn="light">Light</button>
+        <button class="theme-btn" data-theme-btn="dark">Dark</button>
+        <button class="theme-btn" data-theme-btn="cappuccino">Cappuccino</button>
+      </div>
+    </div>
   </div>
 
   <div class="footer">
-    Changes apply instantly without reloading.<br>
+    Changes apply instantly.<br>
     Toggle off to restore original site styles.
   </div>
 
