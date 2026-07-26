@@ -84,15 +84,15 @@ if (window !== window.top) {
   });
 }
 
-// 2. If we are in the parent shell, monitor the iframe URL and apply 
+// 2. If we are in the parent shell, monitor the iframe URL and apply
 //    the .active class to the corresponding sidebar menu link.
 if (window === window.top) {
   let lastIframeUrl = '';
-  
-  setInterval(() => {
+
+  function checkIframeUrl() {
     const iframe = document.getElementById('capIframeId');
     if (!iframe) return;
-    
+
     try {
       const currentUrl = iframe.contentWindow.location.pathname.toLowerCase();
       if (currentUrl !== lastIframeUrl) {
@@ -102,11 +102,43 @@ if (window === window.top) {
     } catch (e) {
       // Cross-origin restriction before iframe fully loads/redirects, safely ignore
     }
-  }, 400);
+  }
+
+  // Observe iframe src attribute changes
+  const waitForIframe = new MutationObserver(() => {
+    const iframe = document.getElementById('capIframeId');
+    if (!iframe) return;
+    waitForIframe.disconnect();
+
+    // Watch for src attribute changes
+    const srcObserver = new MutationObserver(() => checkIframeUrl());
+    srcObserver.observe(iframe, { attributes: true, attributeFilter: ['src'] });
+
+    // Also listen for iframe navigation events (covers same-origin navigations)
+    iframe.addEventListener('load', checkIframeUrl);
+
+    // Initial check
+    checkIframeUrl();
+  });
+
+  if (document.getElementById('capIframeId')) {
+    // Iframe already exists; set up observers directly
+    const iframe = document.getElementById('capIframeId');
+    const srcObserver = new MutationObserver(() => checkIframeUrl());
+    srcObserver.observe(iframe, { attributes: true, attributeFilter: ['src'] });
+    iframe.addEventListener('load', checkIframeUrl);
+    checkIframeUrl();
+  } else {
+    // Wait for the iframe to appear in the DOM
+    waitForIframe.observe(document.documentElement, { childList: true, subtree: true });
+  }
 }
 
 function syncSidebarActiveState(iframePath) {
-  const links = document.querySelectorAll('a.menuLink');
+  if (document.documentElement.getAttribute('data-overview-active') === 'true') {
+    return;
+  }
+  const links = document.querySelectorAll('a.reecap-sidebar-link:not(.reecap-sidebar-overview), a.menuLink');
   links.forEach(link => {
     try {
       const linkPath = new URL(link.href).pathname.toLowerCase();
