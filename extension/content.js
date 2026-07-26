@@ -39,11 +39,39 @@ function removeStyle() {
   if (el) el.remove();
 }
 
+function resolveTheme(family, mode) {
+  if (family === "amoled") return "amoled";
+  if (family === "original") return mode; // returns "light" or "dark"
+  return `${family}-${mode}`;             // returns "cappuccino-light", "cappuccino-dark", etc.
+}
+
+function migrateThemeStorage(data, callback) {
+  if (data.themeFamily) {
+    callback({ family: data.themeFamily, mode: data.themeMode || "light" });
+    return;
+  }
+  const LEGACY_MAP = {
+    "light":      { family: "original",    mode: "light" },
+    "dark":       { family: "original",    mode: "dark"  },
+    "cappuccino": { family: "cappuccino",  mode: "light" },
+    "amoled":     { family: "amoled",      mode: "dark"  },
+    "evergreen":  { family: "evergreen",   mode: "light" },
+    "midnight":   { family: "midnight",    mode: "dark"  },
+    "rosewood":   { family: "rosewood",    mode: "light" },
+  };
+  const mapped = LEGACY_MAP[data.theme || "light"] || { family: "original", mode: "light" };
+  chrome.storage.sync.set({ themeFamily: mapped.family, themeMode: mapped.mode, theme: null });
+  callback(mapped);
+}
+
 // Apply on load based on stored state
-chrome.storage.sync.get({ enabled: true, theme: 'light' }, (data) => {
+chrome.storage.sync.get({ enabled: true, themeFamily: null, themeMode: null, theme: null }, (data) => {
   if (data.enabled) {
     injectStyle();
-    document.documentElement.setAttribute('data-theme', data.theme);
+    migrateThemeStorage(data, (mapped) => {
+      const resolved = resolveTheme(mapped.family, mapped.mode);
+      document.documentElement.setAttribute('data-theme', resolved);
+    });
   }
 });
 
@@ -52,8 +80,11 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'REECAP_TOGGLE') {
     if (msg.enabled) {
       injectStyle();
-      chrome.storage.sync.get({ theme: 'light' }, (data) => {
-        document.documentElement.setAttribute('data-theme', data.theme);
+      chrome.storage.sync.get({ themeFamily: null, themeMode: null, theme: null }, (data) => {
+        migrateThemeStorage(data, (mapped) => {
+          const resolved = resolveTheme(mapped.family, mapped.mode);
+          document.documentElement.setAttribute('data-theme', resolved);
+        });
       });
     } else {
       removeStyle();
