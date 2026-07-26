@@ -629,98 +629,209 @@ function rebuildPresentSemTab() {
   const pane = document.getElementById('divProfile_Present') || document.getElementById('divProfile_PresentSem');
   if (!pane || pane.dataset.reecapEnhanced === 'true') return;
 
-  const tables = pane.querySelectorAll('table');
-  if (!tables.length) return;
-
+  // 1. Scrape data across all sections
   let totalHeld = 0, totalAttend = 0, totalPercent = 0;
   const subjects = [];
+  const internalMarksHeaders = [];
+  const internalMarksRows = [];
+  let achievementsText = 'No achievements recorded.';
+  let presentationsText = 'No paper presentations recorded.';
 
-  tables.forEach(table => {
-    const rows = table.querySelectorAll('tr');
-    rows.forEach(row => {
-      const cells = row.querySelectorAll('td');
-      if (cells.length >= 4 && cells[0].textContent.trim() === 'TOTAL') {
-        totalHeld = parseInt(cells[1].textContent.trim(), 10) || 0;
-        totalAttend = parseInt(cells[2].textContent.trim(), 10) || 0;
-        totalPercent = parseFloat(cells[3].textContent.trim()) || 0;
-      } else if (cells.length >= 5 && !isNaN(parseInt(cells[0].textContent.trim(), 10))) {
-        // Sl.No row
-        const subjName = cells[1].textContent.trim();
-        const held = parseInt(cells[2].textContent.trim(), 10) || 0;
-        const attend = parseInt(cells[3].textContent.trim(), 10) || 0;
-        const percent = parseFloat(cells[4].textContent.trim()) || 0;
-        if (subjName) subjects.push({ subjName, held, attend, percent });
+  let currentSection = 'ATTENDANCE';
+  const allRows = pane.querySelectorAll('tr');
+
+  allRows.forEach(row => {
+    const text = row.textContent.trim().toUpperCase();
+    if (text.includes('INTERNAL MARKS')) {
+      currentSection = 'INTERNAL';
+      return;
+    }
+    if (text === 'ACHIEVEMENTS' || text.startsWith('ACHIEVEMENTS')) {
+      currentSection = 'ACHIEVEMENTS';
+      return;
+    }
+    if (text === 'PAPER PRESENTATIONS' || text.startsWith('PAPER PRESENTATIONS')) {
+      currentSection = 'PRESENTATIONS';
+      return;
+    }
+
+    const cells = Array.from(row.querySelectorAll('td, th')).map(c => c.textContent.trim());
+    if (!cells.length) return;
+
+    if (currentSection === 'ATTENDANCE') {
+      if (cells.length >= 4 && cells[0].toUpperCase() === 'TOTAL') {
+        totalHeld = parseInt(cells[1], 10) || 0;
+        totalAttend = parseInt(cells[2], 10) || 0;
+        totalPercent = parseFloat(cells[3]) || 0;
+      } else if (cells.length >= 5 && !isNaN(parseInt(cells[0], 10))) {
+        subjects.push({
+          subjName: cells[1] || 'Subject',
+          held: parseInt(cells[2], 10) || 0,
+          attend: parseInt(cells[3], 10) || 0,
+          percent: parseFloat(cells[4]) || 0
+        });
       }
-    });
+    } else if (currentSection === 'INTERNAL') {
+      if (cells.length > 2 && (row.classList.contains('reportHeading2WithBackground') || cells[0].toLowerCase() === 'sl.no.' || cells[0].toLowerCase() === 's.no')) {
+        if (!internalMarksHeaders.length) internalMarksHeaders.push(...cells);
+      } else if (cells.length > 2 && !isNaN(parseInt(cells[0], 10))) {
+        internalMarksRows.push(cells);
+      }
+    } else if (currentSection === 'ACHIEVEMENTS') {
+      if (cells[0] && !cells[0].toUpperCase().includes('ACHIEVEMENTS')) {
+        achievementsText = cells[0];
+      }
+    } else if (currentSection === 'PRESENTATIONS') {
+      if (cells[0] && !cells[0].toUpperCase().includes('PRESENTATIONS')) {
+        presentationsText = cells[0];
+      }
+    }
   });
-
-  if (!subjects.length && totalHeld === 0) return; // defensive: keep legacy view
 
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
   newView.className = 'reecap-enhanced-tab';
 
-  const ringRadius = 38;
+  const ringRadius = 40;
   const ringCircumf = 2 * Math.PI * ringRadius;
   const offset = ringCircumf - (totalPercent / 100) * ringCircumf;
-  const ringColor = totalPercent >= 75 ? "var(--success)" : (totalPercent >= 65 ? "var(--warning)" : "var(--error)");
+  const ringColor = totalPercent >= 75 ? "var(--success)" : (totalPercent >= 65 ? "var(--warning)" : (totalHeld === 0 ? "var(--text-faint)" : "var(--error)"));
 
   let html = `
+    <!-- Top Overall Attendance Meter -->
     <div class="overview-section-metrics" style="margin-bottom: 24px;">
-      <div class="ring-card" style="flex: 1; min-width: 260px;">
-        <div class="ring-wrap" style="width: 90px; height: 90px;">
-          <svg width="90" height="90">
-            <circle class="ring-bg" cx="45" cy="45" r="${ringRadius}" stroke-width="7"></circle>
-            <circle class="ring-fg" cx="45" cy="45" r="${ringRadius}" stroke-width="7" stroke="${ringColor}" stroke-dasharray="${ringCircumf}" stroke-dashoffset="${offset}"></circle>
+      <div class="ring-card" style="flex: 1; min-width: 280px; flex-direction: row; gap: 24px; text-align: left; justify-content: flex-start; padding: 24px 32px;">
+        <div class="ring-wrap" style="width: 96px; height: 96px; flex-shrink: 0;">
+          <svg width="96" height="96">
+            <circle class="ring-bg" cx="48" cy="48" r="${ringRadius}" stroke-width="8"></circle>
+            <circle class="ring-fg" cx="48" cy="48" r="${ringRadius}" stroke-width="8" stroke="${ringColor}" stroke-dasharray="${ringCircumf}" stroke-dashoffset="${offset}"></circle>
           </svg>
           <div class="ring-center">
-            <div class="ring-value" style="font-size: 20px; color: ${ringColor}">${totalPercent.toFixed(1)}%</div>
+            <div class="ring-value" style="font-size: 20px; color: ${ringColor}">${totalHeld > 0 ? totalPercent.toFixed(1) + '%' : '0%'}</div>
           </div>
         </div>
-        <div class="ring-label">Overall Attendance</div>
-        <div class="ring-caption">${totalAttend} / ${totalHeld} lectures attended</div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin: 0; color: var(--text-primary);">Present Semester Attendance</h3>
+          <div style="font-size: 14px; color: var(--text-secondary); font-weight: 500;">
+            ${totalHeld > 0 ? `<span class="mono" style="font-weight: 600; color: var(--text-primary);">${totalAttend}</span> attended out of <span class="mono" style="font-weight: 600; color: var(--text-primary);">${totalHeld}</span> total lectures held` : 'No attendance lectures logged for this term yet.'}
+          </div>
+          <div style="font-size: 12px; color: var(--text-faint); margin-top: 4px;">Status: ${totalHeld === 0 ? 'Not yet started / Vacation' : (totalPercent >= 75 ? 'Satisfactory Standing' : 'Below 75% Requirement')}</div>
+        </div>
       </div>
     </div>
 
-    <div class="overview-card">
+    <!-- Subject Attendance Record Table -->
+    <div class="overview-card" style="margin-bottom: 24px;">
       <div class="overview-card-header">
         <span class="overview-card-title">Subject Attendance Record</span>
-        <span class="overview-card-subtitle">Current Semester</span>
+        <span class="overview-card-subtitle">Current Term</span>
       </div>
+  `;
+
+  if (!subjects.length) {
+    html += `
+      <div style="text-align: center; padding: 32px; background: var(--surface-sunken); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 14px;">
+        No course subject attendance rows recorded for this term yet.
+      </div>
+    `;
+  } else {
+    html += `
       <div class="reecap-table-wrap">
         <table class="reecap-data-table">
           <thead>
             <tr>
               <th>Subject Name</th>
-              <th>Lectures Held</th>
-              <th>Attended</th>
-              <th>Percentage</th>
-              <th style="width: 140px;">Progress</th>
+              <th style="text-align: right;">Held</th>
+              <th style="text-align: right;">Attended</th>
+              <th style="text-align: right;">Percentage</th>
+              <th style="width: 150px; text-align: left;">Progress</th>
             </tr>
           </thead>
           <tbody>
-  `;
-
-  subjects.forEach(s => {
-    const sColor = s.percent >= 75 ? "var(--success)" : (s.percent >= 65 ? "var(--warning)" : "var(--error)");
-    html += `
-      <tr>
-        <td style="font-weight: 600; color: var(--text-primary);">${s.subjName}</td>
-        <td class="mono">${s.held}</td>
-        <td class="mono">${s.attend}</td>
-        <td class="mono" style="font-weight: 600; color: ${sColor};">${s.percent}%</td>
-        <td>
-          <div class="progress-track">
-            <div class="progress-bar" style="width: ${Math.min(100, s.percent)}%; background: ${sColor};"></div>
-          </div>
-        </td>
-      </tr>
     `;
-  });
-
-  html += `
+    subjects.forEach(s => {
+      const sColor = s.percent >= 75 ? "var(--success)" : (s.percent >= 65 ? "var(--warning)" : (s.held === 0 ? "var(--text-faint)" : "var(--error)"));
+      html += `
+        <tr>
+          <td style="font-weight: 600; color: var(--text-primary);">${s.subjName}</td>
+          <td class="mono" style="text-align: right;">${s.held}</td>
+          <td class="mono" style="text-align: right; font-weight: 600;">${s.attend}</td>
+          <td class="mono" style="text-align: right; font-weight: 700; color: ${sColor};">${s.percent}%</td>
+          <td>
+            <div class="progress-track" style="margin-top: 2px;">
+              <div class="progress-bar" style="width: ${Math.min(100, s.percent)}%; background: ${sColor};"></div>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+    html += `
           </tbody>
         </table>
+      </div>
+    `;
+  }
+  html += `</div>`;
+
+  // Internal Marks Card
+  html += `
+    <div class="overview-card" style="margin-bottom: 24px;">
+      <div class="overview-card-header">
+        <span class="overview-card-title">Internal Marks & Mid-Terms</span>
+        <span class="overview-card-subtitle">Continuous Evaluation</span>
+      </div>
+  `;
+  if (!internalMarksRows.length) {
+    html += `
+      <div style="text-align: center; padding: 28px; background: var(--surface-sunken); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 13.5px;">
+        No internal exam marks have been published for this semester yet.
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="reecap-table-wrap">
+        <table class="reecap-data-table">
+          <thead>
+            <tr>
+              ${internalMarksHeaders.map(h => `<th>${h}</th>`).join('') || '<th>Subject</th><th>Marks</th>'}
+            </tr>
+          </thead>
+          <tbody>
+            ${internalMarksRows.map(rowCells => `
+              <tr>
+                ${rowCells.map((c, idx) => idx === 0 ? `<td class="mono">${c}</td>` : (idx === 1 ? `<td style="font-weight: 600; color: var(--text-primary);">${c}</td>` : `<td class="mono" style="font-weight: 500;">${c}</td>`)).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+  html += `</div>`;
+
+  // Achievements & Paper Presentations Two-Column Grid
+  html += `
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+      <div class="overview-card">
+        <div class="overview-card-header">
+          <span class="overview-card-title">Achievements</span>
+        </div>
+        <div style="background: var(--surface-sunken); padding: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+          <p style="margin: 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5;">
+            ${achievementsText || 'No extra-curricular or departmental achievements recorded.'}
+          </p>
+        </div>
+      </div>
+
+      <div class="overview-card">
+        <div class="overview-card-header">
+          <span class="overview-card-title">Paper Presentations</span>
+        </div>
+        <div style="background: var(--surface-sunken); padding: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+          <p style="margin: 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5;">
+            ${presentationsText || 'No paper presentations recorded for this session.'}
+          </p>
+        </div>
       </div>
     </div>
   `;
