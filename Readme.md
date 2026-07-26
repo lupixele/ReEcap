@@ -22,8 +22,12 @@ ReEcap is a Chrome Extension that overlays a polished design system on top of th
 | Theme | Description |
 |---|---|
 | **Light** | Warm cream tones with a muted red accent |
-| **Dark** | Near-black with ambient coral glow gradients |
+| **Dark** | Comfortable charcoal with restrained coral ambience for extended sessions |
 | **Cappuccino** | Coffee-toned warmth with a brown accent |
+| **AMOLED** | True-black OLED aesthetic with minimally lifted cards and dramatic coral glow |
+| **Evergreen** | Scholarly sage-and-forest palette with calm botanical character |
+| **Midnight** | Deep navy late-night study mode with a crisp sapphire accent |
+| **Rosewood** | Soft dusty rose and mauve palette with modern warm contrast |
 
 Switch themes instantly from the extension popup. Changes apply without a page reload.
 

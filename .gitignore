@@ -1,3 +1,5 @@
 # Ignore implementation and review folders
 Implementation/
 Review/
+.claude/
+*.tmp
