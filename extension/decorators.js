@@ -939,7 +939,7 @@ function rebuildPastSemTab() {
             <span class="overview-card-title">${sem.title}</span>
             ${sem.summary.passed ? `<span class="overview-card-subtitle" style="margin-left: 10px;">Passed: ${sem.summary.passed} • Failed: ${sem.summary.failed}</span>` : ''}
           </div>
-          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; background: var(--surface-sunken); padding: 6px 14px; border-radius: 100px; border: 1px solid var(--border);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; background: var(--surface-sunken); padding: 6px 14px; border-radius: 100px; border: 1px solid var(--border-light);">
             SGPA: <span style="color: var(--accent);">${sem.summary.sgpa || '--'}</span>
           </div>
         </div>
@@ -1175,7 +1175,7 @@ function rebuildOutingsTab() {
   if (isEmpty || !rows.length) {
     newView.innerHTML = `
       <div class="overview-card" style="text-align: center; padding: 48px 24px; align-items: center;">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--surface-sunken); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px solid var(--border);">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--surface-sunken); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px solid var(--border-light);">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         </div>
         <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin: 0 0 8px 0; color: var(--text-primary);">No Outing History</h2>
@@ -1313,8 +1313,8 @@ function rebuildDisciplinaryTab() {
 
   if (hasNoComplaints || !rows.length) {
     newView.innerHTML = `
-      <div class="overview-card" style="text-align: center; padding: 48px 24px; align-items: center; border: 1px solid var(--card-border);">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--success-soft); color: var(--success); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <div class="overview-card" style="text-align: center; padding: 48px 24px; align-items: center;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--success-soft); color: var(--success); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: var(--card-shadow);">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
         </div>
         <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin: 0 0 8px 0; color: var(--success);">Good Standing</h2>
@@ -1485,12 +1485,29 @@ function buildSidebar() {
       groupHeader.addEventListener('click', () => {
         const isCollapsed = groupHeader.classList.toggle('is-collapsed');
         section.classList.toggle('is-collapsed', isCollapsed);
-        
-        chrome.storage.sync.get({ sidebarOpen: {} }, (data) => {
-          const currentSidebarOpen = data.sidebarOpen || {};
-          currentSidebarOpen[groupName] = !isCollapsed;
-          chrome.storage.sync.set({ sidebarOpen: currentSidebarOpen });
-        });
+
+        // An extension reload invalidates this page's existing content-script
+        // context. Keep the visual toggle working and skip preference storage
+        // until the user refreshes into the current extension context.
+        if (typeof chrome === 'undefined' || !chrome.runtime?.id || !chrome.storage?.sync) return;
+
+        try {
+          chrome.storage.sync.get({ sidebarOpen: {} }, (data) => {
+            try {
+              if (!chrome.runtime?.id || chrome.runtime.lastError) return;
+              const currentSidebarOpen = data.sidebarOpen || {};
+              currentSidebarOpen[groupName] = !isCollapsed;
+              chrome.storage.sync.set({ sidebarOpen: currentSidebarOpen }, () => {
+                // Consume a potential context-invalidated error after reload.
+                void chrome.runtime?.lastError;
+              });
+            } catch (e) {
+              // The extension was reloaded between get() and its callback.
+            }
+          });
+        } catch (e) {
+          // The extension context has been invalidated; a page refresh reconnects it.
+        }
       });
       
       menu.appendChild(groupHeader);
