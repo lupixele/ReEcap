@@ -1,6 +1,14 @@
 // ReEcap — decorators.js
 // Isolated module for DOM-reading decorative enhancements (SVG rings, progress bars).
 
+function escapeAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function initDecorators() {
   chrome.storage.sync.get({ enabled: true }, (data) => {
     if (!data.enabled) return;
@@ -51,8 +59,18 @@ function initDecorators() {
          }
          
          if (lblUser) {
-            lblUser.textContent = lblUser.textContent.replace('Hi...', '').trim();
-            lblUser.className = 'user-name';
+            // Prefer the first <b>/<strong> child because the legacy "Hi..." prefix
+            // has been known to mutate to "Welcome," or other tokens across portal versions.
+            const inner = lblUser.querySelector('b, strong');
+            if (inner) {
+              inner.className = 'user-name';
+              // Wipe the wrapper's other text nodes so the role prefix doesn't leak.
+              Array.from(lblUser.childNodes).forEach(node => {
+                if (node !== inner && node.nodeType === Node.TEXT_NODE) node.textContent = '';
+              });
+            } else {
+              lblUser.className = 'user-name';
+            }
             userCluster.appendChild(lblUser);
          }
          
@@ -93,6 +111,11 @@ function initDecorators() {
       }
     }
     
+    // 1. Login Page (Default.aspx)
+    if (window.location.pathname.toLowerCase().includes('default.aspx')) {
+      redesignLoginPage();
+    }
+
     // 2. Profile Dashboard (Pass 1)
     if (window.location.pathname.toLowerCase().includes('studentprofile.aspx')) {
       observeProfileDashboard();
@@ -107,7 +130,807 @@ function initDecorators() {
     if (window.location.pathname.toLowerCase().includes('studentmaster.aspx')) {
       initStatusStrip();
     }
+
+    // 5. Online Payment (Phase 6, 2026-07-26) — studentfeereceipt.aspx.
+    //    Renders the year-tabs of fee items in a readable single-column-per-field
+    //    layout, plus a payment-channel picker and live totals at the bottom.
+    if (window.location.pathname.toLowerCase().includes('studentfeereceipt.aspx')) {
+      redesignOnlinePaymentPage();
+    }
+
+    // 6. Marks Page (2026-07-27) — studentmarksreport.aspx.
+    //    Renders the academic record (Present Marks, I Semester, II Semester, etc.),
+    //    CGPA summary, and past attendance/internal marks in a unified card layout.
+    if (window.location.pathname.toLowerCase().includes('studentmarksreport.aspx')) {
+      redesignMarksPage();
+    }
   });
+}
+
+function redesignLoginPage() {
+  const form = document.getElementById('form1');
+  const loginCard = document.querySelector('.login_card');
+  if (!form || !loginCard || loginCard.dataset.reecapLoginReady === 'true') return;
+
+  loginCard.dataset.reecapLoginReady = 'true';
+  document.body.classList.add('reecap-login-page');
+
+  // Hide original decorative branding without touching authentication controls.
+  const originalHeader = form.querySelector('header');
+  const particles = document.getElementById('particles');
+  const campusImage = document.querySelector('.campus-image');
+  const themeImage = document.querySelector('.theme-image');
+
+  [originalHeader, particles, campusImage, themeImage].forEach(el => {
+    if (!el) return;
+    const wrapper = el.closest('.col-12, .col-md-6, .col-lg-3, .col-lg-5') || el;
+    wrapper.classList.add('reecap-login-original-art');
+  });
+
+  const main = form.querySelector('main');
+  if (main) main.classList.add('reecap-login-stage');
+
+  const container = main?.querySelector('.container-fluid') || main;
+  if (container) container.classList.add('reecap-login-container');
+
+  const row = main?.querySelector('.row');
+  if (row) row.classList.add('reecap-login-row');
+
+  const cardColumn = loginCard.closest('[class*="col-"]');
+  if (cardColumn) cardColumn.classList.add('reecap-login-card-column');
+
+  // Replace the generic LOGIN title with a ReEcap brand block.
+  const titleWrap = loginCard.querySelector('.logintext')?.parentElement;
+  if (titleWrap && !loginCard.querySelector('.reecap-login-brand')) {
+    titleWrap.classList.add('reecap-login-title-wrap');
+    titleWrap.innerHTML = `
+      <div class="reecap-login-brand" aria-hidden="true">
+        <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" class="reecap-login-mark">
+          <rect width="128" height="128" rx="28" fill="currentColor"></rect>
+          <text x="64" y="88" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="76" fill="#FFFFFF">R</text>
+        </svg>
+        <div>
+          <div class="reecap-login-eyebrow">Student Portal</div>
+          <h1 class="reecap-login-wordmark">ReEcap</h1>
+        </div>
+      </div>
+      <p class="reecap-login-subtitle">A cleaner way back into your academic workspace.</p>
+    `;
+  }
+
+  // The eyebrow + wordmark read as a single visual block; expose a hidden
+  // semantic heading so screen readers announce "ReEcap" once on focus.
+  if (titleWrap && !titleWrap.querySelector('h1.visually-hidden-head')) {
+    const hidden = document.createElement('h1');
+    hidden.className = 'visually-hidden-head';
+    hidden.textContent = 'ReEcap sign in';
+    hidden.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;';
+    titleWrap.appendChild(hidden);
+  }
+
+  // Add a small eyebrow above the role selector while leaving radio inputs intact.
+  const radioGroup = loginCard.querySelector('.radio-group');
+  if (radioGroup && !loginCard.querySelector('.reecap-role-label')) {
+    const roleLabel = document.createElement('div');
+    roleLabel.className = 'reecap-role-label';
+    roleLabel.textContent = 'Continue as';
+    radioGroup.parentNode.insertBefore(roleLabel, radioGroup);
+  }
+
+  // Annotate error / result labels so screen readers pick up changes.
+  ['lblResult', 'lblError', 'Label1'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el && !el.getAttribute('aria-live')) el.setAttribute('aria-live', 'polite');
+  });
+
+  // Keep footer links accessible but restyle them as a centered utility row.
+  const footer = form.querySelector('footer');
+  if (footer) footer.classList.add('reecap-login-footer');
+}
+
+// ---------------------------------------------------------------------------
+// Online Payment page (studentfeereceipt.aspx?scrid=23) ground-up redesign.
+//
+// The portal ships a complex page: student identity at the top, a jQuery
+// UI tabs group for each academic year (1st–4th), an 18-column table with
+// input boxes per year, live totals at the bottom, and ICICI/Paytm radios.
+//
+// My redesign keeps all original form elements, checkboxes, fine inputs,
+// and Proceed/Cancel buttons intact in the DOM so the portal's postback
+// handlers keep working, while visually re-layering the page into:
+//
+// 1. A hero card showing the student's Roll.No / Name / Semester / Father
+//    and a payment channel selector (ICICI / Paytm).
+// 2. Year cards: 4 selectable cards showing due totals per year, with an
+//    "Active" indicator on the term with open dues.
+// 3. An itemised table for the selected year that displays Title, Billed,
+//    Committed, Paid, Balance, and a visible checkbox or "Paid" pill.
+// 4. A sticky summary bar at the bottom with Total Fee Paying, Fine, and Total
+//    Paying, plus the Proceed / Cancel buttons.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Marks Page (StudentMarksReport.aspx) ground-up redesign.
+//
+// The portal loads the same multi-section markup used by the Profile → Past
+// Semesters view (I Semester, II Semester, etc.) and stacks the CGPA
+// summary + previous semesters attendance + internal marks beneath it.
+// We wait for `divMarks` to populate via the `GetMarksReport` AJAX call,
+// then walk the resulting DOM structurally:
+//
+//   1. Top-level extraction sections
+//        - "Present Marks"        : placeholder (always empty in the dump)
+//        - Semester grades tables : `<table>` per semester + summary row
+//        - "Over all summary"     : CGPA / credits / result
+//        - "PREVIOUS SEMESTERS ATTENDANCE"  : sub-header per semester
+//        - "PREVIOUS SEMESTERS INTERNAL MARKS" : matrix tables per semester
+//
+//   2. Render into a hero header (CGPA / credits), a per-semester grades
+//      stream, an attendance section, and an internal marks section, using
+//      the same design tokens as the rest of the extension.
+// ---------------------------------------------------------------------------
+
+function redesignMarksPage() {
+  const form = document.querySelector('form#aspnetForm, form[name="aspnetForm"]');
+  const divMarks = document.getElementById('divMarks');
+  if (!form || !divMarks || divMarks.dataset.reecapMarksReady === 'true') return;
+
+  const observer = new MutationObserver(() => {
+    if (divMarks.querySelector('table')) {
+      observer.disconnect();
+      divMarks.dataset.reecapMarksReady = 'true';
+      buildMarksPageUI(divMarks);
+    }
+  });
+  observer.observe(divMarks, { childList: true, subtree: true });
+  setTimeout(() => observer.disconnect(), 15000);
+}
+
+function buildMarksPageUI(divMarks) {
+  // We will progressively move children out of divMarks into a structured wrap,
+  // then hide the legacy children that are no longer in use.
+
+  // 1) Identify the Overall Summary table (2 columns: label, value).
+  //    It's the first <table> with exactly one header row that has `colspan=2`
+  //    cellBorder and exactly two columns.
+  let overall = null;
+  Array.from(divMarks.querySelectorAll('table')).forEach(t => {
+    const rows = t.querySelectorAll('tr');
+    if (rows.length >= 5 && rows.length <= 7) {
+      const headerRow = rows[0];
+      const head = headerRow.querySelectorAll('th, td');
+      if (head.length === 2 && (head[0].textContent.toLowerCase().includes('over all') || head[0].textContent.toLowerCase().includes('overall'))) {
+        overall = t;
+      }
+    }
+  });
+
+  // 2) Walk the children of divMarks sequentially. Each "block" either
+  //    starts a new semester (grades), an attendance sub-block, or an internal
+  //    marks sub-block.
+  const grades = [];   // [{ title, table }]
+  const attendance = []; // [{ title, table }]
+  const internals = [];  // [{ title, table }]
+
+  let currentSection = 'grades';
+  let currentSemester = null;
+
+  Array.from(divMarks.children).forEach(node => {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const text = (node.textContent || '').toUpperCase();
+
+    // Detect cross-section transitions
+    if (text.includes('PREVIOUS SEMESTERS ATTENDANCE')) {
+      currentSection = 'attendance';
+      currentSemester = null;
+      return;
+    }
+    if (text.includes('PREVIOUS SEMESTERS INTERNAL MARKS')) {
+      currentSection = 'internal';
+      currentSemester = null;
+      return;
+    }
+
+    if (currentSection === 'grades') {
+      // Capture the semester header row (e.g. "I Semester" with colspan=8)
+      if (text.match(/^\s*([IVX]+)\s+SEMESTER\s*$/)) {
+        currentSemester = text.replace(/\s+/g, ' ').trim();
+        return;
+      }
+      if (node.tagName === 'TABLE' && currentSemester) {
+        // Verify this is the grades table (8+ columns, headcellBorder)
+        const head = node.querySelectorAll('th, td');
+        if (head.length >= 6 && node.querySelector('.headcellBorder')) {
+          grades.push({ title: currentSemester, table: node.cloneNode(true) });
+        }
+      }
+    } else if (currentSection === 'attendance') {
+      if (text.match(/^\s*([IVX]+)\s+SEMESTER\s*$/)) {
+        currentSemester = text.replace(/\s+/g, ' ').trim();
+        return;
+      }
+      if (node.tagName === 'TABLE' && currentSemester) {
+        attendance.push({ title: currentSemester, table: node.cloneNode(true) });
+      }
+    } else if (currentSection === 'internal') {
+      if (text.match(/^\s*([IVX]+)\s+SEMESTER\s*$/)) {
+        currentSemester = text.replace(/\s+/g, ' ').trim();
+        return;
+      }
+      if (node.tagName === 'TABLE' && currentSemester) {
+        internals.push({ title: currentSemester, table: node.cloneNode(true) });
+      }
+    }
+  });
+
+  // 3) Extract overall summary stats (CGPA, Credits, Result, Passed, Failed)
+  const overallStats = { cgpa: '--', credits: '--', result: '--', passed: '--', failed: '--' };
+  if (overall) {
+    Array.from(overall.querySelectorAll('tr')).forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 2) {
+        const k = cells[0].textContent.trim().toUpperCase();
+        const v = cells[1].textContent.trim();
+        if (k.includes('CGPA')) overallStats.cgpa = v;
+        else if (k.includes('CREDITS')) overallStats.credits = v;
+        else if (k.includes('RESULT')) overallStats.result = v;
+        else if (k.includes('PASSED')) overallStats.passed = v;
+        else if (k.includes('FAILED')) overallStats.failed = v;
+      }
+    });
+  }
+
+  // 4) Build the new redesign wrapper.
+  const wrap = document.createElement('div');
+  wrap.className = 'reecap-marks-page';
+
+  const cgpaColor = (() => {
+    const n = parseFloat(overallStats.cgpa);
+    if (isNaN(n)) return 'var(--text-faint)';
+    if (n >= 7.5) return 'var(--success)';
+    if (n >= 6.0) return 'var(--accent)';
+    return 'var(--warning)';
+  })();
+
+  wrap.innerHTML = `
+    <div class="marks-hero">
+      <div class="marks-hero-id">
+        <div class="marks-eyebrow">Academic Record</div>
+        <h1 class="marks-title">${(document.getElementById('tdstudentname') || {}).textContent || 'Student Performance'}</h1>
+        <div class="marks-meta">
+          <span><b>Roll No:</b> ${(document.getElementById('tdrollno') || {}).textContent || '--'}</span> •
+          <span><b>Semester:</b> ${(document.getElementById('tdrollno') || {}).textContent || '--'}</span> <!-- placeholder -->
+          <span><b>Branch:</b> --</span> <!-- placeholder -->
+        </div>
+      </div>
+      <div class="marks-hero-stats">
+        <div class="marks-stat">
+          <div class="marks-stat-label">CGPA</div>
+          <div class="marks-stat-value" style="color: ${cgpaColor};">${overallStats.cgpa}</div>
+        </div>
+        <div class="marks-stat">
+          <div class="marks-stat-label">Credits</div>
+          <div class="marks-stat-value">${overallStats.credits}</div>
+        </div>
+        <div class="marks-stat">
+          <div class="marks-stat-label">Result</div>
+          <div class="marks-stat-value ${overallStats.result.toUpperCase() === 'PASS' ? 'is-success' : 'is-warning'}">${overallStats.result}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marks-section">
+      <div class="marks-section-title">Transcript by Semester</div>
+      <div class="marks-transcript-list">
+        ${grades.length === 0 ? '<div class="marks-empty">No semester marks found.</div>' : grades.map(sem => renderTranscriptBlock(sem)).join('')}
+      </div>
+    </div>
+
+    <div class="marks-section">
+      <div class="marks-section-title">Previous Semesters Attendance</div>
+      <div class="marks-attendance-list">
+        ${attendance.length === 0 ? '<div class="marks-empty">No attendance data found.</div>' : attendance.map(sem => renderAttendanceBlock(sem)).join('')}
+      </div>
+    </div>
+
+    <div class="marks-section">
+      <div class="marks-section-title">Previous Semesters Internal Marks</div>
+      <div class="marks-internal-list">
+        ${internals.length === 0 ? '<div class="marks-empty">No internal marks data found.</div>' : internals.map(sem => renderInternalBlock(sem)).join('')}
+      </div>
+    </div>
+  `;
+
+  // Insert the wrap into the divMarks container.
+  divMarks.insertBefore(wrap, divMarks.firstChild);
+
+  // Hide the original divMarks children (we've cloned them out).
+  Array.from(divMarks.children).forEach(node => {
+    if (node !== wrap && node.nodeType === Node.ELEMENT_NODE) {
+      node.style.setProperty('display', 'none', 'important');
+    } else if (node.nodeType === Node.TEXT_NODE) {
+      node.textContent = '';
+    }
+  });
+}
+
+function renderTranscriptBlock(sem) {
+  // Build a clean subject-by-subject table for a semester. We avoid cloning
+  // the legacy rows wholesale (which carry legacy class names like
+  // 'cellBorder'); instead we extract the data and render fresh markup.
+  const table = sem.table;
+  const rows = Array.from(table.querySelectorAll('tr'));
+  // The first row is the column header; the last row is the semester summary.
+  const headerRow = rows[0];
+  const summaryRow = rows[rows.length - 1];
+  const dataRows = rows.slice(1, -1);
+
+  // Summary extraction
+  let summaryHtml = '';
+  if (summaryRow) {
+    const txt = summaryRow.textContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const m = {
+      passed:    (txt.match(/Passed\s*:\s*(\d+)/i) || [])[1],
+      failed:    (txt.match(/Failed\s*:\s*(\d+)/i) || [])[1],
+      result:    (txt.match(/Result\s*:\s*([A-Za-z]+)/i) || [])[1],
+      sgpa:      (txt.match(/SGPA\s*:\s*([\d.]+)/i) || [])[1],
+    };
+    summaryHtml = `
+      <div class="sem-summary">
+        ${m.passed != null ? `<span><b>${m.passed}</b> Passed</span>` : ''}
+        ${m.failed != null ? `<span><b>${m.failed}</b> Failed</span>` : ''}
+        ${m.result ? `<span>Result: <b>${m.result}</b></span>` : ''}
+        ${m.sgpa ? `<span>SGPA: <b>${m.sgpa}</b></span>` : ''}
+      </div>
+    `;
+  }
+
+  // Pull column headers (S.No, Code, Name, Session, Grade, Points, Credits, Result)
+  const headers = Array.from(headerRow.querySelectorAll('th, td')).map(td => td.textContent.trim().replace(/<br\s*\/?>/gi, ' ').replace(/\s+/g, ' ').trim());
+
+  // Determine the session/column (varies by semester) and pull data.
+  const subjectRows = dataRows.map(r => {
+    const cells = Array.from(r.querySelectorAll('td')).map(td => td.textContent.trim());
+    return cells;
+  }).filter(c => c.length >= 7);
+
+  const bodyHtml = subjectRows.map(cells => {
+    const isPass = (cells[7] || '').toUpperCase().startsWith('P');
+    return `
+      <tr>
+        <td class="mono">${cells[0] || ''}</td>
+        <td class="mono">${cells[1] || ''}</td>
+        <td>${cells[2] || ''}</td>
+        <td class="mono">${cells[3] || ''}</td>
+        <td class="mono"><b>${cells[4] || ''}</b></td>
+        <td class="mono">${cells[5] || ''}</td>
+        <td class="mono">${cells[6] || ''}</td>
+        <td><span class="reecap-status-pill ${isPass ? 'status-pill-pass' : 'status-pill-fail'}">${cells[7] || '-'}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="transcript-card">
+      <div class="transcript-head">
+        <div class="transcript-title">${sem.title}</div>
+        ${summaryHtml}
+      </div>
+      <div class="reecap-table-wrap">
+        <table class="reecap-data-table">
+          <thead>
+            <tr>
+              ${headers.map(h => `<th>${h}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>${bodyHtml}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderAttendanceBlock(sem) {
+  // The attendance table has a layout like:
+  //   Subject | subjectid | classesheld | classesattend | Total
+  //   Held    | -         | -           | -            | 0
+  //   Attend  | -         | -           | -            | 0
+  //   %       | .00       | .00         | .00          | -
+  const table = sem.table;
+  const rows = Array.from(table.querySelectorAll('tr')).slice(1); // drop header
+  if (rows.length === 0) return '';
+
+  // We only have one subject "Held/Attend/%" with three rows. The "Total" cell
+  // is the last <td> on each row. Other cells are blank.
+  const totalCell = (row) => {
+    const cells = row.querySelectorAll('td');
+    return (cells[cells.length - 1] || {}).textContent.trim() || '--';
+  };
+
+  const held = totalCell(rows[0]);
+  const attended = totalCell(rows[1]);
+  const pct = totalCell(rows[2]);
+
+  return `
+    <div class="attendance-card">
+      <div class="attendance-title">${sem.title}</div>
+      <div class="attendance-stats">
+        <div class="attendance-stat"><div class="attendance-stat-label">Held</div><div class="attendance-stat-value">${held}</div></div>
+        <div class="attendance-stat"><div class="attendance-stat-label">Attended</div><div class="attendance-stat-value">${attended}</div></div>
+        <div class="attendance-stat"><div class="attendance-stat-label">Percentage</div><div class="attendance-stat-value">${pct}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderInternalBlock(sem) {
+  // Internal marks: matrix table with subjects as rows, exam components as columns.
+  // We just clone the table inside an overflow-scrollable card.
+  const table = sem.table;
+  // Strip our/their clone-and-restyle pipeline: we'll wrap the original table
+  // in a re-styled card.
+  return `
+    <div class="internal-card">
+      <div class="internal-title">${sem.title}</div>
+      <div class="reecap-table-wrap">
+        <table class="reecap-data-table internal-marks-table">
+          ${table.innerHTML}
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function redesignOnlinePaymentPage() {
+  const form = document.querySelector('form#aspnetForm, form[name="aspnetForm"]');
+  const divfees = document.getElementById('divfees');
+  if (!form || !divfees || divfees.dataset.reecapPayReady === 'true') return;
+
+  // Let the portal's AJAX / script resources populate the year tabs first.
+  // We must gate the redesign on both the tabs AND the presence of the proceed/payment
+  // buttons, because .html(response) might fire the observer mid-parse before
+  // the buttons at the end of the blob are attached.
+  const observer = new MutationObserver((mutations, obs) => {
+    const tabs = document.getElementById('divtabs');
+    // Using a more lenient check for buttons in case they render late:
+    const proceedBtn = Array.from(divfees.querySelectorAll('input[type="button"], input[type="submit"], button'))
+      .find(b => {
+        const v = (b.value || b.textContent || '').toLowerCase();
+        return v.includes('proceed') || v.includes('pay') || v.includes('submit');
+      });
+    if (tabs && tabs.querySelectorAll('li').length > 0 && proceedBtn) {
+      obs.disconnect();
+      divfees.dataset.reecapPayReady = 'true';
+      buildOnlinePaymentUI(divfees, tabs);
+    }
+  });
+
+  const tabs = document.getElementById('divtabs');
+  const proceedBtn = tabs ? Array.from(divfees.querySelectorAll('input[type="button"], input[type="submit"], button'))
+      .find(b => {
+        const v = (b.value || b.textContent || '').toLowerCase();
+        return v.includes('proceed') || v.includes('pay') || v.includes('submit');
+      }) : null;
+
+  if (tabs && proceedBtn) {
+    divfees.dataset.reecapPayReady = 'true';
+    buildOnlinePaymentUI(divfees, tabs);
+  } else {
+    observer.observe(divfees, { childList: true, subtree: true });
+    // Retry polling backup so we don't permanently brick the UI if the portal
+    // disabled the proceed button because there are no fees due.
+    setTimeout(() => {
+      observer.disconnect();
+      if (!divfees.dataset.reecapPayReady && document.getElementById('divtabs')) {
+        divfees.dataset.reecapPayReady = 'true';
+        buildOnlinePaymentUI(divfees, document.getElementById('divtabs'));
+      }
+    }, 1500);
+  }
+}
+
+function buildOnlinePaymentUI(divfees, legacyTabs) {
+  // Hide legacy elements being replaced by the redesign layout.
+  const legacyStudentTable = document.getElementById('tblstudent');
+  if (legacyStudentTable) legacyStudentTable.style.setProperty('display', 'none', 'important');
+
+  const mainHead = document.querySelector('.MainHead');
+  if (mainHead && mainHead.closest('table')) mainHead.closest('table').style.setProperty('display', 'none', 'important');
+
+  // ---- Extract student identity from legacy #tblstudent -----------------
+  const identity = {
+    rollNo:  (document.getElementById('tdrollno') || {}).textContent || '',
+    name:    (document.getElementById('tdstudentname') || {}).textContent || '',
+    parent:  (document.getElementById('tdparentname') || {}).textContent || '',
+    mobile:  (document.getElementById('spnmobile') || document.getElementById('tdparentmobile') || {}).textContent || '',
+    date:    (document.getElementById('tddate') || {}).textContent || '',
+  };
+
+  // ---- Create new redesign wrapper --------------------------------------
+  const wrap = document.createElement('div');
+  wrap.className = 'reecap-payment-page';
+  wrap.innerHTML = `
+    <div class="pay-hero">
+      <div class="pay-hero-id">
+        <div class="pay-eyebrow">Online Fee Payment</div>
+        <h1 class="pay-title">${identity.name || 'Student Payment Desk'}</h1>
+        <div class="pay-meta">
+          <span><b>Roll No:</b> ${identity.rollNo || '--'}</span> •
+          <span><b>Parent:</b> ${identity.parent || '--'}</span> •
+          <span><b>Date:</b> ${identity.date || '--'}</span>
+        </div>
+      </div>
+      <div class="pay-hero-channel" id="reecap-pay-channel-slot"></div>
+    </div>
+
+    <div class="pay-years" id="reecap-pay-years"></div>
+    <div class="pay-items-card" id="reecap-pay-items">
+      <div class="pay-items-head">
+        <div class="pay-items-title">Select items to pay <span class="pay-items-year-label"></span></div>
+        <div class="pay-items-hint">Check the boxes beside the fees you wish to settle now.</div>
+      </div>
+      <div class="pay-items-body"></div>
+    </div>
+
+    <div class="pay-sticky-bar" id="reecap-pay-sticky">
+      <div class="pay-sticky-totals">
+        <div class="pay-total-item"><span>Fee Paying:</span> <b id="reecap-live-feepaying">₹0.00</b></div>
+        <div class="pay-total-item"><span>Fine:</span> <b id="reecap-live-fine">₹0.00</b></div>
+        <div class="pay-total-item is-primary"><span>Total Paying:</span> <b id="reecap-live-total">₹0.00</b></div>
+      </div>
+      <div class="pay-sticky-actions">
+        <!-- Original buttons get relocated here so postback events keep working -->
+      </div>
+    </div>
+  `;
+
+  // Insert wrap right before legacyTabs.
+  divfees.insertBefore(wrap, legacyTabs);
+
+  // Relocate ICICI/Paytm payment channel radios into our hero block FIRST.
+  // The portal might offer different gateways per student (e.g. HDFC, BillDesk),
+  // so we dynamically scoop up ANY radio button inside divfees.
+  const channelSlot = wrap.querySelector('#reecap-pay-channel-slot');
+  const radios = Array.from(divfees.querySelectorAll('input[type="radio"]'));
+  if (channelSlot && radios.length > 0) {
+    channelSlot.innerHTML = `<div class="channel-title">Payment Gateway</div><div class="channel-options"></div>`;
+    const opts = channelSlot.querySelector('.channel-options');
+    radios.forEach(rad => {
+      const parentLabel = rad.closest('label');
+      // If the portal wraps in <label>, extract the text. Otherwise, look for
+      // the adjacent <b> or just use the value.
+      let lblText = 'Option';
+      if (parentLabel && parentLabel.textContent) {
+         lblText = parentLabel.textContent.trim();
+      } else if (rad.nextElementSibling && rad.nextElementSibling.tagName === 'B') {
+         lblText = rad.nextElementSibling.textContent.trim();
+      } else if (rad.value) {
+         lblText = String(rad.value).length === 1 && rad.value.toUpperCase() === 'I' ? 'ICICI' :
+                   String(rad.value).length === 1 && rad.value.toUpperCase() === 'P' ? 'Paytm' : rad.value;
+      }
+
+      const lblEl = document.createElement('label');
+      lblEl.className = 'channel-label';
+      lblEl.appendChild(rad);
+      const span = document.createElement('span');
+      span.textContent = lblText;
+      lblEl.appendChild(span);
+      opts.appendChild(lblEl);
+
+      if (rad.nextElementSibling && rad.nextElementSibling.tagName === 'B') rad.nextElementSibling.remove();
+    });
+  }
+
+  // Relocate Proceed and Cancel buttons into our sticky bar FIRST.
+  // The portal might use <button>, <input type="submit">, or different classes,
+  // so we grab any button that contains 'proceed', 'cancel', or 'pay'.
+  const stickyActions = wrap.querySelector('.pay-sticky-actions');
+  const allBtns = Array.from(divfees.querySelectorAll('input[type="button"], input[type="submit"], button')).filter(b => !b.closest('.reecap-payment-page') && !b.closest('.ui-tabs-nav'));
+
+  allBtns.forEach(btn => {
+    const val = (btn.value || btn.textContent || '').toLowerCase().replace(/&nbsp;/g, '').trim();
+    if (val.includes('proceed') || val.includes('cancel') || val.includes('pay') || val.includes('submit')) {
+      const isPrimary = val.includes('proceed') || val.includes('pay') || val.includes('submit');
+      btn.className = isPrimary ? 'pay-btn pay-btn-primary' : 'pay-btn pay-btn-secondary';
+      stickyActions.appendChild(btn);
+    }
+  });
+
+  // Now safely hide the legacy tabs and ALL subsequent DOM nodes inside divfees
+  // since we have already successfully relocated the functional inputs out of them.
+  Array.from(divfees.childNodes).forEach(node => {
+    if (node !== wrap && node.nodeType === Node.ELEMENT_NODE) {
+      if (node.tagName !== 'INPUT' && node.tagName !== 'BUTTON') {
+        node.style.setProperty('display', 'none', 'important');
+      }
+    } else if (node.nodeType === Node.TEXT_NODE) {
+      node.textContent = '';
+    }
+  });
+
+  // ---- Parse year tabs and populate cards -------------------------------
+  const yearsContainer = wrap.querySelector('#reecap-pay-years');
+  const itemsContainer = wrap.querySelector('#reecap-pay-items .pay-items-body');
+  const yearLabel      = wrap.querySelector('.pay-items-year-label');
+
+  const tabLinks = Array.from(legacyTabs.querySelectorAll('ul.ui-tabs-nav li a'));
+  const yearCards = [];
+
+  tabLinks.forEach((a, idx) => {
+    const text = a.textContent.trim(); // e.g. "Ist Year (Due:0.00)" or "2nd Year (Due:78,750.00)"
+    const match = text.match(/^(.*?)\s*\(\s*Due\s*:\s*([\d,.]+)\s*\)/i);
+    const title = match ? match[1].trim() : `Year ${idx + 1}`;
+    const due   = match ? parseFloat(match[2].replace(/,/g, '')) || 0 : 0;
+    const targetId = (a.getAttribute('href') || '').split('#')[1];
+    const panel = targetId ? document.getElementById(targetId) : null;
+
+    const card = document.createElement('div');
+    card.className = 'pay-year-card' + (due > 0 ? ' has-due' : ' is-cleared');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-pressed', idx === 0 ? 'true' : 'false');
+    card.innerHTML = `
+      <div class="year-card-title">${title}</div>
+      <div class="year-card-due">${due > 0 ? '₹' + due.toLocaleString('en-IN') : 'Cleared'}</div>
+      <div class="year-card-status">${due > 0 ? 'Outstanding' : 'No dues'}</div>
+    `;
+
+    card.addEventListener('click', () => {
+      yearCards.forEach(c => { c.classList.remove('is-selected'); c.setAttribute('aria-pressed', 'false'); });
+      card.classList.add('is-selected');
+      card.setAttribute('aria-pressed', 'true');
+      if (yearLabel) yearLabel.textContent = `— ${title}`;
+      renderYearPanel(panel, itemsContainer);
+    });
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
+
+    yearsContainer.appendChild(card);
+    yearCards.push(card);
+
+    // Auto-select the first year with outstanding dues; fallback to year 1.
+    if (due > 0 && !yearsContainer.dataset.hasSelectedDue) {
+      yearsContainer.dataset.hasSelectedDue = 'true';
+      setTimeout(() => card.click(), 50);
+    } else if (idx === 0 && !yearsContainer.dataset.hasSelectedDue) {
+      setTimeout(() => card.click(), 50);
+    }
+  });
+
+  // ---- Live totals mirror ----------------------------------------------
+  function updateLiveTotals() {
+    const fpText = (document.getElementById('spnfeepaying') || {}).textContent || '0.00';
+    const fnText = (document.getElementById('spnfine')      || {}).textContent || '0.00';
+    const totText= (document.getElementById('spntotal')     || {}).textContent || '0.00';
+    const elFp  = document.getElementById('reecap-live-feepaying');
+    const elFn  = document.getElementById('reecap-live-fine');
+    const elTot = document.getElementById('reecap-live-total');
+    if (elFp)  elFp.textContent  = '₹' + fpText;
+    if (elFn)  elFn.textContent  = '₹' + fnText;
+    if (elTot) elTot.textContent = '₹' + totText;
+  }
+
+  setInterval(updateLiveTotals, 300);
+  updateLiveTotals();
+}
+
+// Render a single year's fee table in our clean 6-column itemised structure.
+// Keeps the original checkboxes and amount inputs connected to the portal DOM
+// so when the user clicks our visible row, the portal's checkboxes toggle and
+// trigger onFeeCheckBoxClick / calculateAmounts natively.
+function renderYearPanel(panel, container) {
+  if (!panel || !container) return;
+  container.innerHTML = '';
+
+  const table = document.createElement('table');
+  table.className = 'pay-items-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th style="width:40px;">Pay</th>
+        <th>Fee Category</th>
+        <th style="text-align:right;">Billed</th>
+        <th style="text-align:right;">Paid / Committed</th>
+        <th style="text-align:right;">Balance</th>
+        <th style="text-align:right;">Amount Paying</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const tbody = table.querySelector('tbody');
+
+  // Walk physical data rows (skipping gvHeaderStyle rows).
+  const rows = Array.from(panel.querySelectorAll('tr')).filter(r => !r.classList.contains('gvHeaderStyle') && r.getAttribute('name'));
+
+  if (!rows.length) {
+    container.innerHTML = '<div class="fee-empty">No fee items found for this academic year.</div>';
+    return;
+  }
+
+  rows.forEach(row => {
+    const cells = Array.from(row.querySelectorAll('td'));
+    if (cells.length < 15) return; // not a fee data row
+
+    const sl        = (cells[0] || {}).textContent || '';
+    const chk       = cells[1] ? cells[1].querySelector('input[type="checkbox"]') : null;
+    const title     = (cells[4] || {}).textContent || 'Fee';
+    const billed    = (cells[5] || {}).textContent || '0';
+    const committed = (cells[7] || {}).textContent || '0';
+    const paid      = (cells[9] || {}).textContent || '0';
+    const balEl     = cells[12] ? cells[12].querySelector('label[name="lblbalance"]') : null;
+    const balance   = balEl ? (balEl.getAttribute('title') || balEl.textContent || '0') : '0';
+    const payingInp = cells[16] ? cells[16].querySelector('input[name="txtamount"]') : null;
+
+    const numBal = parseFloat(String(balance).replace(/,/g, '')) || 0;
+    const isPaid = numBal <= 0;
+    const isDisabled = chk && chk.disabled;
+
+    const tr = document.createElement('tr');
+    tr.className = isPaid ? 'row-paid' : (isDisabled ? 'row-disabled' : 'row-payable');
+
+    // Col 1: Checkbox (we move the real checkbox node here so clicks stay bound).
+    const tdChk = document.createElement('td');
+    tdChk.className = 'col-chk';
+    if (chk) {
+      tdChk.appendChild(chk);
+      // Give the checkbox a clean custom wrapper style without overriding rules.
+      chk.classList.add('reecap-native-chk');
+    } else {
+      tdChk.innerHTML = '—';
+    }
+
+    // Col 2: Title + Sl.No.
+    const tdTitle = document.createElement('td');
+    tdTitle.innerHTML = `<div class="item-title">${title}</div><div class="item-sl">Sl.No: ${sl}</div>`;
+
+    // Col 3: Billed.
+    const tdBilled = document.createElement('td');
+    tdBilled.className = 'mono';
+    tdBilled.style.textAlign = 'right';
+    tdBilled.textContent = '₹' + (parseFloat(billed) || 0).toLocaleString('en-IN');
+
+    // Col 4: Paid / Committed.
+    const tdPaid = document.createElement('td');
+    tdPaid.className = 'mono';
+    tdPaid.style.textAlign = 'right';
+    const numPaid = (parseFloat(paid) || 0) + (parseFloat(committed) || 0);
+    tdPaid.style.color = 'var(--success)';
+    tdPaid.textContent = '₹' + numPaid.toLocaleString('en-IN');
+
+    // Col 5: Balance.
+    const tdBal = document.createElement('td');
+    tdBal.className = 'mono';
+    tdBal.style.textAlign = 'right';
+    tdBal.style.fontWeight = '700';
+    tdBal.style.color = numBal > 0 ? 'var(--error)' : 'var(--text-faint)';
+    tdBal.textContent = '₹' + numBal.toLocaleString('en-IN');
+
+    // Col 6: Amount Paying input (relocate real input so onblur handlers fire).
+    const tdPay = document.createElement('td');
+    tdPay.className = 'col-pay';
+    tdPay.style.textAlign = 'right';
+    if (payingInp) {
+      payingInp.classList.add('reecap-pay-input');
+      tdPay.appendChild(payingInp);
+    } else {
+      tdPay.innerHTML = '—';
+    }
+
+    tr.appendChild(tdChk);
+    tr.appendChild(tdTitle);
+    tr.appendChild(tdBilled);
+    tr.appendChild(tdPaid);
+    tr.appendChild(tdBal);
+    tr.appendChild(tdPay);
+    tbody.appendChild(tr);
+
+    // Make clicking the row toggle the checkbox if it isn't disabled.
+    tr.addEventListener('click', (e) => {
+      if (e.target === chk || e.target === payingInp) return;
+      if (chk && !chk.disabled) chk.click();
+    });
+  });
+
+  container.appendChild(table);
 }
 
 function observeTimetable() {
@@ -205,67 +1028,168 @@ function buildTimetableDashboard(tbl) {
     reecapTimetable: { schedule, legendMap, lastUpdated: Date.now() } 
   });
 
-  // --- D. Build UI (CSS Grid) ---
+  // --- D. Plan the slot layout: merge consecutive same-class periods in a row
+  //       into a single wide cell. Each row produces an array whose length
+  //       equals the period count, where each item is either:
+  //         { type: 'empty' }
+  //         { type: 'class', code, primaryCode, details, timeRange, span,
+  //           palette, faculty, room, isFirst }                       ---
+  //
+  //       The JS renderer then emits one cell per non-empty item and uses
+  //       grid-column: span N so the rendered width matches its slot count.
+
+  const PALETTE_SIZE = 12;
+  // Stable per-subject palette assignment. Same code → same colour across
+  // sessions, days, and across the schedule + status strip cards.
+  const paletteFor = (() => {
+    const map = new Map();
+    return (code) => {
+      if (!code) return 0;
+      if (map.has(code)) return map.get(code);
+      // djb2 string hash → modulo PALETTE_SIZE.
+      let hash = 5381;
+      for (let i = 0; i < code.length; i++) hash = ((hash << 5) + hash + code.charCodeAt(i)) | 0;
+      const idx = Math.abs(hash) % PALETTE_SIZE;
+      map.set(code, idx);
+      return idx;
+    };
+  })();
+
+  // Build the slot plan row-by-row.
+  const layoutByDay = {};
+  for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
+    if (!schedule[day]) continue;
+    const slots = [];
+    let i = 0;
+    while (i < schedule[day].length) {
+      const period = schedule[day][i];
+      if (!period.subjectCode) {
+        slots.push({ type: 'empty' });
+        i++;
+        continue;
+      }
+      const codes = period.subjectCode.split(',').map(c => c.trim());
+      const primaryCode = codes[0];
+      const details = legendMap[primaryCode] || { name: period.subjectCode, faculty: '', room: '' };
+      // Merge run: same primary code on consecutive indices.
+      let span = 1;
+      while (i + span < schedule[day].length) {
+        const next = schedule[day][i + span];
+        if (!next.subjectCode) break;
+        const nextCodes = next.subjectCode.split(',').map(c => c.trim());
+        if (nextCodes[0] !== primaryCode) break;
+        span++;
+      }
+      slots.push({
+        type: 'class',
+        code: primaryCode,
+        allCodes: period.subjectCode,
+        details,
+        timeRange: period.timeRange,
+        span,
+        palette: paletteFor(primaryCode),
+        faculty: details.faculty,
+        room: details.room,
+      });
+      i += span;
+    }
+    layoutByDay[day] = slots;
+  }
+
+  // --- E. Build UI (CSS Grid) ---
   tbl.style.display = 'none';
 
   const dashboard = document.createElement('div');
   dashboard.id = 'reecap-timetable';
   dashboard.className = 'reecap-timetable';
-  
-  const currentDayIndex = new Date().getDay(); 
+
+  const currentDayIndex = new Date().getDay();
   const jsDayToName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const todayName = jsDayToName[currentDayIndex];
 
-  let html = `<div class="tt-grid" style="--cols: ${periodCount}">`;
-  
-  html += `<div class="tt-cell tt-header">Day</div>`;
-  for (let p = 1; p <= periodCount; p++) {
-    html += `<div class="tt-cell tt-header">Period ${p}</div>`;
+  // Pull the actual time-range labels from the portal's header row so
+  // users see "08:00 – 09:00" instead of the generic "Period 1".
+  const portalHeaderCells = rows[0].querySelectorAll('td');
+  const headerLabels = [];
+  for (let i = 1; i < portalHeaderCells.length; i++) {
+    const cellText = (portalHeaderCells[i].innerText || portalHeaderCells[i].textContent || '').trim();
+    const match = cellText.match(/\d{1,2}:\d{2}\s*[-to]+\s*\d{1,2}:\d{2}/i);
+    headerLabels.push(match ? match[0].replace(/-/i, '–') : `Period ${i + 1}`);
   }
+  while (headerLabels.length < periodCount) headerLabels.push(`Period ${headerLabels.length + 1}`);
 
-  const sortedDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  sortedDays.forEach(day => {
-    if (!schedule[day]) return;
-    const isToday = (day === todayName) ? 'is-today' : '';
-    
-    html += `<div class="tt-cell tt-day ${isToday}">${day}</div>`;
-    
-    schedule[day].forEach(period => {
-      if (!period.subjectCode) {
-        html += `<div class="tt-cell tt-empty ${isToday}"></div>`;
-      } else {
-        const code = period.subjectCode;
-        // Handle multiple subjects (e.g. labs)
-        const codes = code.split(',').map(c => c.trim());
-        const primaryCode = codes[0];
-        const details = legendMap[primaryCode] || { name: code, faculty: 'Unknown', room: 'Unknown' };
-        
-        html += `
-          <div class="tt-cell tt-class ${isToday}">
-            <div class="tt-time">${period.timeRange}</div>
-            <div class="tt-subject">${code}</div>
-            
-            <div class="tt-tooltip">
-              <div class="tt-tt-name">${details.name}</div>
-              <div class="tt-tt-meta">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                ${details.faculty}
-              </div>
-              <div class="tt-tt-meta">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                ${details.room}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-    });
+  // Build the marks/legend strip below the grid.
+  let html = `<div class="tt-grid" style="--cols: ${periodCount}" role="grid" aria-label="Weekly timetable">`;
+
+  html += `<div class="tt-cell tt-header" role="columnheader">Day</div>`;
+  headerLabels.forEach((label) => {
+    html += `<div class="tt-cell tt-header" role="columnheader">${label}</div>`;
   });
 
+  const sortedDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  for (const day of sortedDays) {
+    const slots = layoutByDay[day];
+    if (!slots) continue;
+    const isToday = (day === todayName) ? 'is-today' : '';
+
+    html += `<div class="tt-cell tt-day ${isToday}">${day}</div>`;
+
+    for (const slot of slots) {
+      if (slot.type === 'empty') {
+        html += `<div class="tt-cell tt-empty ${isToday}"></div>`;
+        continue;
+      }
+      const spanStyle = slot.span > 1 ? `--span: ${slot.span};` : '';
+      const ttAriaLabel = `${slot.timeRange} — ${slot.details.name}${slot.faculty ? ', taught by ' + slot.faculty : ''}${slot.room ? ', in ' + slot.room : ''}${slot.span > 1 ? ' (' + slot.span + ' periods)' : ''}`;
+
+      html += `
+        <div class="tt-cell tt-class ${isToday}${slot.span > 1 ? ' tt-merged' : ''}" style="${spanStyle} --palette: ${slot.palette};" tabindex="0" role="gridcell" aria-label="${escapeAttr(ttAriaLabel)}">
+          <div class="tt-time">${slot.span > 1 ? slot.timeRange + ' · ' + slot.span + ' periods' : slot.timeRange}</div>
+          <div class="tt-subject">${slot.code}</div>
+          ${slot.details.name && slot.details.name !== slot.code
+            ? `<div class="tt-subject-name">${slot.details.name}</div>`
+            : ''}
+
+          <div class="tt-tooltip">
+            <div class="tt-tt-name">${slot.details.name}</div>
+            ${slot.faculty ? `<div class="tt-tt-meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>${slot.faculty}</div>` : ''}
+            ${slot.room ? `<div class="tt-tt-meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>${slot.room}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+  }
+
   html += `</div>`;
+  html += renderTimetableLegend(schedule, legendMap);
   dashboard.innerHTML = html;
 
   tbl.parentElement.insertBefore(dashboard, tbl);
+}
+
+// Render a legend strip showing the legend key for every subject in the schedule.
+// Each chip uses the same palette colour as the timetable cells, so the
+// user can map a coloured block back to its name without reading the tooltip.
+function renderTimetableLegend(schedule, legendMap) {
+  const seen = new Map();
+  Object.values(schedule).forEach((daySlots) => {
+    daySlots.forEach((p) => {
+      if (!p.subjectCode) return;
+      const code = p.subjectCode.split(',')[0].trim();
+      if (code && !seen.has(code)) seen.set(code, legendMap[code] || { name: code });
+    });
+  });
+  if (seen.size === 0) return '';
+  const PALETTE_SIZE = 12;
+  let legendHtml = '<div class="tt-legend">';
+  Array.from(seen.entries()).forEach(([code, details]) => {
+    let hash = 5381;
+    for (let i = 0; i < code.length; i++) hash = ((hash << 5) + hash + code.charCodeAt(i)) | 0;
+    const palette = Math.abs(hash) % PALETTE_SIZE;
+    legendHtml += `<span class="tt-legend-chip" style="--palette: ${palette};" title="${escapeAttr(details.name)}"><span class="tt-legend-dot"></span><span class="tt-legend-code">${code}</span><span class="tt-legend-name">${escapeAttr(details.name || code)}</span></span>`;
+  });
+  legendHtml += '</div>';
+  return legendHtml;
 }
 
 function observeProfileDashboard() {
@@ -332,9 +1256,88 @@ function buildProfileDashboard(accordion) {
   }
 
   // --- B. Send Data to Parent ---
+  // Use the same robust ledger scraper that the Fees-tab rebuild now relies
+  // on. The "Current Semester" label is sourced from the BioData pane text
+  // (e.g. "Regular(III Semester- 2025)") — that is the term the student
+  // is *enrolled* in, not the term whose bill happens to be open. The amount
+  // comes from the matching fee summary if the portal has already posted the
+  // assessment for that term; otherwise the row reads "—" / pending.
+  let feeCurrentSem = '--';
+  let feeCurrentSemLabel = 'Current Semester';
+  let feeCurrentSemPayable = '--';
+  let feeCurrentSemStatus = 'pending'; // 'pending' | 'paid' | 'due'
+  let feeTotalDue = '--';
+  let feeBalanceWords = '';
+  // Read the active semester text from the BioData pane on this same page.
+  // The BioData parse ran earlier in this function and saved it into
+  // `data.Semester`. If for any reason that's empty (e.g., a manual
+  // refresh after navigation) read it directly from the DOM.
+  let activeSemRaw = '';
+  if (typeof data !== 'undefined' && data && data.Semester) {
+    activeSemRaw = data.Semester;
+  }
+  if (!activeSemRaw) {
+    try {
+      const bioPane = document.getElementById('divProfile_BioData');
+      const semCell = bioPane ? bioPane.querySelector('td[style*="color:Blue"]') : null;
+      if (semCell) activeSemRaw = (semCell.textContent || '').trim();
+    } catch (e) { /* ignore */ }
+  }
+  if (!activeSemRaw) {
+    try {
+      const id = (chrome.storage && chrome.storage.local) || null;
+      if (id && id.get) {
+        id.get(['reecapIdentity'], (data2) => {
+          if (data2 && data2.reecapIdentity && data2.reecapIdentity.Semester) {
+            activeSemRaw = data2.reecapIdentity.Semester;
+          }
+        });
+      }
+    } catch (e) { /* ignore — fall through to "--" label */ }
+  }
+  const activeLabel = extractActiveSemesterLabel(activeSemRaw);
+  if (activeLabel) feeCurrentSemLabel = activeLabel;
+
+  try {
+    const feesPane = document.getElementById('divProfile_Fees');
+    if (feesPane && !feesPane.dataset.reecapEnhanced) rebuildFeeDetailsTab();
+    const parsedFees = parseFeeLedger(feesPane);
+    if (parsedFees) {
+      feeBalanceWords = parsedFees.balanceWords || '';
+      if (parsedFees.grandTotals) {
+        const td = parseFloat((parsedFees.grandTotals.due || '0').replace(/,/g, '')) || 0;
+        feeTotalDue = isFinite(td) && !isNaN(td) ? td.toFixed(2) : '--';
+      }
+
+      // Look up the matching semester summary by the enrollment label
+      // (e.g. "III SEMESTER"). Search by exact roman prefix to tolerate the
+      // summary strings being lowercase vs. uppercase.
+      const romanKey = activeLabel ? activeLabel.split(' ')[0].toUpperCase() : null;
+      const match = parsedFees.semesterSummaries.find((s) =>
+        romanKey && (s.sem.toUpperCase() === activeLabel || s.sem.toUpperCase().startsWith(romanKey + ' '))
+      );
+      if (match) {
+        const d = parseFloat((match.due || '0').replace(/,/g, '')) || 0;
+        feeCurrentSem = d.toFixed(2);
+        feeCurrentSemPayable = match.payable;
+        feeCurrentSemStatus = d > 0 ? 'due' : 'paid';
+      } else {
+        // Enrollment semester was not found in the ledger. The portal likely
+        // hasn't posted an assessment row for this term yet.
+        feeCurrentSemStatus = 'pending';
+      }
+    }
+  } catch (e) { /* fee breakdown is best-effort — fall back to feeDue */ }
+
   window.parent.postMessage({
     type: 'REECAP_PROFILE_DATA',
-    data: { held, attended, percent, backlogsText, feeDue }
+    data: {
+      held, attended, percent, backlogsText, feeDue,
+      feeCurrentSem, feeCurrentSemLabel,
+      feeCurrentSemPayable,
+      feeCurrentSemStatus,
+      feeTotalDue, feeBalanceWords
+    }
   }, '*');
 
   // Zero all ancestor top padding/margin inside the iframe so the tab section
@@ -509,11 +1512,26 @@ function buildBioDataRedesign(accordion) {
     }
   });
 
+  // A tiny in-page cache so downstream rebuilders (Fees, Overview) can read
+  // the active semester synchronously without awaiting chrome.storage.local.
+  // The string here mirrors the raw portal-rendered text, e.g.
+  // "Regular(III Semester- 2025)".
+  try {
+    window.__reecapIdentitySemRaw = data['Semester'] || '';
+    if (window.__reecapIdentitySemRaw && !window.__reecapIdentitySemSet) {
+      window.__reecapIdentitySemSet = true;
+      document.documentElement.setAttribute('data-reecap-sem', window.__reecapIdentitySemRaw);
+    }
+  } catch (e) { /* window may be cross-origin in some scoped contexts */ }
+
   // 3. Build New Structure
   const newBio = document.createElement('div');
   newBio.className = 'reecap-biodata';
+  newBio.setAttribute('data-reecap-source', 'studentprofile.aspx#tblReport');
 
-  // Helper to build field: never drop fields even if empty/0/NO
+  // Tag the rebuilt wrapper + every section so a later scraper pass can
+  // re-render from the rebuilt DOM even if the legacy markup shifts.
+  newBio.setAttribute('data-reecap-pane', 'biodata');  // Helper to build field: never drop fields even if empty/0/NO
   const makeField = (label, value) => {
     let displayVal = value;
     if (displayVal === undefined || displayVal === null || displayVal === '') {
@@ -691,6 +1709,7 @@ function rebuildPresentSemTab() {
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
   newView.className = 'reecap-enhanced-tab';
+  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
 
   const ringRadius = 40;
   const ringCircumf = 2 * Math.PI * ringRadius;
@@ -906,6 +1925,7 @@ function rebuildPastSemTab() {
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
   newView.className = 'reecap-enhanced-tab';
+  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
 
   let html = `
     <!-- Overall Academic Summary -->
@@ -988,121 +2008,421 @@ function rebuildPastSemTab() {
   pane.appendChild(newView);
 }
 
+// ---------------------------------------------------------------------------
+// Active-semester matcher.
+//
+// `reecapIdentity.Semester` carries the literal string the portal renders
+// in the BioData header — typically `"Regular(III Semester- 2025)"` or
+// `"Regular(I Semester)"` or just `"VIII Semester"`. Translate it into the
+// roman-numeral key the fee ledger uses ("III", "IV", …).
+// ---------------------------------------------------------------------------
+function extractActiveSemesterLabel(raw) {
+  if (!raw) return null;
+  const cleaned = String(raw).replace(/^Regular\(/i, '').replace(/\)\s*$/, '').trim();
+  // Match the leading roman numeral sequence up to a space.
+  const m = cleaned.match(/^([IVXLCDM]+)\s+Semester/i);
+  if (m) return m[1].toUpperCase() + ' SEMESTER';
+  // Fallback: some labels are like "Summer Semester" or "VIII SEMESTER"
+  // already — pass them through uppercased.
+  return cleaned.toUpperCase();
+}
+
+// ---------------------------------------------------------------------------
+// Robust fee ledger scraper.
+//
+// The portal renders `#divProfile_Fees` as a `<table>` with three row shapes:
+//
+//   • Header row      — first cell text is `Sl.No`, ≥9 columns.
+//   • Per-fee row     — first cell text is a numeric serial, 9 columns:
+//                          [ Sl.No | Title | Payable | Paid | Rec.No |
+//                            Rec.Date | Due | ExcessPaid | Refund ].
+//   • Semester totals — single label cell with `colspan="2"`, then 7
+//                          cells:  [ colspan(2): "I SEMESTER TOTALS" |
+//                                     Payable | Paid | '' | '' |
+//                                     Due | ExcessPaid | Refund ].
+//                          So 8 physical `<td>`s, but the visible Payable is
+//                          at *visual* column 2 (physical column 1), Paid at
+//                          visual 3 (physical 2), Due at visual 6 (physical
+//                          5) because of the `colspan=2` on the label.
+//   • Grand totals    — same shape as semester totals, label = "GRAND TOTALS".
+//   • Balance row     — `[ colspan(1): "Balance" | colspan(7): words ]`.
+//
+// My previous parser compared cells by physical index, which collapsed every
+// totals row's `Due` into `cells[6]` and missed it entirely (it landed on
+// physical 5). `parseFeeLedger` instead walks every <tr>, classifies it by
+// shape, and uses colspan-aware lookups so positional columns are stable.
+// ---------------------------------------------------------------------------
+
+function parseFeeLedger(pane) {
+  if (!pane) return null;
+  const items = [];
+  const semesterSummaries = [];
+  let grandTotals = null;
+  let balanceWords = '';
+  let currentSemester = null;
+
+  // Returns { physical: array of trimmed cell text, byColspan(idx): visual idx
+  // — both 0-based — text }.
+  function inspect(row) {
+    const cells = Array.from(row.querySelectorAll('td'));
+    const physical = cells.map(c => c.textContent.trim());
+    const visual = [];
+    for (const td of cells) {
+      const span = td.colSpan || 1;
+      const text = td.textContent.trim();
+      for (let i = 0; i < span; i++) visual.push(text);
+    }
+    return { physical, byColspan: (i) => visual[i] || '' };
+  }
+
+  pane.querySelectorAll('tr').forEach(row => {
+    const { physical, byColspan } = inspect(row);
+    if (!physical.length) return;
+    const label = physical[0];
+
+    // Header row.
+    if (label === 'Sl.No' || label === 'Sl.No.') return;
+
+    // Semester header row — single <td colspan="8"> wrapping the label.
+    if (physical.length === 1 && /semester/i.test(label) && !/summary/i.test(label) && !/total/i.test(label)) {
+      currentSemester = label;
+      return;
+    }
+
+    // Per-fee row.
+    if (physical.length >= 9 && !isNaN(parseInt(label, 10)) && currentSemester) {
+      items.push({
+        sem: currentSemester,
+        sl: physical[0],
+        title: physical[1] || 'Fee',
+        payable: physical[2] || '0.00',
+        paid:    physical[3] || '0.00',
+        receipt: physical[4] || '-',
+        date:    physical[5] || '-',
+        due:     physical[6] || '0.00',
+        excess:  physical[7] || '-',
+        refund:  physical[8] || '-',
+      });
+      return;
+    }
+
+    // Semester TOTALS row (colspan=2 → 8 physical cells).
+    if (physical.length === 8 && /SEMESTER\s+TOTALS/i.test(label)) {
+      semesterSummaries.push({
+        sem: label.replace(/\s+TOTALS\s*$/i, '').trim(),
+        payable: byColspan(2),
+        paid:    byColspan(3),
+        due:     byColspan(6),
+        excess:  byColspan(7),
+        refund:  byColspan(8),
+      });
+      return;
+    }
+
+    // GRAND TOTALS row — same colspan=2 layout but absolute totals.
+    if (physical.length === 8 && /GRAND\s+TOTALS/i.test(label)) {
+      grandTotals = {
+        payable: byColspan(2),
+        paid:    byColspan(3),
+        due:     byColspan(6),
+        excess:  byColspan(7),
+        refund:  byColspan(8),
+      };
+      return;
+    }
+
+    // SUMMER SEMESTER TOTALS row — also colspan=2 — captured as a semester
+    // so the renderer can show it without breaking the total math.
+    if (physical.length === 8 && /SUMMER\s+SEMESTER\s+TOTALS/i.test(label)) {
+      semesterSummaries.push({
+        sem: 'Summer Semester',
+        payable: byColspan(2),
+        paid:    byColspan(3),
+        due:     byColspan(6),
+        excess:  byColspan(7),
+        refund:  byColspan(8),
+      });
+      return;
+    }
+
+    // Balance row: [Balance | (currency-in-words) | … spanning 7 cols].
+    if (label === 'Balance' || label === 'Due Balance') {
+      balanceWords = byColspan(7) || physical[physical.length - 1] || '';
+    }
+  });
+
+  // "Current semester" = the first semester (top-down) with a non-zero due.
+  // The portal reveals the next unpaid term at the top of that block; we
+  // surface it so the Overview card can show how much the bill is right now.
+  let currentSem = null;
+  let currentSemDue = null;
+  let currentSemPayable = null;
+  let earliestUnpaid = null;
+  for (const s of semesterSummaries) {
+    const d = parseFloat((s.due || '0').replace(/,/g, '')) || 0;
+    if (d > 0 && !earliestUnpaid) {
+      earliestUnpaid = s;
+      currentSem = s.sem;
+      currentSemDue = d;
+      currentSemPayable = s.payable;
+      break;
+    }
+  }
+
+  // If every semester has been paid, fall back to the highest-numbered
+  // semester as the "active" label so the card never reads "--".
+  if (!currentSem && semesterSummaries.length) {
+    const last = semesterSummaries[semesterSummaries.length - 1];
+    currentSem = last.sem;
+    currentSemDue = parseFloat((last.due || '0').replace(/,/g, '')) || 0;
+    currentSemPayable = last.payable;
+  }
+
+  return {
+    items,
+    semesterSummaries,
+    grandTotals,
+    balanceWords,
+    currentSem,
+    currentSemDue,
+    currentSemPayable,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Ground-up render of the Fees tab.
+//
+// Layout:
+//
+//   1. Hero "Financial Health" card — current-semester bill with progress
+//      bar (paid fraction of payable) and a Pay Online CTA scoped to the
+//      active term. If every semester is paid in full, this slot celebrates
+//      the cleared ledger with a calm success state.
+//
+//   2. Stats strip — lifetime Total Payable / Paid / Outstanding.
+//      Compact, JetBrains Mono numeric, one card per stat.
+//
+//   3. Per-semester stack — each semester renders as a tiered block with
+//      its own pay meter and "Cleared" / "Outstanding" status. The active
+//      enrollment semester is highlighted.
+//
+//   4. Per-row ledger — hidden by default; user expands via "<details>"
+//      to inspect receipts, dates, and amounts.
+//
+// Colors and spacing flow from the design system. No primary CTAs are
+// hidden behind chevrons or hover overlays — the Pay Online button is
+// always reachable from the hero block.
+// ---------------------------------------------------------------------------
 function rebuildFeeDetailsTab() {
   const pane = document.getElementById('divProfile_Fees');
   if (!pane || pane.dataset.reecapEnhanced === 'true') return;
 
-  const allRows = pane.querySelectorAll('tr');
-  let totalPayable = '--', totalPaid = '--', totalDue = '--', balanceWords = '';
-  const items = [];
-  let currentGroup = 'Main Semesters';
+  const parsed = parseFeeLedger(pane) ||
+    { items: [], semesterSummaries: [], grandTotals: null, balanceWords: '', currentSem: null, currentSemDue: null, currentSemPayable: null };
 
-  allRows.forEach(row => {
-    const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-    if (!cells.length) return;
-    if (cells[0] === 'GRAND TOTALS') {
-      if (cells[1]) totalPayable = cells[1];
-      if (cells[2]) totalPaid = cells[2];
-      if (cells[5]) totalDue = cells[5];
-    } else if (cells[0] === 'Balance' || cells[0] === 'Due Balance') {
-      balanceWords = cells[1] || '';
-    } else if (cells.length === 1 || (cells[0] && cells[1] === undefined) || row.querySelector('td')?.colSpan >= 7) {
-      if (!cells[0].includes('TOTALS') && cells[0].includes('Semester')) {
-        currentGroup = cells[0];
-      }
-    } else if (cells.length >= 7 && !isNaN(parseInt(cells[0], 10))) {
-      items.push({
-        group: currentGroup,
-        title: cells[1] || 'Fee',
-        payable: cells[2] || '0.00',
-        paid: cells[3] || '0.00',
-        receipt: cells[4] || '-',
-        date: cells[5] || '-',
-        due: cells[6] || '0.00'
-      });
-    }
-  });
-
-  if (!items.length && totalPayable === '--') return;
+  if (!parsed.items.length && !parsed.grandTotals) return;
 
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
   newView.className = 'reecap-enhanced-tab';
+  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
 
-  const hasDue = totalDue !== '--' && totalDue !== '0.00' && totalDue !== '0' && totalDue !== '0.0';
-  let html = `
-    <!-- Financial Overview Banner -->
-    <div class="overview-section-metrics" style="margin-bottom: 24px;">
-      <div class="stat-card">
-        <div class="stat-top"><div class="stat-label">Total Payable</div></div>
-        <div class="ring-value" style="color: var(--text-primary); font-size: 24px;">₹${totalPayable}</div>
-        <div class="ring-caption">All Assessed Charges</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top"><div class="stat-label">Total Paid</div></div>
-        <div class="ring-value" style="color: var(--success); font-size: 24px;">₹${totalPaid}</div>
-        <div class="ring-caption">Verified Receipts</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top"><div class="stat-label">Current Balance Due</div></div>
-        <div class="ring-value" style="color: ${hasDue ? 'var(--error)' : 'var(--success)'}; font-size: 26px;">₹${totalDue}</div>
-        <div class="ring-caption">${hasDue ? 'Payment Required' : 'All accounts settled'}</div>
-      </div>
-    </div>
+  // ---- active-semester detection (mirrors send-to-parent logic) -----------
+  const identityRaw =
+    (typeof window !== 'undefined' && window.__reecapIdentitySemRaw) ||
+    (parsed.balanceWords ? '' : '');
+  const activeLabel = extractActiveSemesterLabel(identityRaw);
+  const activeSem = (parsed.semesterSummaries || []).find((s) => s.sem === activeLabel)
+    || (parsed.semesterSummaries || []).find((s) => activeLabel && s.sem.startsWith(activeLabel.split(' ')[0]))
+    || null;
+  const identitySemMissing = !activeSem;
 
-    <!-- Fee Ledger View -->
-    <div class="overview-card">
-      <div class="overview-card-header">
-        <span class="overview-card-title">Detailed Fee Ledger</span>
-        <span class="overview-card-subtitle">${balanceWords || 'Complete Transaction History'}</span>
+  // ---- numbers normalised to numbers (or 0) -----------------------------
+  const num = (s, fb = 0) => {
+    if (s == null || s === '' || s === '--') return fb;
+    const v = parseFloat(String(s).replace(/,/g, ''));
+    return isFinite(v) ? v : fb;
+  };
+
+  // ---- HERO: active-semester bill + Pay Online --------------------------
+  function renderHero() {
+    const payable = activeSem ? num(activeSem.payable, 0) : 0;
+    const paid    = activeSem ? num(activeSem.paid, 0)    : 0;
+    const due     = activeSem ? num(activeSem.due, 0)     : 0;
+    const pct     = payable > 0 ? Math.min(100, Math.round((paid / payable) * 100)) : 100;
+    const isCleared = activeSem && due <= 0 && payable > 0;
+    const isPending = !activeSem;
+
+    let stateLabel = 'Active Term — All Settled';
+    let stateSubLabel = 'Receipts verified against the ledger.';
+    let heroClass = 'is-success';
+    let stateTag = 'Cleared';
+    if (isPending) {
+      stateLabel = 'No Assessment Posted';
+      stateSubLabel = 'The portal hasn’t logged charges for ' + (activeLabel || 'this term') + ' yet.';
+      heroClass = 'is-pending';
+      stateTag = 'Pending';
+    } else if (due > 0) {
+      stateLabel = `Outstanding · ${activeSem.sem}`;
+      stateSubLabel = `Payable ₹${payable.toLocaleString('en-IN')}` + (paid > 0 ? `, paid ₹${paid.toLocaleString('en-IN')}` : '') + `.`;
+      heroClass = 'is-warning';
+      stateTag = 'Payment Due';
+    }
+
+    const ctaHref = 'Feepayments/studentfeereceipt.aspx?scrid=23';
+    const ctaLabel = isPending ? 'Open Portal' : (due > 0 ? 'Pay ₹' + due.toLocaleString('en-IN') + ' Online' : 'View Receipts');
+
+    return `
+      <div class="fee-hero ${heroClass}">
+        <div class="fee-hero-left">
+          <div class="fee-hero-eyebrow">Active Semester</div>
+          <div class="fee-hero-title">${activeLabel || 'Current Term'}</div>
+          <div class="fee-hero-state">
+            <span class="fee-state-pill ${heroClass}">${stateTag}</span>
+            <span class="fee-hero-subline">${stateSubLabel}</span>
+          </div>
+        </div>
+
+        <div class="fee-hero-right">
+          <div class="fee-hero-meter">
+            <div class="fee-hero-meter-bar"><div class="fee-hero-meter-fill" style="width:${pct}%"></div></div>
+            <div class="fee-hero-meter-labels">
+              <span>${pct}% paid</span>
+              <span>${isPending || !activeSem ? '—' : '₹' + due.toLocaleString('en-IN') + ' due'}</span>
+            </div>
+          </div>
+          <a href="${ctaHref}" target="capIframe" class="fee-hero-cta">${ctaLabel}</a>
+        </div>
       </div>
-      <div class="reecap-table-wrap">
-        <table class="reecap-data-table">
-          <thead>
-            <tr>
-              <th>Fee Category</th>
-              <th>Receipt Info</th>
-              <th style="text-align: right;">Billed</th>
-              <th style="text-align: right;">Paid</th>
-              <th style="text-align: right;">Balance</th>
-              <th style="text-align: center;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-  `;
-
-  items.forEach(i => {
-    const iDue = parseFloat(i.due.replace(/,/g, '')) || 0;
-    const isPaid = iDue <= 0 && parseFloat(i.paid.replace(/,/g, '')) > 0;
-    const stClass = isPaid ? 'status-pill-pass' : (iDue > 0 ? 'status-pill-fail' : 'status-pill-neutral');
-    const stLabel = isPaid ? 'PAID' : (iDue > 0 ? 'DUE' : 'SETTLED');
-
-    html += `
-      <tr>
-        <div>
-          <div style="font-weight: 600; color: var(--text-primary);">${i.title}</div>
-          <div style="font-size: 11px; color: var(--text-faint);">${i.group}</div>
-        </td>
-        <div>
-          <div class="mono" style="font-size: 12px; color: var(--text-secondary);">${i.receipt.replace(/:/g, ', ')}</div>
-          <div class="mono" style="font-size: 10px; color: var(--text-faint);">${i.date.replace(/:/g, ', ')}</div>
-        </td>
-        <td class="mono" style="text-align: right; font-weight: 500;">₹${i.payable}</td>
-        <td class="mono" style="text-align: right; color: var(--success); font-weight: 600;">₹${i.paid}</td>
-        <td class="mono" style="text-align: right; color: ${iDue > 0 ? 'var(--error)' : 'var(--text-faint)'}; font-weight: 700;">₹${i.due}</td>
-        <td style="text-align: center;"><span class="reecap-status-pill ${stClass}">${stLabel}</span></td>
-      </tr>
     `;
-  });
+  }
 
-  html += `
-          </tbody>
-        </table>
+  // ---- Stats strip ----------------------------------------------------
+  function renderStats() {
+    const gp = parsed.grandTotals;
+    const payable = gp ? num(gp.payable, 0) : 0;
+    const paid    = gp ? num(gp.paid, 0)    : 0;
+    const due     = gp ? num(gp.due, 0)     : 0;
+    const pct = payable > 0 ? Math.min(100, Math.round((paid / payable) * 100)) : 0;
+    const dueClass = due > 0 ? 'is-critical' : 'is-success';
+    const items = [
+      { label: 'Total Payable',  value: '₹' + payable.toLocaleString('en-IN'), sub: 'All Assessed Charges',     tone: 'neutral' },
+      { label: 'Total Paid',     value: '₹' + paid.toLocaleString('en-IN'),    sub: pct + '% of payable',        tone: 'success' },
+      { label: 'Outstanding',    value: '₹' + due.toLocaleString('en-IN'),     sub: due > 0 ? 'Payment Pending' : 'All accounts settled', tone: dueClass.replace('is-','') },
+    ];
+    return `
+      <div class="fee-stats">
+        ${items.map(it => `
+          <div class="fee-stat-card ${it.tone === 'success' ? 'is-success' : it.tone === 'critical' ? 'is-critical' : ''}">
+            <div class="fee-stat-label">${it.label}</div>
+            <div class="fee-stat-value">${it.value}</div>
+            <div class="fee-stat-sub">${it.sub}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // ---- Per-semester blocks -------------------------------------------
+  function renderSemesters() {
+    const summs = parsed.semesterSummaries || [];
+    if (!summs.length) return '<div class="fee-empty">No fee semesters found in the ledger.</div>';
+
+    return `
+      <div class="fee-semesters">
+        ${summs.map((s) => {
+          const pay  = num(s.payable, 0);
+          const pai  = num(s.paid, 0);
+          const owe  = num(s.due, 0);
+          const pct  = pay > 0 ? Math.min(100, Math.round((pai / pay) * 100)) : 0;
+          const cleared = pay > 0 && owe <= 0;
+          const tone = cleared ? 'is-success' : (owe > 0 ? 'is-warning' : 'is-muted');
+          const statusLabel = cleared ? 'Cleared' : (owe > 0 ? 'Outstanding' : 'No Charges');
+          const isActive = activeLabel && s.sem === activeLabel;
+          const itemsInSem = (parsed.items || []).filter((i) => i.sem === s.sem);
+
+          return `
+            <div class="fee-semester ${tone}${isActive ? ' is-active' : ''}">
+              <div class="fee-semester-head">
+                <div class="fee-semester-title">
+                  <span class="fee-semester-name">${s.sem}</span>
+                  ${isActive ? '<span class="fee-semester-tag">Active</span>' : ''}
+                  <span class="fee-semester-status ${tone}">${statusLabel}</span>
+                </div>
+                <div class="fee-semester-amount">₹${owe <= 0 && pay > 0 ? 'Cleared' : (owe > 0 ? owe.toLocaleString('en-IN') : '0')}</div>
+              </div>
+
+              <div class="fee-sem-meter">
+                <div class="fee-sem-meter-bar"><div class="fee-sem-meter-fill ${tone}" style="width:${pct}%"></div></div>
+                <div class="fee-sem-meter-labels">
+                  <span>Billed ₹${pay.toLocaleString('en-IN')}</span>
+                  <span>Paid ₹${pai.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              ${itemsInSem.length > 0 ? `
+                <details class="fee-sem-details">
+                  <summary>Itemised Ledger (${itemsInSem.length})</summary>
+                  <table class="fee-sem-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Receipt</th>
+                        <th style="text-align:right;">Billed</th>
+                        <th style="text-align:right;">Paid</th>
+                        <th style="text-align:right;">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${itemsInSem.map((it) => {
+                        const itOwe = num(it.due, 0);
+                        const itPay = num(it.paid, 0);
+                        const itClass = itOwe > 0 ? 'is-warning' : 'is-muted';
+                        return `
+                          <tr>
+                            <td><div class="fee-row-name">${it.title}</div></td>
+                            <td class="mono" style="font-size:11.5px;line-height:1.4;">
+                              <div style="color: var(--text-secondary);">${(it.receipt || '').replace(/:/g, ', ')}</div>
+                              <div style="color: var(--text-faint);">${(it.date || '').replace(/:/g, ', ')}</div>
+                            </td>
+                            <td class="mono" style="text-align:right;">₹${num(it.payable, 0).toLocaleString('en-IN')}</td>
+                            <td class="mono" style="text-align:right; color: var(--success);">₹${itPay.toLocaleString('en-IN')}</td>
+                            <td class="mono fee-row-out ${itClass}" style="text-align:right;">₹${itOwe.toLocaleString('en-IN')}</td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </details>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // ---- Per-row ledger (kept for completeness; details-based) ------------
+  // The per-row ledger is also embedded inside each semester block above.
+  // We don't show a separate whole-table here — opens were large and redundant.
+  const hero = renderHero();
+  const stats = renderStats();
+  const semesters = renderSemesters();
+
+  newView.innerHTML = `
+    <div class="fee-redesign">
+      ${hero}
+      ${stats}
+      ${parsed.balanceWords ? `<div class="fee-balance-words"><span class="fee-balance-words-label">Balance (in words)</span> <span class="fee-balance-words-value">${parsed.balanceWords}</span></div>` : ''}
+      ${semesters}
+      <div class="fee-actions">
+        <a href="Feepayments/studentreceipts.aspx?scrid=28" target="capIframe" class="fee-action fee-action-secondary">View All Receipts</a>
+        <a href="feepayments/optransactions.aspx" target="capIframe" class="fee-action fee-action-secondary">Transaction History</a>
+        <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="fee-action fee-action-primary">Pay Online</a>
       </div>
     </div>
   `;
 
-  newView.innerHTML = html;
   hideLegacyChildren(pane);
   pane.appendChild(newView);
 }
@@ -1118,6 +2438,7 @@ function rebuildBacklogsTab() {
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
   newView.className = 'reecap-enhanced-tab';
+  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
 
   if (hasNoBacklogs || !rows.length) {
     newView.innerHTML = `
@@ -1171,6 +2492,7 @@ function rebuildOutingsTab() {
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
   newView.className = 'reecap-enhanced-tab';
+  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
 
   if (isEmpty || !rows.length) {
     newView.innerHTML = `
@@ -1243,6 +2565,7 @@ function rebuildCounselingTab() {
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
   newView.className = 'reecap-enhanced-tab';
+  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
 
   let html = `
     <!-- Faculty Counselor Bio Box -->
@@ -1255,8 +2578,8 @@ function rebuildCounselingTab() {
           ${counselorInfo.charAt(0) || 'C'}
         </div>
         <div style="flex: 1;">
-          <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary);">${counselorInfo.split(',')[1] || counselorInfo}</h3>
-          <div class="mono" style="font-size: 12px; color: var(--text-secondary);">Employee Code: ${counselorInfo.split(',')[0] || 'Faculty'}</div>
+          <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary);">${(counselorInfo.split(/\r?\n|,/)[1] || counselorInfo).trim()}</h3>
+          <div class="mono" style="font-size: 12px; color: var(--text-secondary);">Employee Code: ${(counselorInfo.split(/\r?\n|,/)[0] || 'Faculty').trim()}</div>
         </div>
       </div>
     </div>
@@ -1310,6 +2633,7 @@ function rebuildDisciplinaryTab() {
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
   newView.className = 'reecap-enhanced-tab';
+  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
 
   if (hasNoComplaints || !rows.length) {
     newView.innerHTML = `
@@ -1468,9 +2792,26 @@ function buildSidebar() {
       items.forEach(item => {
         const a = item.link;
         a.className = 'reecap-sidebar-link';
-        if (window.location.href.includes(a.getAttribute('href') || '')) {
-           a.classList.add('active');
+
+        // Stamp data-route-key at link creation so the sync side becomes a
+        // single dict lookup. We resolve against window.location for relative
+        // URLs (the portal mixes absolute and relative hrefs).
+        const routeKey = (window.__reecap_theme && window.__reecap_theme.routeKeyForHref)
+          ? window.__reecap_theme.routeKeyForHref(a.getAttribute('href') || '')
+          : null;
+        if (routeKey) a.setAttribute('data-route-key', routeKey);
+
+        // Seed the initial active state from the resolved route key. We do not
+        // call syncSidebarActiveState at build time because the iframe has not
+        // navigated yet — instead, we set the active class iff the *shell*
+        // pathname itself matches the link's route key.
+        if (routeKey) {
+          const shellKey = (window.__reecap_theme && window.__reecap_theme.matchActivePage)
+            ? window.__reecap_theme.matchActivePage(window.location.pathname)
+            : null;
+          a.classList.toggle('active', shellKey === routeKey);
         }
+
         a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>`;
         a.addEventListener('click', () => {
           if (typeof showIframe === 'function') showIframe();
@@ -1628,6 +2969,11 @@ function buildOverviewPage(container) {
   stripSlot.id = 'reecap-strip-slot';
   stripSlot.className = 'reecap-strip-slot';
   container.appendChild(stripSlot);
+  // Phase 3 (2026-07-26): the strip slot is now ALWAYS populated by
+  // initStatusStrip with a real DOM node carrying data-reecap-state. The
+  // shimmer skeleton has been removed — it was getting stuck visible
+  // because the legacy .reecap-status-strip CSS hides the real strip until
+  // data-reecap-strip-active is set, leaving the skeleton in front of nothing.
   initStatusStrip(stripSlot);
 
   const grid = document.createElement('div');
@@ -1650,8 +2996,75 @@ function buildOverviewPage(container) {
       renderDashboardCards(metricsSlot, data ? data.reecapProfileData : null);
       renderScheduleCard(contentRow, data ? data.reecapTimetable : null);
       renderQuickLinksCard(contentRow);
+      // The categorized sidebar groups are the single source of truth for
+      // navigation. Rendering a second quick-links strip there created
+      // duplicate entries, so we no longer inject reecap-sidebar-quicklinks.
+
+      // When the hidden cache warmer finishes, replace only the schedule card
+      // in place — no page refresh and no user navigation required.
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local' || !changes.reecapTimetable || !contentRow.isConnected) return;
+        const existingSchedule = contentRow.querySelector('.overview-schedule-card');
+        renderScheduleCard(contentRow, changes.reecapTimetable.newValue, existingSchedule);
+      });
+
+      // No schedule yet? Load the existing portal page silently in a one-shot
+      // helper iframe. Its all-frames content script runs observeTimetable(),
+      // writes the usual chrome.storage.local cache, then this helper removes
+      // itself. The user never has to open CHOOSE TIMETABLE manually.
+      if (!data || !data.reecapTimetable) prefetchTimetableData();
     });
   } catch (e) {}
+}
+
+function prefetchTimetableData() {
+  if (window !== window.top) return;
+  if (document.getElementById('reecap-timetable-prefetch')) return;
+
+  try {
+    chrome.storage.local.get(['reecapTimetable'], (data) => {
+      if (chrome.runtime && chrome.runtime.lastError) return;
+      if (data && data.reecapTimetable) return;
+
+      const prefetch = document.createElement('iframe');
+      prefetch.id = 'reecap-timetable-prefetch';
+      prefetch.className = 'reecap-timetable-prefetch';
+      prefetch.src = 'Academics/studenttimetableoption.aspx';
+      prefetch.title = '';
+      prefetch.tabIndex = -1;
+      prefetch.setAttribute('aria-hidden', 'true');
+      prefetch.setAttribute('inert', '');
+      document.body.appendChild(prefetch);
+
+      let cleaned = false;
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        try { prefetch.remove(); } catch (e) {}
+        try { chrome.storage.onChanged.removeListener(onStorageChange); } catch (e) {}
+      };
+      const onStorageChange = (changes, areaName) => {
+        if (areaName === 'local' && changes.reecapTimetable) cleanup();
+      };
+
+      chrome.storage.onChanged.addListener(onStorageChange);
+      // Hard cap: the helper never stays resident if the legacy page refuses
+      // to render its table or the session is no longer valid.
+      setTimeout(cleanup, 20000);
+    });
+  } catch (e) {
+    // A reload can invalidate the extension context between overview render
+    // and storage lookup; the direct status-strip CTA remains available.
+  }
+}
+
+function renderSidebarQuickLinks() {
+  // Deprecated (Phase 4, 2026-07-26). The categorized sidebar groups already
+  // cover Attendance, Timetable, Marks, Fee, Profile, and Backlogs, so
+  // rendering a second list doubled every entry. The footer slot is removed.
+  if (document.querySelector('.reecap-sidebar-quicklinks')) {
+    document.querySelectorAll('.reecap-sidebar-quicklinks').forEach((el) => el.remove());
+  }
 }
 
 function updateOverviewCards(profileData) {
@@ -1671,6 +3084,12 @@ function renderDashboardCards(slot, profileData) {
   let attended = 0, held = 0;
   let backlogsText = "Syncing...";
   let feeDue = "--";
+  let feeCurrentSem = "--";
+  let feeCurrentSemLabel = "Current Semester";
+  let feeCurrentSemStatus = "pending";
+  let feeCurrentSemPayable = null;
+  let feeBalanceWords = "";
+  let feeTotalDue = "--";
   let syncedCaption = "Syncing from background Profile...";
 
   if (profileData) {
@@ -1685,7 +3104,13 @@ function renderDashboardCards(slot, profileData) {
       ringDisplay = "0%";
     }
     backlogsText = profileData.backlogsText !== undefined ? `${profileData.backlogsText}` : "0";
-    feeDue = profileData.feeDue !== undefined ? `${profileData.feeDue}` : "0.00";
+    feeDue          = profileData.feeDue        !== undefined ? `${profileData.feeDue}` : "0.00";
+    feeCurrentSem        = profileData.feeCurrentSem !== undefined && profileData.feeCurrentSem !== null ? `${profileData.feeCurrentSem}` : "--";
+    feeCurrentSemLabel   = profileData.feeCurrentSemLabel || "Current Semester";
+    feeCurrentSemStatus  = profileData.feeCurrentSemStatus || 'pending';
+    feeCurrentSemPayable = profileData.feeCurrentSemPayable !== undefined && profileData.feeCurrentSemPayable !== null ? `${profileData.feeCurrentSemPayable}` : null;
+    feeBalanceWords      = profileData.feeBalanceWords || '';
+    feeTotalDue          = profileData.feeTotalDue   !== undefined && profileData.feeTotalDue   !== null ? `${profileData.feeTotalDue}` : "--";
     if (profileData.lastUpdated) {
       const minsAgo = Math.round((Date.now() - profileData.lastUpdated) / 60000);
       syncedCaption = minsAgo < 2 ? "Synced just now" : `Synced ${minsAgo < 60 ? minsAgo + 'm' : Math.round(minsAgo/60) + 'h'} ago`;
@@ -1693,6 +3118,34 @@ function renderDashboardCards(slot, profileData) {
       syncedCaption = "Synced from Profile";
     }
   }
+
+  // Color logic + caption text for the two fee values.
+  // - Current semester bill: amber if due, green if paid, mute + "Assessment
+  //   pending" caption if the portal hasn't yet posted the row.
+  // - Total outstanding: red if anything owed, green otherwise.
+  // - The optional balance-words caption (e.g. "Three Lakh Ninety Three …")
+  //   sits under the Total row so the user can spot-check the portal.
+  const haveSemNumber   = feeCurrentSem !== "--" && feeCurrentSem !== "0.00" && parseFloat(feeCurrentSem) > 0;
+  const haveTotalNumber = feeTotalDue   !== "--" && feeTotalDue   !== "0.00" && parseFloat(feeTotalDue)   > 0;
+
+  let semClass = 'is-muted';
+  let semDisplay = '—';
+  let semCaption = 'Assessment pending';
+  if (feeCurrentSemStatus === 'due') {
+    semClass = 'is-warning';
+    semDisplay = '₹' + feeCurrentSem;
+    semCaption = 'Amount outstanding this term';
+  } else if (feeCurrentSemStatus === 'paid') {
+    semClass = 'is-success';
+    semDisplay = '₹' + (feeCurrentSemPayable || feeCurrentSem || '0.00');
+    semCaption = 'Cleared in full' + (feeBalanceWords ? ' · ' + feeBalanceWords : '');
+  }
+  // Fall through: 'pending' → muted em-dash + pending caption.
+
+  const totalDisplay  = (haveTotalNumber ? '₹' + feeTotalDue : '—');
+  const totalCaption  = haveTotalNumber
+    ? 'Across all assessed terms'
+    : 'All accounts settled';
 
   slot.innerHTML = `
     <div class="ring-card">
@@ -1722,14 +3175,26 @@ function renderDashboardCards(slot, profileData) {
       <div class="ring-caption">${syncedCaption}</div>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card fee-balance-card">
       <div class="stat-top">
         <div class="stat-label">Fee Balance</div>
       </div>
-      <div class="ring-value" style="color: ${profileData && feeDue !== '0.00' && feeDue !== '0' && feeDue !== '0.0' && feeDue !== '--' ? 'var(--error)' : 'var(--success)'}; font-size: 24px;">
-        ${feeDue !== '--' ? '₹' + feeDue : feeDue}
+
+      <div class="fee-row">
+        <span class="fee-row-label">${feeCurrentSemLabel}</span>
+        <span class="fee-row-amount ${semClass}">${semDisplay}</span>
       </div>
-      <a href="../Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="masthead-btn stat-cta" style="text-align: center; display: block; padding: 10px; width: 100%;">Pay Online</a>
+      <div class="fee-row-caption">${semCaption}</div>
+
+      <div class="fee-divider"></div>
+
+      <div class="fee-row">
+        <span class="fee-row-label">Total Outstanding</span>
+        <span class="fee-row-amount ${haveTotalNumber ? 'is-critical' : 'is-success'}">${totalDisplay}</span>
+      </div>
+      <div class="fee-row-caption">${totalCaption}</div>
+
+      <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="masthead-btn stat-cta" style="text-align: center; display: block; padding: 10px; width: 100%; margin-top: 4px;">Pay Online</a>
     </div>
   `;
 
@@ -1741,9 +3206,17 @@ function renderDashboardCards(slot, profileData) {
   }
 }
 
-function renderScheduleCard(container, timetableData) {
+function renderScheduleCard(container, timetableData, previousCard = null) {
   const card = document.createElement('div');
   card.className = 'overview-card overview-schedule-card';
+
+  // Cache warmers update chrome.storage.local asynchronously. Replace the
+  // existing empty card in place rather than append a duplicate schedule.
+  if (previousCard && previousCard.parentNode === container) {
+    previousCard.replaceWith(card);
+  } else {
+    container.appendChild(card);
+  }
 
   const now = new Date();
   const jsDayToName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -1752,9 +3225,8 @@ function renderScheduleCard(container, timetableData) {
   let html = `<div class="overview-card-header"><span class="overview-card-title">Today's Schedule</span><span class="overview-card-subtitle">${todayName}, ${now.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span></div>`;
 
   if (!timetableData || !timetableData.schedule) {
-    html += `<div class="schedule-empty">Visit <b>CHOOSE TIMETABLE</b> page once to sync your schedule.</div>`;
+    html += `<div class="schedule-empty">Preparing your schedule in the background…</div>`;
     card.innerHTML = html;
-    container.appendChild(card);
     return;
   }
 
@@ -1804,7 +3276,6 @@ function renderScheduleCard(container, timetableData) {
   }
 
   card.innerHTML = html;
-  container.appendChild(card);
 }
 
 function renderQuickLinksCard(container) {
@@ -1845,18 +3316,20 @@ function renderQuickLinksCard(container) {
 // --- Pass 3: Status Strip Engine ---
 
 function initStatusStrip(targetSlot) {
-  // Inject directly into targetSlot, or fall back to container
   const stripContainer = targetSlot || document.getElementById('reecap-strip-container');
   if (!stripContainer) return;
 
   const strip = document.createElement('div');
   strip.className = 'reecap-status-strip';
+  strip.setAttribute('data-reecap-state', 'empty');
+  strip.setAttribute('role', 'status');
+  strip.setAttribute('aria-live', 'polite');
   strip.innerHTML = `
     <div class="status-content">
-      <div class="status-title">Loading...</div>
-      <div class="status-meta">...</div>
+      <div class="status-title"></div>
+      <div class="status-meta"></div>
     </div>
-    <div class="status-identity" style="display: none;">
+    <div class="status-identity" hidden>
       <div class="id-roll"></div>
       <div class="id-course"></div>
     </div>
@@ -1865,15 +3338,17 @@ function initStatusStrip(targetSlot) {
       <div class="clock-date">--</div>
     </div>
   `;
-  
-  if (!document.querySelector('.reecap-status-strip')) {
-    stripContainer.appendChild(strip);
-  }
+
+  // Only one strip belongs in this slot. This clears any strip left behind
+  // by a hot extension reload, avoiding duplicated clocks/listeners.
+  const existing = stripContainer.querySelector('.reecap-status-strip');
+  if (existing) existing.remove();
+  stripContainer.appendChild(strip);
 
   updateStatusStrip(strip);
   setInterval(() => updateStatusStrip(strip), 60000);
 
-  // Listen for instant updates from the iframe
+  // Listen for instant updates from the iframe (all frames share local storage).
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local' && (changes.reecapTimetable || changes.reecapIdentity)) {
       updateStatusStrip(strip);
@@ -1914,7 +3389,6 @@ function updateStatusStrip(strip) {
       if (chrome.runtime && chrome.runtime.lastError) return;
       if (!data) return;
     
-    strip.setAttribute('data-reecap-strip-active', 'true');
     const titleEl = strip.querySelector('.status-title');
     const metaEl = strip.querySelector('.status-meta');
     const idEl = strip.querySelector('.status-identity');
@@ -1928,23 +3402,37 @@ function updateStatusStrip(strip) {
     if (clockTime) clockTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     if (clockDate) clockDate.textContent = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
     
-    // Update Identity if available
+    // Update Identity if available.
     if (data.reecapIdentity && idEl) {
-       idEl.style.display = 'flex';
+       idEl.hidden = false;
        if (idRoll) idRoll.textContent = data.reecapIdentity.RollNo || '';
        if (idCourse) {
           const course = data.reecapIdentity.Course || '';
           const sem = data.reecapIdentity.Semester ? data.reecapIdentity.Semester.replace('Regular(', '').replace(')', '') : '';
           idCourse.textContent = `${course} • ${sem}`;
        }
+    } else if (idEl) {
+       idEl.hidden = true;
     }
-    
+
     if (!data.reecapTimetable) {
-       strip.style.setProperty('--accent', 'var(--text-faint)');
-       if (titleEl) titleEl.textContent = "Status Strip Inactive";
-       if (metaEl) metaEl.innerHTML = `Please visit the <b>CHOOSE TIMETABLE</b> page once to sync.`;
+       // The strip itself is the empty state (never an indefinite shimmer).
+       // Make the page name a direct iframe link so one click starts syncing.
+       strip.setAttribute('data-reecap-state', 'empty');
+       strip.style.removeProperty('--accent');
+       if (titleEl) titleEl.textContent = "Set up your schedule";
+       if (metaEl) {
+         metaEl.innerHTML = `Visit <a class="status-strip-cta" href="Academics/studenttimetableoption.aspx" target="capIframe">CHOOSE TIMETABLE</a> once to sync your upcoming classes.`;
+         const setupLink = metaEl.querySelector('.status-strip-cta');
+         if (setupLink) setupLink.addEventListener('click', () => {
+           // Navigate the iframe directly — no intermediate dialog or extra action.
+           if (typeof showIframe === 'function') showIframe();
+         });
+       }
        return;
     }
+
+    strip.setAttribute('data-reecap-state', 'ready');
     
     const { schedule, legendMap } = data.reecapTimetable;
     const currentMins = now.getHours() * 60 + now.getMinutes();
