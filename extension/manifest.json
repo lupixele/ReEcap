@@ -1,51 +1,57 @@
-{
-  "manifest_version": 3,
-  "name": "ReEcap",
-  "version": "1.0.0",
-  "description": "A modern reskin for the AEC student portal — cleaner UI, same functionality.",
-
-  "icons": {
-    "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "64": "icons/icon64.png",
-    "128": "icons/icon128.png"
-  },
-
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
-      "48": "icons/icon48.png",
-      "64": "icons/icon64.png",
-      "128": "icons/icon128.png"
-    },
-    "default_title": "ReEcap"
-  },
-
-  "permissions": [
-    "storage",
-    "activeTab"
-  ],
-
-  "host_permissions": [
-    "*://info.aec.edu.in/*"
-  ],
-
-  "content_scripts": [
-    {
-      "matches": ["*://info.aec.edu.in/*"],
-      "js": ["shared/theme.js", "content.js", "decorators.js"],
-      "all_frames": true,
-      "run_at": "document_start"
-    }
-  ],
-
-  "web_accessible_resources": [
-    {
-      "resources": ["style.css", "shared/theme.js"],
-      "matches": ["*://info.aec.edu.in/*"]
-    }
-  ]
+﻿{
+    "manifest_version":  3,
+    "name":  "ReEcap",
+    "version":  "1.0.0",
+    "description":  "A modern reskin for the AEC student portal - cleaner UI, same functionality.",
+    "icons":  {
+                  "16":  "icons/icon16.png",
+                  "32":  "icons/icon32.png",
+                  "48":  "icons/icon48.png",
+                  "64":  "icons/icon64.png",
+                  "128":  "icons/icon128.png"
+              },
+    "action":  {
+                   "default_popup":  "popup.html",
+                   "default_icon":  {
+                                        "16":  "icons/icon16.png",
+                                        "32":  "icons/icon32.png",
+                                        "48":  "icons/icon48.png",
+                                        "64":  "icons/icon64.png",
+                                        "128":  "icons/icon128.png"
+                                    },
+                   "default_title":  "ReEcap"
+               },
+    "permissions":  [
+                        "storage",
+                        "activeTab"
+                    ],
+    "host_permissions":  [
+                             "*://info.aec.edu.in/*"
+                         ],
+    "content_scripts":  [
+                            {
+                                "matches":  [
+                                                "*://info.aec.edu.in/*"
+                                            ],
+                                "js":  [
+                                           "shared/theme.js",
+                                           "content.js",
+                                           "decorators.js"
+                                       ],
+                                "all_frames":  true,
+                                "run_at":  "document_start"
+                            }
+                        ],
+    "web_accessible_resources":  [
+                                     {
+                                         "resources":  [
+                                                           "shared/theme.js",
+                                                           "shared/tokens.css",
+                                                           "style.css"
+                                                       ],
+                                         "matches":  [
+                                                         "*://info.aec.edu.in/*"
+                                                     ]
+                                     }
+                                 ]
 }
