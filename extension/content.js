@@ -3,9 +3,7 @@
 // Does NOT touch page logic, forms, or postbacks.
 
 const STYLE_ID = 'reecap-stylesheet';
-const FONTS_ID = 'reecap-fonts';
-const FONTS_PRE1_ID = 'reecap-fonts-pre1';
-const FONTS_PRE2_ID = 'reecap-fonts-pre2';
+const TOKENS_ID = 'reecap-tokens';
 const SKIP_LINK_ID = 'reecap-skip-link';
 const THEME_STORAGE_DEFAULTS = { enabled: true, themeFamily: null, themeMode: null, theme: null };
 
@@ -27,38 +25,27 @@ function ensureSkipLink() {
   document.documentElement.insertBefore(a, document.body || target);
 }
 
+function injectStylesheet(id, path) {
+  if (document.getElementById(id)) return;
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = chrome.runtime.getURL(path);
+  (document.head || document.documentElement).appendChild(link);
+}
+
 function injectStyle() {
-  const head = document.head || document.documentElement;
-
-  // Inject Google Fonts directly into <head> to bypass CSS @import CSP issues
-  if (!document.getElementById(FONTS_PRE1_ID)) {
-    const pre1 = document.createElement('link');
-    pre1.id = FONTS_PRE1_ID; pre1.rel = 'preconnect'; pre1.href = 'https://fonts.googleapis.com';
-    const pre2 = document.createElement('link');
-    pre2.id = FONTS_PRE2_ID; pre2.rel = 'preconnect'; pre2.href = 'https://fonts.gstatic.com'; pre2.crossOrigin = 'anonymous';
-    const fontLink = document.createElement('link');
-    fontLink.id = FONTS_ID; fontLink.rel = 'stylesheet'; fontLink.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap';
-
-    head.appendChild(pre1);
-    head.appendChild(pre2);
-    head.appendChild(fontLink);
-  }
-
-  if (!document.getElementById(STYLE_ID)) {
-    const link = document.createElement('link');
-    link.id = STYLE_ID;
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = chrome.runtime.getURL('style.css');
-    head.appendChild(link);
-  }
-
+  // Tokens must load before the portal component stylesheet.
+  injectStylesheet(TOKENS_ID, 'shared/tokens.css');
+  injectStylesheet(STYLE_ID, 'style.css');
   ensureSkipLink();
 }
 
 function removeStyle() {
-  const el = document.getElementById(STYLE_ID);
-  if (el) el.remove();
+  document.getElementById(STYLE_ID)?.remove();
+  document.getElementById(TOKENS_ID)?.remove();
+  document.getElementById(SKIP_LINK_ID)?.remove();
 }
 
 function migrateThemeStorage(data) {

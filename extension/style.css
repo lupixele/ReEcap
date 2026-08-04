@@ -1,337 +1,4 @@
-/* ==========================================================================
-   Shared Structural Tokens
-   ========================================================================== */
-:root {
-  --radius: 14px;
-  --radius-sm: 9px;
-
-  /* Semantic elevation aliases — every card component should pull from these
-     so dark-mode consistency is uniform across the codebase. The per-theme
-     values defined below continue to live on --surface-card; --surface-elevated
-     is what new code should reference. (Phase 2, 2026-07-26) */
-  --surface-elevated: var(--surface-card);
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
-}
-
-/* ==========================================================================
-   Theme Blocks
-   ========================================================================== */
-html[data-theme="light"] {
-  --surface-page: #F6F4EE;
-  --surface-page-glow: radial-gradient(circle at 12% 0%, #FBF9F3 0%, #F6F4EE 55%);
-  --surface-card: #FFFFFF;
-  --surface-sunken: #F6F4EE;
-  --surface-strip: #1B2430;
-  --surface-strip-text: #F6F4EE;
-  --surface-strip-text-muted: #C7CDD8;
-  --text-primary: #111827;
-  --text-secondary: #6B7280;
-  --text-faint: #9A9788;
-  --border: #DCD7C9;
-  --border-light: rgba(0, 0, 0, 0.05);
-  --accent: #C1432E;
-  --accent-dark: #8F2F1F;
-  --accent-soft: #F3D9D2;
-  --success: #3F7A56;
-  --success-soft: #E2F0E7;
-  --warning: #A8823A;
-  --warning-soft: #EFE4C8;
-  --danger: #C1432E;
-  --error: #C1432E;
-  --surface-hover: #ECE9E0;
-  --card-shadow: 0 1px 2px rgba(27,36,48,0.05), 0 6px 18px rgba(27,36,48,0.06);
-  --card-border: 1px solid var(--border);
-  --ambient-glow: 0 0 0 transparent;
-}
-
-html[data-theme="dark"] {
-  --surface-page: #17171C;
-  --surface-page-glow:
-    radial-gradient(ellipse 900px 500px at 20% -10%, rgba(224,101,76,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 700px 500px at 90% 10%, rgba(80,120,160,0.05) 0%, transparent 60%),
-    #17171C;
-  --surface-card: #202027;
-  --surface-sunken: #292932;
-  --surface-strip: #0D0D11;
-  --surface-strip-text: #F1F1EE;
-  --surface-strip-text-muted: #96969F;
-  --text-primary: #F1F1EE;
-  --text-secondary: #B0B0BA;
-  --text-faint: #74747F;
-  --border: #383840;
-  --border-light: rgba(255, 255, 255, 0.06);
-  --accent: #E0654C;
-  --accent-dark: #F08A73;
-  --accent-soft: #412720;
-  --success: #5FBE85;
-  --success-soft: #1A3022;
-  --warning: #D4A959;
-  --warning-soft: #352A18;
-  --danger: #E0654C;
-  --error: #E0654C;
-  --surface-hover: #2D2D36;
-  --card-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.35);
-  --card-border: none;
-  --ambient-glow: 0 0 22px rgba(224,101,76,0.08);
-}
-
-html[data-theme="amoled"] {
-  --surface-page: #000000;
-  --surface-page-glow:
-    radial-gradient(ellipse 900px 500px at 20% -10%, rgba(224,101,76,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 700px 500px at 90% 10%, rgba(80,120,160,0.07) 0%, transparent 60%),
-    #000000;
-  --surface-card: #0A0A0E;
-  --surface-sunken: #0F0F14;
-  --surface-strip: #000000;
-  --surface-strip-text: #F1F1EE;
-  --surface-strip-text-muted: #8A8A94;
-  --text-primary: #ECECE7;
-  --text-secondary: #9A9AA4;
-  --text-faint: #5D5D68;
-  --border: #1A1A22;
-  --border-light: rgba(255, 255, 255, 0.04);
-  --accent: #E8705A;
-  --accent-dark: #F29A87;
-  --accent-soft: #2E1C18;
-  --success: #66CC8E;
-  --success-soft: #0E1E14;
-  --warning: #DEBB66;
-  --warning-soft: #221C0E;
-  --danger: #E8705A;
-  --error: #E8705A;
-  --surface-hover: #15151C;
-  --card-shadow: 0 0 0 1px rgba(232,112,90,0.06), 0 6px 22px rgba(232,112,90,0.12);
-  --card-border: none;
-  --ambient-glow: 0 0 26px rgba(232,112,90,0.16);
-}
-
-html[data-theme="cappuccino-light"] {
-  --surface-page: #EDE1D3;
-  --surface-page-glow: radial-gradient(circle at 12% 0%, #F5EBDF 0%, #EDE1D3 55%);
-  --surface-card: #FBF5EC;
-  --surface-sunken: #E6D8C6;
-  --surface-strip: #3D2B1F;
-  --surface-strip-text: #F5EBDF;
-  --surface-strip-text-muted: #C9B39E;
-  --text-primary: #3D2B1F;
-  --text-secondary: #7A6353;
-  --text-faint: #A6907E;
-  --border: #DCC9AF;
-  --border-light: rgba(61, 43, 31, 0.07);
-  --accent: #935729;
-  --accent-dark: #6B3D1B;
-  --accent-soft: #E9D2B3;
-  --success: #5E7A4A;
-  --success-soft: #E3E9D6;
-  --warning: #B08329;
-  --warning-soft: #F1E2BE;
-  --danger: #A2432B;
-  --error: #A2432B;
-  --surface-hover: #F3E9DC;
-  --card-shadow: 0 1px 2px rgba(61,43,31,0.06), 0 6px 18px rgba(61,43,31,0.08);
-  --card-border: 1px solid var(--border);
-  --ambient-glow: 0 0 0 transparent;
-}
-
-html[data-theme="cappuccino-dark"] {
-  --surface-page: #171311;
-  --surface-page-glow: radial-gradient(ellipse 900px 500px at 20% -10%, rgba(147, 87, 41, 0.12) 0%, transparent 60%), radial-gradient(ellipse 700px 500px at 90% 10%, rgba(107, 61, 27, 0.06) 0%, transparent 60%), #171311;
-  --surface-card: #211C19;
-  --surface-sunken: #2A2420;
-  --surface-strip: #0E0C0A;
-  --surface-strip-text: #F5EBDF;
-  --surface-strip-text-muted: #A6907E;
-  --text-primary: #F5EBDF;
-  --text-secondary: #B8A596;
-  --text-faint: #7A6A5D;
-  --border: #3B322C;
-  --border-light: rgba(245, 235, 223, 0.06);
-  --accent: #935729;
-  --accent-dark: #C77E4A;
-  --accent-soft: #3A241A;
-  --success: #6A9E58;
-  --success-soft: #1A2814;
-  --warning: #D4A959;
-  --warning-soft: #302310;
-  --danger: #C75A40;
-  --error: #C75A40;
-  --surface-hover: #2E2723;
-  --card-shadow: 0 0 0 1px rgba(245, 235, 223, 0.04), 0 8px 24px rgba(0, 0, 0, 0.40);
-  --card-border: none;
-  --ambient-glow: 0 0 22px rgba(147, 87, 41, 0.10);
-}
-
-html[data-theme="evergreen-light"] {
-  --surface-page: #EDF2ED;
-  --surface-page-glow: radial-gradient(circle at 12% 0%, #F8FCF8 0%, #EDF2ED 55%);
-  --surface-card: #FAFCFA;
-  --surface-sunken: #E2EAE2;
-  --surface-strip: #1A2E22;
-  --surface-strip-text: #F3F8F3;
-  --surface-strip-text-muted: #C2D0C4;
-  --text-primary: #1A2E22;
-  --text-secondary: #4E6B58;
-  --text-faint: #8A9F8E;
-  --border: #C5D4C5;
-  --border-light: rgba(26, 46, 34, 0.07);
-  --accent: #2D7A4F;
-  --accent-dark: #1B5C37;
-  --accent-soft: #D0E8DA;
-  --success: #3A7A6A;
-  --success-soft: #D9ECE5;
-  --warning: #A88A3A;
-  --warning-soft: #F0E7C9;
-  --danger: #B84433;
-  --error: #B84433;
-  --surface-hover: #E7F0E7;
-  --card-shadow: 0 1px 2px rgba(26,46,34,0.05), 0 6px 18px rgba(26,46,34,0.08);
-  --card-border: 1px solid var(--border);
-  --ambient-glow: 0 0 0 transparent;
-}
-
-html[data-theme="evergreen-dark"] {
-  --surface-page: #101713;
-  --surface-page-glow: radial-gradient(ellipse 900px 500px at 20% -10%, rgba(45, 122, 79, 0.10) 0%, transparent 60%), radial-gradient(ellipse 700px 500px at 90% 10%, rgba(58, 122, 106, 0.06) 0%, transparent 60%), #101713;
-  --surface-card: #18221C;
-  --surface-sunken: #202E26;
-  --surface-strip: #090E0B;
-  --surface-strip-text: #E8F0EA;
-  --surface-strip-text-muted: #8EA696;
-  --text-primary: #E8F0EA;
-  --text-secondary: #9CB5A5;
-  --text-faint: #6B8272;
-  --border: #2F4236;
-  --border-light: rgba(232, 240, 234, 0.05);
-  --accent: #3A9963;
-  --accent-dark: #60BE88;
-  --accent-soft: #1C3626;
-  --success: #4EAE9A;
-  --success-soft: #142E28;
-  --warning: #DEBB66;
-  --warning-soft: #2C2512;
-  --danger: #D46352;
-  --error: #D46352;
-  --surface-hover: #243329;
-  --card-shadow: 0 0 0 1px rgba(232, 240, 234, 0.04), 0 8px 24px rgba(0, 0, 0, 0.45);
-  --card-border: none;
-  --ambient-glow: 0 0 22px rgba(58, 153, 99, 0.10);
-}
-
-html[data-theme="midnight-light"] {
-  --surface-page: #EEF3FB;
-  --surface-page-glow: radial-gradient(circle at 12% 0%, #F5F8FF 0%, #EEF3FB 55%);
-  --surface-card: #FFFFFF;
-  --surface-sunken: #E4ECF8;
-  --surface-strip: #0A1428;
-  --surface-strip-text: #FFFFFF;
-  --surface-strip-text-muted: #8A9ABF;
-  --text-primary: #0F192D;
-  --text-secondary: #4B5C80;
-  --text-faint: #8A9ABF;
-  --border: #D0DFFA;
-  --border-light: rgba(15, 25, 45, 0.06);
-  --accent: #2B6CE0;
-  --accent-dark: #1C4CB0;
-  --accent-soft: #DCEEDD;
-  --success: #2A8C5A;
-  --success-soft: #D6F5E6;
-  --warning: #A87B1C;
-  --warning-soft: #F7ECCB;
-  --danger: #D43F35;
-  --error: #D43F35;
-  --surface-hover: #E2ECFA;
-  --card-shadow: 0 1px 2px rgba(15, 25, 45, 0.05), 0 6px 18px rgba(15, 25, 45, 0.07);
-  --card-border: 1px solid var(--border);
-  --ambient-glow: 0 0 0 transparent;
-}
-
-html[data-theme="midnight-dark"] {
-  --surface-page: #040810;
-  --surface-page-glow:
-    radial-gradient(ellipse 900px 500px at 20% -10%, rgba(91,156,245,0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 700px 500px at 90% 10%, rgba(76,217,154,0.05) 0%, transparent 60%),
-    #040810;
-  --surface-card: #0C1220;
-  --surface-sunken: #111827;
-  --surface-strip: #020408;
-  --surface-strip-text: #E8EDF5;
-  --surface-strip-text-muted: #7C8AA8;
-  --text-primary: #E8EDF5;
-  --text-secondary: #9AA9C8;
-  --text-faint: #55617D;
-  --border: #1C2540;
-  --border-light: rgba(145, 175, 225, 0.08);
-  --accent: #5B9CF5;
-  --accent-dark: #8FBCFF;
-  --accent-soft: #142040;
-  --success: #4CD99A;
-  --success-soft: #0E2A20;
-  --warning: #E0B44A;
-  --warning-soft: #2B240F;
-  --danger: #F06050;
-  --error: #F06050;
-  --surface-hover: #141D32;
-  --card-shadow: 0 0 0 1px rgba(145,175,225,0.05), 0 12px 32px rgba(0,0,0,0.42);
-  --card-border: none;
-  --ambient-glow: 0 0 22px rgba(91,156,245,0.12);
-}
-
-html[data-theme="rosewood-light"] {
-  --surface-page: #F4EDEE;
-  --surface-page-glow: radial-gradient(circle at 12% 0%, #FCF8F9 0%, #F4EDEE 55%);
-  --surface-card: #FCFAFB;
-  --surface-sunken: #EDE4E5;
-  --surface-strip: #2D1F24;
-  --surface-strip-text: #F9F1F3;
-  --surface-strip-text-muted: #D2BDC4;
-  --text-primary: #2D1F24;
-  --text-secondary: #6E5560;
-  --text-faint: #A08D95;
-  --border: #D8C8CE;
-  --border-light: rgba(45, 31, 36, 0.07);
-  --accent: #9E4B5E;
-  --accent-dark: #7A3548;
-  --accent-soft: #F0D5DC;
-  --success: #4A7A5C;
-  --success-soft: #DCEADF;
-  --warning: #B08939;
-  --warning-soft: #F1E5C5;
-  --danger: #C44040;
-  --error: #C44040;
-  --surface-hover: #F5E9EC;
-  --card-shadow: 0 1px 2px rgba(45,31,36,0.06), 0 6px 18px rgba(45,31,36,0.08);
-  --card-border: 1px solid var(--border);
-  --ambient-glow: 0 0 0 transparent;
-}
-
-html[data-theme="rosewood-dark"] {
-  --surface-page: #171214;
-  --surface-page-glow: radial-gradient(ellipse 900px 500px at 20% -10%, rgba(158, 75, 94, 0.12) 0%, transparent 60%), radial-gradient(ellipse 700px 500px at 90% 10%, rgba(122, 53, 72, 0.06) 0%, transparent 60%), #171214;
-  --surface-card: #20191C;
-  --surface-sunken: #2A2125;
-  --surface-strip: #0D0B0C;
-  --surface-strip-text: #FAF2F4;
-  --surface-strip-text-muted: #B8A0A8;
-  --text-primary: #FAF2F4;
-  --text-secondary: #B8A0A8;
-  --text-faint: #78646C;
-  --border: #3B2F34;
-  --border-light: rgba(250, 242, 244, 0.06);
-  --accent: #C76B80;
-  --accent-dark: #E096A8;
-  --accent-soft: #3A242B;
-  --success: #5FBE85;
-  --success-soft: #162E21;
-  --warning: #D4A959;
-  --warning-soft: #302511;
-  --danger: #E25B5B;
-  --error: #E25B5B;
-  --surface-hover: #2B2226;
-  --card-shadow: 0 0 0 1px rgba(250, 242, 244, 0.04), 0 8px 24px rgba(0, 0, 0, 0.42);
-  --card-border: none;
-  --ambient-glow: 0 0 22px rgba(199, 107, 128, 0.12);
-}
+/* Theme tokens live in shared/tokens.css; this file owns portal component styles. */
 
 /* ==========================================================================
    Global Resets & Typography
@@ -344,13 +11,13 @@ body {
   margin: 0;
   padding: 0;
   background: var(--surface-page-glow) !important;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif !important;
   color: var(--text-primary) !important;
   -webkit-font-smoothing: antialiased;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-.mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; }
+.mono { font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace; }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -447,7 +114,7 @@ tr:has(span[style*="color: blue"]) {
 }
 
 .eyebrow {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -457,7 +124,7 @@ tr:has(span[style*="color: blue"]) {
 
 .brand-title {
   margin: 0;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-sans), sans-serif;
   font-size: 30px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -476,7 +143,7 @@ tr:has(span[style*="color: blue"]) {
   color: var(--accent-dark);
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 700;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-sans), sans-serif;
 }
 
 .user-name { 
@@ -486,7 +153,7 @@ tr:has(span[style*="color: blue"]) {
 }
 
 .pill-btn {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 12px; font-weight: 600;
   color: var(--text-secondary);
   background: var(--surface-card);
@@ -524,7 +191,7 @@ tr:has(span[style*="color: blue"]) {
 }
 .status-identity { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding-right: clamp(16px, 3vw, 36px); border-right: 1px solid rgba(255,255,255,0.1); text-align: right; }
 .status-identity[hidden] { display: none !important; }
-.id-roll { font-family: 'JetBrains Mono', monospace; font-size: clamp(20px, 3vw, 24px); font-weight: 600; line-height: 1; color: var(--surface-strip-text); }
+.id-roll { font-family: var(--font-mono), monospace; font-size: clamp(20px, 3vw, 24px); font-weight: 600; line-height: 1; color: var(--surface-strip-text); }
 .id-course { font-size: 12px; color: var(--surface-strip-text-muted); font-weight: 500; margin-top: 6px; }
 .reecap-status-strip[data-reecap-state="empty"] { border: var(--card-border); }
 /* One-shot timetable cache warmer. It loads the authenticated portal page in a
@@ -546,7 +213,7 @@ tr:has(span[style*="color: blue"]) {
   color: var(--surface-strip-text) !important;
   text-decoration: none !important;
   border-bottom: 1px solid currentColor;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -558,14 +225,14 @@ tr:has(span[style*="color: blue"]) {
   background: repeating-linear-gradient(115deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 26px);
   pointer-events: none;
 }
-.clock-time { font-family: 'JetBrains Mono', monospace; font-size: clamp(26px, 4vw, 36px); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.clock-time { font-family: var(--font-mono), monospace; font-size: clamp(26px, 4vw, 36px); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .clock-date { font-size: 12px; color: var(--surface-strip-text-muted); font-weight: 500; margin-top: 6px; }
-.status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 4px 11px; border-radius: 100px; font-size: 11.5px; font-weight: 600; font-family: 'JetBrains Mono', monospace; width: fit-content; background: var(--success); color: #fff; }
+.status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 4px 11px; border-radius: 100px; font-size: 11.5px; font-weight: 600; font-family: var(--font-mono), monospace; width: fit-content; background: var(--success); color: #fff; }
 .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: #7DFFA8; animation: pulse 1.8s infinite; }
 .status-subject { font-size: 16px; font-weight: 700; line-height: 1.3; }
 .status-meta { font-size: 12px; color: var(--surface-strip-text-muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .status-meta b { color: var(--surface-strip-text); font-weight: 600; }
-.status-cta { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--surface-strip); background: var(--surface-strip-text); border: none; padding: 9px 16px; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
+.status-cta { font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 600; color: var(--surface-strip); background: var(--surface-strip-text); border: none; padding: 9px 16px; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(125,255,168,0.55); } 70% { box-shadow: 0 0 0 8px rgba(125,255,168,0); } 100% { box-shadow: 0 0 0 0 rgba(125,255,168,0); } }
 
 /* ==========================================================================
@@ -597,7 +264,7 @@ body.bodyStyle > form > center > br {
 }
 
 .reecap-page-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 24px !important;
   font-weight: 800 !important;
   color: var(--text-primary) !important;
@@ -685,7 +352,7 @@ ul.menu li {
 }
 
 .reecap-brand-header {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 28px !important;
   font-weight: 800 !important;
   color: var(--text-primary) !important;
@@ -701,7 +368,7 @@ ul.menu li {
   align-items: center;
   cursor: pointer;
   user-select: none;
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 11px !important;
   font-weight: 700 !important;
   letter-spacing: 0.08em;
@@ -802,7 +469,7 @@ ul.menu li {
    Page Titles & Content Headers
    ========================================================================== */
 .MainHead {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 20px !important;
   font-weight: 700 !important;
   color: var(--text-primary) !important;
@@ -838,7 +505,7 @@ table.popupTable {
 .gvHeaderStyle,
 table.popupTable tr.gvHeaderStyle td {
   text-align: left;
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 11px !important;
   font-weight: 700 !important;
   letter-spacing: 0.06em;
@@ -854,7 +521,7 @@ table.popupTable tr.gvHeaderStyle td {
 
 table.popupTable td {
   padding: 16px 20px !important;
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 13.5px !important;
   color: var(--text-primary) !important;
   border-top: none !important;
@@ -879,7 +546,7 @@ table.popupTable tr:hover td { background: var(--surface-sunken) !important; }
    Report Tables (Report cards, etc)
    ========================================================================== */
 .reportHeading1 {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 18px !important;
   font-weight: 700 !important;
   color: var(--accent) !important;
@@ -889,7 +556,7 @@ table.popupTable tr:hover td { background: var(--surface-sunken) !important; }
 
 .reportHeading2,
 .reportHeading2WithBackground td {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-weight: 600 !important;
   color: var(--text-secondary) !important;
   background: var(--surface-sunken) !important;
@@ -897,7 +564,7 @@ table.popupTable tr:hover td { background: var(--surface-sunken) !important; }
   font-size: 16px !important;
 }
 
-.reportData2 { font-family: 'Inter', system-ui, sans-serif !important; font-size: 13.5px !important; padding: 14px 16px !important; color: var(--text-primary) !important; }
+.reportData2 { font-family: var(--font-sans), system-ui, sans-serif !important; font-size: 13.5px !important; padding: 14px 16px !important; color: var(--text-primary) !important; }
 .cellBorder { border: none !important; border-bottom: 1px solid var(--border-light) !important; }
 
 /* ==========================================================================
@@ -912,7 +579,7 @@ input[type=tel],
 input[type=url],
 textarea,
 select {
-  font-family: 'Inter', sans-serif !important;
+  font-family: var(--font-sans), sans-serif !important;
   font-size: 13px !important;
   padding: 8px 12px !important;
   border: var(--card-border) !important;
@@ -940,7 +607,7 @@ select:focus {
 input[type=submit],
 input[type=button],
 .buttonStyle {
-  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-family: var(--font-mono), ui-monospace, monospace !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   color: #fff !important;
@@ -974,7 +641,7 @@ input[type=button]:active,
   background: var(--surface-card) !important;
   border: var(--card-border) !important;
   border-radius: var(--radius-sm) !important;
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-weight: 600 !important;
   color: var(--text-primary) !important;
   transition: all 0.2s ease;
@@ -1030,7 +697,7 @@ input[type=button]:active,
 }
 
 .submit {
-  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-family: var(--font-mono), ui-monospace, monospace !important;
   background: var(--accent) !important;
   color: white !important;
   transition: transform 0.12s ease, background 0.12s ease !important;
@@ -1038,7 +705,7 @@ input[type=button]:active,
 .submit:active { transform: scale(0.97) translateY(0) !important; }
 .submit:hover { background: var(--accent-dark) !important; }
 
-.logintext { font-family: 'Space Grotesk', system-ui, sans-serif !important; color: var(--text-primary) !important; }
+.logintext { font-family: var(--font-sans), system-ui, sans-serif !important; color: var(--text-primary) !important; }
 .custom-radio input:checked + label::before { border-color: var(--accent) !important; }
 .custom-radio input:checked + label::after { background: var(--accent) !important; }
 .custominput { background: var(--surface-card) !important; color: var(--text-primary) !important; border: var(--card-border) !important; }
@@ -1055,7 +722,7 @@ body.reecap-login-page {
   overflow-x: hidden !important;
   color: var(--text-primary) !important;
   background: var(--surface-page-glow) !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
 
 body.reecap-login-page::before,
@@ -1171,7 +838,7 @@ body.reecap-login-page .reecap-login-mark { width: 48px; height: 48px; flex: 0 0
 body.reecap-login-page .reecap-login-eyebrow,
 body.reecap-login-page .reecap-role-label {
   color: var(--text-faint) !important;
-  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-family: var(--font-mono), ui-monospace, monospace !important;
   font-size: 10px !important;
   font-weight: 700 !important;
   letter-spacing: 0.12em !important;
@@ -1181,7 +848,7 @@ body.reecap-login-page .reecap-role-label {
 body.reecap-login-page .reecap-login-wordmark {
   margin: 2px 0 0 !important;
   color: var(--text-primary) !important;
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 31px !important;
   font-weight: 700 !important;
   line-height: 0.95 !important;
@@ -1229,7 +896,7 @@ body.reecap-login-page .custom-radio {
   border-radius: 999px !important;
   color: var(--text-secondary) !important;
   cursor: pointer !important;
-  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-family: var(--font-mono), ui-monospace, monospace !important;
   font-size: 10.5px !important;
   font-weight: 700 !important;
   letter-spacing: -0.02em !important;
@@ -1262,7 +929,7 @@ body.reecap-login-page .login_card input.form-control {
   background: transparent !important;
   box-shadow: none !important;
   color: var(--text-primary) !important;
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-size: 14px !important;
   font-weight: 600 !important;
 }
@@ -1282,7 +949,7 @@ body.reecap-login-page .submit {
   background: var(--accent) !important;
   box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 28%, transparent) !important;
   color: #fff !important;
-  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-family: var(--font-mono), ui-monospace, monospace !important;
   font-size: 12px !important;
   font-weight: 700 !important;
   letter-spacing: 0.12em !important;
@@ -1304,7 +971,7 @@ body.reecap-login-page #lblResult, body.reecap-login-page #lblError, body.reecap
   background: var(--accent);
   color: var(--knob);
   border-radius: var(--radius-sm);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1323,7 +990,7 @@ body.reecap-login-page #lblResult, body.reecap-login-page #lblError, body.reecap
 body.reecap-login-page .reecap-login-footer { position: relative !important; z-index: 2 !important; width: 100% !important; padding: 0 20px 24px !important; }
 body.reecap-login-page .reecap-login-footer .container, body.reecap-login-page .reecap-login-footer .row { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 14px !important; max-width: 520px !important; margin: 0 auto !important; padding: 0 !important; }
 body.reecap-login-page .reecap-login-footer .links { width: auto !important; flex: 0 1 auto !important; margin: 0 !important; padding: 0 !important; text-align: center !important; }
-body.reecap-login-page .links a { padding: 8px 10px !important; border-radius: 999px !important; background: transparent !important; color: var(--text-secondary) !important; text-shadow: none !important; font-family: 'JetBrains Mono', ui-monospace, monospace !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.02em !important; text-decoration: none !important; transition: color 0.16s ease, background 0.16s ease, transform 0.16s ease !important; }
+body.reecap-login-page .links a { padding: 8px 10px !important; border-radius: 999px !important; background: transparent !important; color: var(--text-secondary) !important; text-shadow: none !important; font-family: var(--font-mono), ui-monospace, monospace !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.02em !important; text-decoration: none !important; transition: color 0.16s ease, background 0.16s ease, transform 0.16s ease !important; }
 body.reecap-login-page .links a::before { display: none !important; }
 body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--accent-soft) 55%, transparent) !important; color: var(--accent) !important; transform: translateY(-1px) !important; }
 
@@ -1377,8 +1044,8 @@ body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--acc
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 
-.ring-value { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 32px; font-weight: 700; color: var(--success); }
-.ring-caption { font-family: 'Inter', system-ui, sans-serif; font-size: 11px; color: var(--text-faint); }
+.ring-value { font-family: var(--font-sans), system-ui, sans-serif; font-size: 32px; font-weight: 700; color: var(--success); }
+.ring-caption { font-family: var(--font-sans), system-ui, sans-serif; font-size: 11px; color: var(--text-faint); }
 .ring-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .stat-card {
@@ -1405,7 +1072,7 @@ body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--acc
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 13px;
   color: var(--text-secondary);
   width: 100%;
@@ -1417,7 +1084,7 @@ body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--acc
   letter-spacing: 0.02em;
 }
 .fee-balance-card .fee-row-amount {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-weight: 700;
   font-size: 18px;
   letter-spacing: -0.01em;
@@ -1429,7 +1096,7 @@ body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--acc
 .fee-balance-card .fee-row-amount.is-success  { color: var(--success); }
 .fee-balance-card .fee-row-amount.is-muted    { color: var(--text-faint); }
 .fee-balance-card .fee-row-caption {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   line-height: 1.35;
   letter-spacing: 0.02em;
@@ -1478,7 +1145,7 @@ td[style*="1000px"] {
   padding: 8px 16px;
   background: transparent;
   color: var(--text-secondary);
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 600;
   font-size: 13.5px;
   cursor: pointer;
@@ -1583,7 +1250,7 @@ td[style*="1000px"] {
 }
 
 .tt-header {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1599,7 +1266,7 @@ td[style*="1000px"] {
 }
 
 .tt-day {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1767,7 +1434,7 @@ html[data-theme="rosewood-dark"] .tt-class {
 }
 
 .tt-time {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 11px;
   font-weight: 600;
   color: var(--palette-color-fg);
@@ -1777,7 +1444,7 @@ html[data-theme="rosewood-dark"] .tt-class {
 }
 
 .tt-subject {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 13.5px;
   font-weight: 700;
   color: var(--palette-color-fg);
@@ -1786,7 +1453,7 @@ html[data-theme="rosewood-dark"] .tt-class {
 }
 
 .tt-subject-name {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 11.5px;
   font-weight: 500;
   color: var(--palette-color-fg);
@@ -1813,7 +1480,7 @@ html[data-theme="rosewood-dark"] .tt-class {
   gap: 8px;
   padding: 6px 12px 6px 8px;
   font-size: 11.5px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   color: var(--text-secondary);
   background: hsl(var(--palette-hue), 70%, 96%);
   border: 1px solid hsl(var(--palette-hue), 50%, 80%);
@@ -1832,7 +1499,7 @@ html[data-theme="rosewood-dark"] .tt-class {
   box-shadow: 0 0 0 2px hsl(var(--palette-hue), 70%, 90%);
 }
 .tt-legend-code {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-weight: 700;
   color: hsl(var(--palette-hue), 70%, 28%);
   font-size: 11px;
@@ -1876,7 +1543,7 @@ html[data-theme="rosewood-dark"] .tt-legend-code {
 }
 
 .tt-tt-name {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 700;
   font-size: 15px;
   color: var(--text-primary);
@@ -1889,7 +1556,7 @@ html[data-theme="rosewood-dark"] .tt-legend-code {
 .tt-tt-meta {
   font-size: 12px;
   margin-bottom: 6px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   color: var(--text-secondary);
   font-weight: 500;
   display: flex;
@@ -1993,7 +1660,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 
 .bio-name {
   margin: 0;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
@@ -2001,7 +1668,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .bio-course {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 15px;
   color: var(--text-secondary);
 }
@@ -2013,7 +1680,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .bio-pill {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
@@ -2024,7 +1691,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .biodata-section-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
@@ -2046,7 +1713,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .biodata-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   text-transform: uppercase;
   color: var(--text-secondary);
@@ -2054,7 +1721,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .biodata-value {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 14px;
   color: var(--text-primary);
   font-weight: 500;
@@ -2137,7 +1804,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .overview-card-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
@@ -2146,7 +1813,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .overview-card-subtitle {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   color: var(--text-faint);
   font-weight: 500;
@@ -2182,7 +1849,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 .schedule-time {
   display: flex;
   flex-direction: column;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
@@ -2205,7 +1872,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .schedule-subject {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text-primary);
@@ -2213,7 +1880,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .schedule-meta {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 11.5px;
   color: var(--text-secondary);
   display: flex;
@@ -2226,7 +1893,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .schedule-badge {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 700;
   color: #fff;
@@ -2289,7 +1956,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .quicklink-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -2308,11 +1975,11 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
 .reecap-data-table th {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -2359,7 +2026,7 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 }
 
 .reecap-status-pill {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 700;
   padding: 4px 10px;
@@ -2571,7 +2238,7 @@ table.popupTable th a:hover {
 .fee-hero-left,
 .fee-hero-right { position: relative; z-index: 1; }
 .fee-hero-eyebrow {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -2579,7 +2246,7 @@ table.popupTable th a:hover {
   color: var(--accent);
 }
 .fee-hero-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -2601,7 +2268,7 @@ table.popupTable th a:hover {
 .fee-state-pill {
   display: inline-flex;
   align-items: center;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -2638,7 +2305,7 @@ table.popupTable th a:hover {
 .fee-hero-meter-labels {
   display: flex;
   justify-content: space-between;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -2652,7 +2319,7 @@ table.popupTable th a:hover {
   width: 100%;
   padding: 11px 18px;
   border-radius: var(--radius-sm);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -2698,7 +2365,7 @@ table.popupTable th a:hover {
   gap: 4px;
 }
 .fee-stat-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -2706,7 +2373,7 @@ table.popupTable th a:hover {
   color: var(--text-secondary);
 }
 .fee-stat-value {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -2754,7 +2421,7 @@ table.popupTable th a:hover {
   flex-wrap: wrap;
 }
 .fee-semester-name {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -2762,7 +2429,7 @@ table.popupTable th a:hover {
   color: var(--text-primary);
 }
 .fee-semester-tag {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -2773,7 +2440,7 @@ table.popupTable th a:hover {
   color: var(--accent-dark);
 }
 .fee-semester-status {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2787,7 +2454,7 @@ table.popupTable th a:hover {
 .fee-semester-status.is-warning { color: var(--warning); }
 .fee-semester-status.is-muted   { color: var(--text-faint); }
 .fee-semester-amount {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -2816,7 +2483,7 @@ table.popupTable th a:hover {
 .fee-sem-meter-labels {
   display: flex;
   justify-content: space-between;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -2830,7 +2497,7 @@ table.popupTable th a:hover {
 }
 .fee-sem-details > summary {
   cursor: pointer;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -2853,11 +2520,11 @@ table.popupTable th a:hover {
   width: 100%;
   border-collapse: collapse;
   margin-top: 12px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 13px;
 }
 .fee-sem-table th {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2900,7 +2567,7 @@ table.popupTable th a:hover {
   box-shadow: var(--card-shadow);
 }
 .fee-balance-words-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -2908,7 +2575,7 @@ table.popupTable th a:hover {
   color: var(--text-secondary);
 }
 .fee-balance-words-value {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 13px;
   color: var(--text-primary);
 }
@@ -2924,7 +2591,7 @@ table.popupTable th a:hover {
   justify-content: center;
   padding: 9px 18px;
   border-radius: var(--radius-sm);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -2992,7 +2659,7 @@ table.popupTable th a:hover {
   box-shadow: var(--card-shadow);
 }
 .pay-eyebrow {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -3000,7 +2667,7 @@ table.popupTable th a:hover {
   color: var(--accent);
 }
 .pay-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -3024,7 +2691,7 @@ table.popupTable th a:hover {
   gap: 8px;
 }
 .channel-title {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -3043,7 +2710,7 @@ table.popupTable th a:hover {
   background: var(--surface-sunken);
   border: 1px solid var(--border-light);
   border-radius: 999px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -3095,7 +2762,7 @@ table.popupTable th a:hover {
 }
 
 .year-card-title {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -3103,7 +2770,7 @@ table.popupTable th a:hover {
   color: var(--text-secondary);
 }
 .year-card-due {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
@@ -3133,7 +2800,7 @@ table.popupTable th a:hover {
   border-bottom: 1px solid var(--border-light);
 }
 .pay-items-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
@@ -3145,11 +2812,11 @@ table.popupTable th a:hover {
   width: 100%;
   border-collapse: collapse;
   margin-top: 16px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 13.5px;
 }
 .pay-items-table th {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -3174,12 +2841,12 @@ table.popupTable th a:hover {
   accent-color: var(--accent);
 }
 .item-title { font-weight: 600; color: var(--text-primary); }
-.item-sl { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
+.item-sl { font-family: var(--font-mono), monospace; font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
 
 .reecap-pay-input {
   max-width: 90px !important;
   padding: 6px 8px !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  font-family: var(--font-mono), monospace !important;
   font-size: 13px !important;
   font-weight: 600 !important;
   text-align: right !important;
@@ -3221,7 +2888,7 @@ table.popupTable th a:hover {
   flex-wrap: wrap;
 }
 .pay-total-item {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 13px;
   color: var(--text-secondary);
   display: inline-flex;
@@ -3229,7 +2896,7 @@ table.popupTable th a:hover {
   align-items: baseline;
 }
 .pay-total-item b {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
@@ -3249,7 +2916,7 @@ table.popupTable th a:hover {
 .pay-btn {
   padding: 10px 20px !important;
   border-radius: var(--radius-sm) !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  font-family: var(--font-mono), monospace !important;
   font-size: 12px !important;
   font-weight: 700 !important;
   letter-spacing: 0.06em !important;
@@ -3313,7 +2980,7 @@ table.popupTable th a:hover {
   background: var(--accent);
 }
 .marks-eyebrow {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -3321,7 +2988,7 @@ table.popupTable th a:hover {
   color: var(--accent);
 }
 .marks-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -3354,7 +3021,7 @@ table.popupTable th a:hover {
   gap: 4px;
 }
 .marks-stat-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -3362,7 +3029,7 @@ table.popupTable th a:hover {
   color: var(--text-faint);
 }
 .marks-stat-value {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -3383,7 +3050,7 @@ table.popupTable th a:hover {
   gap: 16px;
 }
 .marks-section-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -3422,7 +3089,7 @@ table.popupTable th a:hover {
   margin-bottom: 12px;
 }
 .transcript-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -3433,7 +3100,7 @@ table.popupTable th a:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11.5px;
   color: var(--text-secondary);
 }
@@ -3461,7 +3128,7 @@ table.popupTable th a:hover {
   gap: 12px;
 }
 .attendance-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -3484,7 +3151,7 @@ table.popupTable th a:hover {
   gap: 2px;
 }
 .attendance-stat-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -3492,7 +3159,7 @@ table.popupTable th a:hover {
   color: var(--text-faint);
 }
 .attendance-stat-value {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
@@ -3511,7 +3178,7 @@ table.popupTable th a:hover {
   padding: 18px 20px;
 }
 .internal-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -3525,7 +3192,7 @@ table.popupTable th a:hover {
   font-size: 12.5px;
 }
 .internal-marks-table th {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;

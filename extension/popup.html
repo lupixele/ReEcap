@@ -2,532 +2,312 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <title>ReEcap Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReEcap settings</title>
+  <link rel="stylesheet" href="shared/tokens.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
-
-    :root {
-      --radius: 14px;
-      --radius-sm: 9px;
-    }
-
-    html[data-theme="light"] {
-      --surface-page: #F6F4EE;
-      --surface-card: #FFFFFF;
-      --text-primary: #1B2430;
-      --text-secondary: #5A6577;
-      --text-faint: #9A9788;
-      --border: #DCD7C9;
-      --accent: #C1432E;
-      --success: #3F7A56;
-      --knob: #FFFFFF;
-      --card-shadow: 0 1px 2px rgba(27,36,48,0.05), 0 6px 18px rgba(27,36,48,0.06);
-    }
-
-    html[data-theme="dark"] {
-      --surface-page: #17171C;
-      --surface-card: #202027;
-      --text-primary: #F1F1EE;
-      --text-secondary: #B0B0BA;
-      --text-faint: #74747F;
-      --border: #383840;
-      --accent: #E0654C;
-      --success: #5FBE85;
-      --knob: #F1F1EE;
-      --card-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.35);
-    }
-
-    html[data-theme="amoled"] {
-      --surface-page: #000000;
-      --surface-card: #0A0A0E;
-      --text-primary: #ECECE7;
-      --text-secondary: #9A9AA4;
-      --text-faint: #5D5D68;
-      --border: #1A1A22;
-      --accent: #E8705A;
-      --success: #66CC8E;
-      --knob: #ECECE7;
-      --card-shadow: 0 0 0 1px rgba(232,112,90,0.08), 0 0 28px rgba(232,112,90,0.14);
-    }
-
-    html[data-theme="cappuccino-light"] {
-      --surface-page: #EDE1D3;
-      --surface-card: #FBF5EC;
-      --text-primary: #3D2B1F;
-      --text-secondary: #7A6353;
-      --text-faint: #A6907E;
-      --border: #DCC9AF;
-      --accent: #935729;
-      --success: #5E7A4A;
-      --knob: #FFFFFF;
-      --card-shadow: 0 1px 2px rgba(61,43,31,0.06), 0 6px 18px rgba(61,43,31,0.08);
-    }
-
-    html[data-theme="cappuccino-dark"] {
-      --surface-page: #171311;
-      --surface-card: #211C19;
-      --text-primary: #F5EBDF;
-      --text-secondary: #B8A596;
-      --text-faint: #7A6A5D;
-      --border: #3B322C;
-      --accent: #935729;
-      --success: #6A9E58;
-      --knob: #F5EBDF;
-      --card-shadow: 0 0 0 1px rgba(245, 235, 223, 0.04), 0 8px 24px rgba(0, 0, 0, 0.40);
-    }
-
-    html[data-theme="evergreen-light"] {
-      --surface-page: #EDF2ED;
-      --surface-card: #FAFCFA;
-      --text-primary: #1A2E22;
-      --text-secondary: #4E6B58;
-      --text-faint: #8A9F8E;
-      --border: #C5D4C5;
-      --accent: #2D7A4F;
-      --success: #3A7A6A;
-      --knob: #FFFFFF;
-      --card-shadow: 0 1px 2px rgba(26,46,34,0.05), 0 6px 18px rgba(26,46,34,0.08);
-    }
-
-    html[data-theme="evergreen-dark"] {
-      --surface-page: #101713;
-      --surface-card: #18221C;
-      --text-primary: #E8F0EA;
-      --text-secondary: #9CB5A5;
-      --text-faint: #6B8272;
-      --border: #2F4236;
-      --accent: #3A9963;
-      --success: #4EAE9A;
-      --knob: #E8F0EA;
-      --card-shadow: 0 0 0 1px rgba(232, 240, 234, 0.04), 0 8px 24px rgba(0, 0, 0, 0.45);
-    }
-
-    html[data-theme="midnight-light"] {
-      --surface-page: #EEF3FB;
-      --surface-card: #FFFFFF;
-      --text-primary: #0F192D;
-      --text-secondary: #4B5C80;
-      --text-faint: #8A9ABF;
-      --border: #D0DFFA;
-      --accent: #2B6CE0;
-      --success: #2A8C5A;
-      --knob: #FFFFFF;
-      --card-shadow: 0 1px 2px rgba(15, 25, 45, 0.05), 0 6px 18px rgba(15, 25, 45, 0.07);
-    }
-
-    html[data-theme="midnight-dark"] {
-      --surface-page: #040810;
-      --surface-card: #0C1220;
-      --text-primary: #E8EDF5;
-      --text-secondary: #9AA9C8;
-      --text-faint: #55617D;
-      --border: #1C2540;
-      --accent: #5B9CF5;
-      --success: #4CD99A;
-      --knob: #E8EDF5;
-      --card-shadow: 0 0 0 1px rgba(145,175,225,0.05), 0 12px 32px rgba(0,0,0,0.42);
-    }
-
-    html[data-theme="rosewood-light"] {
-      --surface-page: #F4EDEE;
-      --surface-card: #FCFAFB;
-      --text-primary: #2D1F24;
-      --text-secondary: #6E5560;
-      --text-faint: #A08D95;
-      --border: #D8C8CE;
-      --accent: #9E4B5E;
-      --success: #4A7A5C;
-      --knob: #FFFFFF;
-      --card-shadow: 0 1px 2px rgba(45,31,36,0.06), 0 6px 18px rgba(45,31,36,0.08);
-    }
-
-    html[data-theme="rosewood-dark"] {
-      --surface-page: #171214;
-      --surface-card: #20191C;
-      --text-primary: #FAF2F4;
-      --text-secondary: #B8A0A8;
-      --text-faint: #78646C;
-      --border: #3B2F34;
-      --accent: #C76B80;
-      --success: #5FBE85;
-      --knob: #FAF2F4;
-      --card-shadow: 0 0 0 1px rgba(250, 242, 244, 0.04), 0 8px 24px rgba(0, 0, 0, 0.42);
-    }
+    * { box-sizing: border-box; }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      width: 290px;
+      width: min(23rem, 100vw);
       margin: 0;
-      padding: 20px;
-      background: var(--surface-page);
+      padding: var(--space-lg);
+      background: var(--surface-page-glow);
       color: var(--text-primary);
-      transition: background 0.2s ease, color 0.2s ease;
+      font-family: var(--font-sans);
+      line-height: 1.45;
     }
 
-    /* ── Header ── */
-    .header {
+    button { font: inherit; }
+    button:focus-visible,
+    [role="radio"]:focus-visible,
+    [role="switch"]:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .popup-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border);
+      gap: var(--space-md);
+      margin: 0 0 var(--space-lg);
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .logo-mark {
-      width: 38px;
-      height: 38px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.2s ease;
-    }
-
-    .logo-mark svg {
-      width: 38px;
-      height: 38px;
+    .brand-mark {
+      display: grid;
+      width: 2.5rem;
+      height: 2.5rem;
+      flex: 0 0 auto;
+      place-items: center;
       border-radius: var(--radius-sm);
-      box-shadow: var(--card-shadow);
+      background: var(--action-primary);
+      box-shadow: var(--ambient-glow);
+      color: var(--text-on-action);
+      font-size: 1.25rem;
+      font-weight: 750;
+      letter-spacing: -0.08em;
     }
 
-    .title-group h1 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 18px;
-      font-weight: 700;
+    .brand-copy { min-width: 0; }
+    .brand-copy h1 {
       margin: 0;
-      color: var(--text-primary);
-      letter-spacing: -0.02em;
+      font-size: 1rem;
+      font-weight: 750;
+      letter-spacing: -0.025em;
     }
 
-    .title-group p {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+    .brand-copy p,
+    .section-heading,
+    .connection-copy,
+    .footer-version {
+      font-family: var(--font-mono);
+    }
+
+    .brand-copy p {
+      margin: 0.125rem 0 0;
       color: var(--text-faint);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin: 2px 0 0 0;
+      font-size: 0.625rem;
       font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
-    /* ── Card Container ── */
-    .card-container {
-      background: var(--surface-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+    .settings-panel {
+      display: grid;
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      border: var(--card-border);
+      border-radius: var(--radius-lg);
+      background: var(--surface-raised);
       box-shadow: var(--card-shadow);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
     }
 
-    /* ── Toggle Row ── */
-    .toggle-row {
+    .connection-row,
+    .setting-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: var(--space-md);
     }
 
-    .label-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .label-main {
-      font-size: 14px;
-      font-weight: 600;
+    .connection-copy { min-width: 0; }
+    .connection-copy strong {
+      display: block;
       color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
     }
 
-    .label-status {
-      font-size: 12px;
-      font-weight: 500;
+    .connection-copy span {
+      display: block;
+      margin-top: 0.125rem;
+      color: var(--text-secondary);
+      font-size: 0.6875rem;
     }
 
-    .status-enabled { color: var(--success); }
-    .status-disabled { color: var(--text-faint); }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      color: var(--status-success);
+      font-size: 0.6875rem;
+      font-weight: 700;
+    }
 
-    /* ── Modern Switch ── */
+    .status::before {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .status[data-state="disabled"],
+    .status[data-state="unavailable"],
+    .status[data-state="error"] { color: var(--text-secondary); }
+    .status[data-state="error"] { color: var(--status-danger); }
+
     .switch {
       position: relative;
-      display: inline-block;
-      width: 48px;
-      height: 26px;
-    }
-
-    .switch input { opacity: 0; width: 0; height: 0; }
-
-    .slider {
-      position: absolute;
+      width: 3rem;
+      min-width: 3rem;
+      height: 1.75rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      background: var(--surface-sunken);
       cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--border);
-      transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
-      border-radius: 34px;
+      transition: background var(--duration-standard) var(--ease-standard), border-color var(--duration-standard) var(--ease-standard);
     }
 
-    .slider:before {
+    .switch::after {
       position: absolute;
-      content: "";
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background-color: var(--knob);
-      transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+      top: 0.1875rem;
+      left: 0.1875rem;
+      width: 1.25rem;
+      height: 1.25rem;
       border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      background: var(--text-secondary);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      content: "";
+      transition: transform var(--duration-standard) var(--ease-standard), background var(--duration-standard) var(--ease-standard);
     }
 
-    input:checked + .slider { background: var(--accent); }
-    input:checked + .slider:before { transform: translateX(22px); }
-
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 2px 0;
+    .switch[aria-checked="true"] {
+      border-color: var(--action-primary);
+      background: var(--action-primary);
+    }
+    .switch[aria-checked="true"]::after {
+      transform: translateX(1.25rem);
+      background: var(--text-on-action);
     }
 
-    /* ── Section Labels (JetBrains Mono eyebrow) ── */
-    .section-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      font-weight: 700;
+    .rule { width: 100%; height: 1px; margin: 0; border: 0; background: var(--border-subtle); }
+
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    .section-heading {
+      margin-bottom: var(--space-sm);
       color: var(--text-faint);
-      letter-spacing: 0.1em;
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
-    /* ── Theme Selector ── */
-    .theme-row {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .theme-switcher {
+    .choice-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px;
-      background: var(--surface-page);
-      border: 1px solid var(--border);
+      gap: var(--space-xs);
+      padding: var(--space-xs);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
-      padding: 6px;
-    }
-
-    .theme-btn {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
-      font-weight: 600;
-      min-height: 32px;
-      padding: 7px 8px;
-      border-radius: 7px;
-      border: none;
-      background: transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .theme-btn .theme-btn-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
-    }
-
-    .theme-btn:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-
-    .theme-btn.active {
-      background: var(--accent);
-      color: var(--knob);
-    }
-
-    .theme-btn.active .theme-btn-dot {
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.4);
-    }
-
-    .theme-btn:hover:not(.active) {
-      color: var(--text-primary);
       background: var(--surface-sunken);
     }
 
-    /* ── Mode Segmented Pill ── */
-    .mode-pill {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      position: relative;
-      background: var(--surface-page);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 3px;
-    }
-
-    .mode-pill-track {
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      width: calc(50% - 3px);
-      height: calc(100% - 6px);
-      background: var(--accent);
-      border-radius: 17px;
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 0;
-    }
-
-    .mode-pill-track.right {
-      transform: translateX(100%);
-    }
-
-    .mode-btn {
-      position: relative;
-      z-index: 1;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 7px 0;
-      border: none;
+    .choice {
+      display: inline-flex;
+      min-height: 2.5rem;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      padding: 0.5rem;
+      border: 1px solid transparent;
+      border-radius: var(--radius-xs);
       background: transparent;
       color: var(--text-secondary);
       cursor: pointer;
-      border-radius: 17px;
-      transition: color 0.2s ease;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
       text-align: center;
+      transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
     }
 
-    .mode-btn.active {
-      color: var(--knob);
+    .choice:hover { background: var(--surface-hover); color: var(--text-primary); }
+    .choice[aria-checked="true"] {
+      border-color: var(--action-primary);
+      background: var(--action-primary);
+      color: var(--text-on-action);
     }
 
-    .mode-btn:hover:not(.active) {
-      color: var(--text-primary);
+    .choice-dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.85;
     }
 
-    /* ── Disabled States ── */
-    #modeRow.is-disabled {
-      opacity: 0.45;
-      pointer-events: none;
+    .mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mode-note {
+      margin: var(--space-sm) 0 0;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
     }
 
-    body.disabled .theme-switcher,
-    body.disabled .mode-pill {
-      opacity: 0.45;
-      pointer-events: none;
-    }
+    fieldset[disabled] { opacity: 0.6; }
+    fieldset[disabled] .choice { cursor: not-allowed; }
 
-    /* Form-semantic borders so fieldset/legend read well */
-    fieldset {
-      border: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    legend.section-label {
-      padding: 0 0 8px 0;
-    }
-
-    /* ── Footer ── */
     .footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-top: 20px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      font-weight: 500;
+      gap: var(--space-sm);
+      margin-top: var(--space-md);
       color: var(--text-faint);
-      letter-spacing: 0.02em;
+      font-size: 0.625rem;
     }
 
-    .footer-version {
-      letter-spacing: 0.06em;
+    .footer button {
+      min-height: 2rem;
+      padding: 0.25rem 0.5rem;
+      border: 0;
+      border-radius: var(--radius-xs);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
     }
+    .footer button:hover { color: var(--text-primary); }
 
-    .footer-help {
-      cursor: help;
-      border-bottom: 1px dotted var(--text-faint);
-    }
+    body.is-disabled .setting-controls { opacity: 0.55; }
 
-    /* ── Reduced Motion ── */
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation: none !important;
-        transition: none !important;
-      }
+      *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
     }
   </style>
 </head>
 <body>
-
-  <div class="header">
-    <div class="logo-mark">
-      <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-        <rect width="128" height="128" rx="28" fill="currentColor" style="color: var(--accent);"/>
-        <text x="64" y="88" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="76" fill="#FFFFFF">R</text>
-      </svg>
-    </div>
-    <div class="title-group">
+  <header class="popup-header">
+    <div class="brand-mark" aria-hidden="true">R</div>
+    <div class="brand-copy">
       <h1>ReEcap</h1>
-      <p>AEC Portal Reskin</p>
+      <p>Student workspace</p>
     </div>
-  </div>
+  </header>
 
-  <div class="card-container">
-    <div class="toggle-row">
-      <div class="label-group">
-        <span class="label-main">Modern Theme</span>
-        <span id="statusText" class="label-status status-enabled">Active</span>
+  <main class="settings-panel" aria-label="ReEcap settings">
+    <section class="connection-row" aria-labelledby="themeToggleLabel">
+      <div class="connection-copy">
+        <strong id="themeToggleLabel">Use ReEcap on this portal</strong>
+        <span id="statusText" class="status" data-state="active" role="status">Active</span>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="toggleSwitch" checked>
-        <span class="slider"></span>
-      </label>
+      <button id="toggleSwitch" class="switch" type="button" role="switch" aria-checked="true" aria-labelledby="themeToggleLabel"></button>
+    </section>
+
+    <div class="setting-controls">
+      <hr class="rule">
+      <fieldset class="theme-row" style="margin-top: var(--space-lg)">
+        <legend class="section-heading">Colour family</legend>
+        <div id="familySwitcher" class="choice-grid" role="radiogroup" aria-label="Colour family">
+          <button class="choice" type="button" data-family="original" role="radio" aria-checked="false"><span class="choice-dot"></span>Classic</button>
+          <button class="choice" type="button" data-family="cappuccino" role="radio" aria-checked="false"><span class="choice-dot"></span>Cappuccino</button>
+          <button class="choice" type="button" data-family="evergreen" role="radio" aria-checked="false"><span class="choice-dot"></span>Evergreen</button>
+          <button class="choice" type="button" data-family="midnight" role="radio" aria-checked="false"><span class="choice-dot"></span>Midnight</button>
+          <button class="choice" type="button" data-family="rosewood" role="radio" aria-checked="false"><span class="choice-dot"></span>Rosewood</button>
+          <button class="choice" type="button" data-family="amoled" role="radio" aria-checked="false"><span class="choice-dot"></span>AMOLED</button>
+        </div>
+      </fieldset>
+
+      <hr class="rule" style="margin-top: var(--space-lg)">
+      <fieldset id="modeRow" class="theme-row" style="margin-top: var(--space-lg)">
+        <legend class="section-heading">Appearance</legend>
+        <div id="modeSwitcher" class="choice-grid mode-grid" role="radiogroup" aria-label="Appearance mode">
+          <button class="choice" type="button" data-mode="light" role="radio" aria-checked="false">Light</button>
+          <button class="choice" type="button" data-mode="dark" role="radio" aria-checked="false">Dark</button>
+        </div>
+        <p id="modeNote" class="mode-note" hidden>AMOLED uses a dedicated dark palette.</p>
+      </fieldset>
     </div>
+  </main>
 
-    <div class="divider"></div>
-
-    <fieldset class="theme-row">
-      <legend class="section-label">Color Family</legend>
-      <div class="theme-switcher" id="familySwitcher" role="radiogroup" aria-label="Color family">
-        <button class="theme-btn" data-family="original" role="radio" aria-checked="false">Original</button>
-        <button class="theme-btn" data-family="cappuccino" role="radio" aria-checked="false">Cappuccino</button>
-        <button class="theme-btn" data-family="evergreen" role="radio" aria-checked="false">Evergreen</button>
-        <button class="theme-btn" data-family="midnight" role="radio" aria-checked="false">Midnight</button>
-        <button class="theme-btn" data-family="rosewood" role="radio" aria-checked="false">Rosewood</button>
-        <button class="theme-btn" data-family="amoled" role="radio" aria-checked="false">AMOLED</button>
-      </div>
-    </fieldset>
-
-    <div class="divider"></div>
-
-    <fieldset class="theme-row" id="modeRow">
-      <legend class="section-label">Mode</legend>
-      <div class="mode-pill" id="modeSwitcher" role="radiogroup" aria-label="Mode">
-        <div class="mode-pill-track" id="modeTrack"></div>
-        <button class="mode-btn" data-mode="light" role="radio" aria-checked="false">Light</button>
-        <button class="mode-btn" data-mode="dark" role="radio" aria-checked="false">Dark</button>
-      </div>
-    </fieldset>
-  </div>
-
-  <div class="footer">
-    <span class="footer-version" aria-label="Version">v1.0.0</span>
-    <span class="footer-help" title="Keyboard shortcuts: T toggles the reskin. The mode switcher is disabled when the AMOLED family is selected.">Shortcuts</span>
-  </div>
+  <footer class="footer">
+    <span class="footer-version">v1.0.0</span>
+    <button id="clearCacheButton" type="button">Clear local cache</button>
+  </footer>
 
   <script src="shared/theme.js"></script>
   <script src="popup.js"></script>

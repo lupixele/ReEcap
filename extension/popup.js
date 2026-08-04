@@ -1,124 +1,138 @@
-// ReEcap — popup.js
-// Handles toggle and two-tier theme settings (color family + mode) via chrome.storage.sync.
-// Theme resolution + migration come from shared/theme.js (single source of truth).
+// ReEcap popup settings. Theme resolution and migration are defined in shared/theme.js.
 
 const reecap = window.__reecap_theme || {};
-const resolveTheme        = reecap.resolveTheme        || ((f, m) => (f === 'amoled' ? 'amoled' : (f === 'original' ? (m || 'light') : `${f}-${m || 'light'}`)));
-const migrateThemeStorage = reecap.migrateThemeStorage || ((d) => ({ family: (d && d.themeFamily) || 'original', mode: (d && d.themeMode) || 'light' }));
-const FAMILY_META         = reecap.FAMILY_META         || {};
+const resolveTheme = reecap.resolveTheme || ((family, mode) => (
+  family === 'amoled' ? 'amoled' : (family === 'original' ? (mode || 'light') : `${family}-${mode || 'light'}`)
+));
+const migrateThemeStorage = reecap.migrateThemeStorage || ((data) => ({
+  family: (data && data.themeFamily) || 'original',
+  mode: (data && data.themeMode) || 'light',
+}));
+const FAMILY_META = reecap.FAMILY_META || {};
+const STORAGE_DEFAULTS = { enabled: true, themeFamily: null, themeMode: null, theme: null };
+
+function getActivePortalTab() {
+  return chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+    if (!tab || !tab.url || !/^https?:\/\/info\.aec\.edu\.in\//i.test(tab.url)) return null;
+    return tab;
+  });
+}
+
+function sendMessageToActivePortal(message) {
+  return getActivePortalTab().then((tab) => {
+    if (!tab) return false;
+    return chrome.tabs.sendMessage(tab.id, message).then(() => true).catch(() => false);
+  });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const toggleSwitch = document.getElementById('toggleSwitch');
-  const statusText   = document.getElementById('statusText');
-  const familyButtons = document.querySelectorAll('#familySwitcher .theme-btn');
-  const modeButtons  = document.querySelectorAll('#modeSwitcher .mode-btn');
-  const modeTrack    = document.getElementById('modeTrack');
-  const modeRow      = document.getElementById('modeRow');
-  const body         = document.body;
-
-  // Decorate each family button with a 6px color dot + aria-label.
-  familyButtons.forEach(btn => {
-    const meta = FAMILY_META[btn.dataset.family];
-    if (!meta) return;
-    btn.setAttribute('aria-label', `${meta.label} — ${meta.description}`);
-    const dot = document.createElement('span');
-    dot.className = 'theme-btn-dot';
-    dot.style.background = meta.preview;
-    btn.insertBefore(dot, btn.firstChild);
-  });
+  const statusText = document.getElementById('statusText');
+  const familyButtons = [...document.querySelectorAll('#familySwitcher [role="radio"]')];
+  const modeButtons = [...document.querySelectorAll('#modeSwitcher [role="radio"]')];
+  const modeRow = document.getElementById('modeRow');
+  const modeNote = document.getElementById('modeNote');
+  const cacheButton = document.getElementById('clearCacheButton');
+  const controls = document.querySelector('.setting-controls');
 
   let currentFamily = 'original';
-  let currentMode   = 'light';
+  let currentMode = 'light';
 
-  chrome.storage.sync.get({ enabled: true, themeFamily: null, themeMode: null, theme: null }, (data) => {
-    toggleSwitch.checked = data.enabled;
-    updateStatusLabel(data.enabled);
-
-    const mapped = migrateThemeStorage(data);
-    if (!data.themeFamily) {
-      // Persist migration so content.js won't have to re-derive.
-      chrome.storage.sync.set({ themeFamily: mapped.family, themeMode: mapped.mode, theme: null }, () => {
-        void chrome.runtime && chrome.runtime.lastError;
-      });
-    }
-    currentFamily = mapped.family;
-    currentMode   = mapped.mode;
-    updateThemeUI(currentFamily, currentMode);
+  familyButtons.forEach((button) => {
+    const meta = FAMILY_META[button.dataset.family];
+    if (!meta) return;
+    button.setAttribute('aria-label', `${meta.label}: ${meta.description}`);
+    const dot = button.querySelector('.choice-dot');
+    if (dot) dot.style.backgroundColor = meta.preview;
   });
 
-  function updateStatusLabel(enabled) {
-    if (enabled) {
-      statusText.textContent = 'Active';
-      statusText.className   = 'label-status status-enabled';
-      body.classList.remove('disabled');
-    } else {
-      statusText.textContent = 'Disabled';
-      statusText.className   = 'label-status status-disabled';
-      body.classList.add('disabled');
-    }
+  function announce(message, state = 'active') {
+    statusText.textContent = message;
+    statusText.dataset.state = state;
+  }
+
+  function updateEnabledUI(enabled) {
+    toggleSwitch.setAttribute('aria-checked', String(enabled));
+    document.body.classList.toggle('is-disabled', !enabled);
+    if (controls) controls.inert = !enabled;
+    announce(enabled ? 'Active' : 'Disabled', enabled ? 'active' : 'disabled');
   }
 
   function updateThemeUI(family, mode) {
-    familyButtons.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.family === family);
+    familyButtons.forEach((button) => {
+      const selected = button.dataset.family === family;
+      button.setAttribute('aria-checked', String(selected));
     });
 
-    modeButtons.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === mode);
+    modeButtons.forEach((button) => {
+      const selected = button.dataset.mode === mode;
+      button.setAttribute('aria-checked', String(selected));
     });
 
-    if (modeTrack) modeTrack.classList.toggle('right', mode === 'dark');
-
-    if (modeRow) modeRow.classList.toggle('is-disabled', family === 'amoled');
-
-    document.documentElement.setAttribute('data-theme', resolveTheme(family, mode));
+    const isAmoled = family === 'amoled';
+    modeRow.disabled = isAmoled;
+    modeNote.hidden = !isAmoled;
+    document.documentElement.dataset.theme = resolveTheme(family, mode);
   }
 
-  function applyThemeChange(family, mode) {
+  function persist(values, successMessage) {
+    return new Promise((resolve) => {
+      chrome.storage.sync.set(values, () => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          announce('Could not save settings', 'error');
+          resolve(false);
+          return;
+        }
+        announce(successMessage, 'active');
+        resolve(true);
+      });
+    });
+  }
+
+  async function applyTheme(family, mode) {
     currentFamily = family;
-    currentMode   = mode;
-    updateThemeUI(family, mode);
-
-    const resolved = resolveTheme(family, mode);
-    chrome.storage.sync.set({ themeFamily: family, themeMode: mode }, () => {
-      // Surface a storage write failure so the UI never claims a save that didn't happen.
-      const err = chrome.runtime && chrome.runtime.lastError;
-      if (err) {
-        console.warn('ReEcap: theme save failed —', err.message);
-        return;
-      }
-      if (toggleSwitch.checked) {
-        sendMessageToTabs({ type: 'REECAP_THEME', theme: resolved });
-      }
-    });
+    currentMode = family === 'amoled' ? 'dark' : mode;
+    updateThemeUI(currentFamily, currentMode);
+    const saved = await persist({ themeFamily: currentFamily, themeMode: currentMode }, 'Appearance saved');
+    if (saved && toggleSwitch.getAttribute('aria-checked') === 'true') {
+      const delivered = await sendMessageToActivePortal({ type: 'REECAP_THEME', theme: resolveTheme(currentFamily, currentMode) });
+      if (!delivered) announce('Saved — open the AEC portal to apply', 'unavailable');
+    }
   }
 
-  function sendMessageToTabs(messagePayload) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0] && tabs[0].url && tabs[0].url.includes('info.aec.edu.in')) {
-        chrome.tabs.sendMessage(tabs[0].id, messagePayload).catch(() => {});
-      }
-    });
-  }
+  chrome.storage.sync.get(STORAGE_DEFAULTS, (data) => {
+    const enabled = data.enabled !== false;
+    const mapped = migrateThemeStorage(data);
+    currentFamily = mapped.family;
+    currentMode = mapped.mode;
+    updateEnabledUI(enabled);
+    updateThemeUI(currentFamily, currentMode);
 
-  toggleSwitch.addEventListener('change', () => {
-    const isEnabled = toggleSwitch.checked;
-    updateStatusLabel(isEnabled);
-    chrome.storage.sync.set({ enabled: isEnabled }, () => {
-      const err = chrome.runtime && chrome.runtime.lastError;
-      if (err) { console.warn('ReEcap: toggle save failed —', err.message); return; }
-      sendMessageToTabs({ type: 'REECAP_TOGGLE', enabled: isEnabled });
-    });
+    if (!data.themeFamily) {
+      chrome.storage.sync.set({ themeFamily: currentFamily, themeMode: currentMode, theme: null });
+    }
   });
 
-  familyButtons.forEach(btn => {
-    btn.addEventListener('click', () => applyThemeChange(btn.dataset.family, currentMode));
+  toggleSwitch.addEventListener('click', async () => {
+    const enabled = toggleSwitch.getAttribute('aria-checked') !== 'true';
+    updateEnabledUI(enabled);
+    const saved = await persist({ enabled }, enabled ? 'Active' : 'Disabled');
+    if (saved) {
+      const delivered = await sendMessageToActivePortal({ type: 'REECAP_TOGGLE', enabled });
+      if (!delivered && enabled) announce('Saved — open the AEC portal to apply', 'unavailable');
+    }
   });
 
-  modeButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (currentFamily === 'amoled') return;
-      applyThemeChange(currentFamily, btn.dataset.mode);
+  familyButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.family, currentMode)));
+  modeButtons.forEach((button) => button.addEventListener('click', () => {
+    if (currentFamily !== 'amoled') applyTheme(currentFamily, button.dataset.mode);
+  }));
+
+  cacheButton.addEventListener('click', () => {
+    chrome.storage.local.remove(['reecapTimetable', 'reecapIdentity', 'reecapProfileData'], () => {
+      const error = chrome.runtime.lastError;
+      announce(error ? 'Could not clear local cache' : 'Local cache cleared', error ? 'error' : 'active');
     });
   });
 });
