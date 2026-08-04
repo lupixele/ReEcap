@@ -4,6 +4,13 @@
 :root {
   --radius: 14px;
   --radius-sm: 9px;
+
+  /* Semantic elevation aliases — every card component should pull from these
+     so dark-mode consistency is uniform across the codebase. The per-theme
+     values defined below continue to live on --surface-card; --surface-elevated
+     is what new code should reference. (Phase 2, 2026-07-26) */
+  --surface-elevated: var(--surface-card);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 /* ==========================================================================
@@ -65,7 +72,7 @@ html[data-theme="dark"] {
   --surface-hover: #2D2D36;
   --card-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.35);
   --card-border: none;
-  --ambient-glow: 0 0 50px rgba(224,101,76,0.10);
+  --ambient-glow: 0 0 22px rgba(224,101,76,0.08);
 }
 
 html[data-theme="amoled"] {
@@ -94,9 +101,9 @@ html[data-theme="amoled"] {
   --danger: #E8705A;
   --error: #E8705A;
   --surface-hover: #15151C;
-  --card-shadow: 0 0 0 1px rgba(232,112,90,0.08), 0 0 28px rgba(232,112,90,0.14);
+  --card-shadow: 0 0 0 1px rgba(232,112,90,0.06), 0 6px 22px rgba(232,112,90,0.12);
   --card-border: none;
-  --ambient-glow: 0 0 80px rgba(232,112,90,0.22), 0 0 160px rgba(232,112,90,0.07);
+  --ambient-glow: 0 0 26px rgba(232,112,90,0.16);
 }
 
 html[data-theme="cappuccino-light"] {
@@ -152,7 +159,7 @@ html[data-theme="cappuccino-dark"] {
   --surface-hover: #2E2723;
   --card-shadow: 0 0 0 1px rgba(245, 235, 223, 0.04), 0 8px 24px rgba(0, 0, 0, 0.40);
   --card-border: none;
-  --ambient-glow: 0 0 50px rgba(147, 87, 41, 0.12);
+  --ambient-glow: 0 0 22px rgba(147, 87, 41, 0.10);
 }
 
 html[data-theme="evergreen-light"] {
@@ -208,7 +215,7 @@ html[data-theme="evergreen-dark"] {
   --surface-hover: #243329;
   --card-shadow: 0 0 0 1px rgba(232, 240, 234, 0.04), 0 8px 24px rgba(0, 0, 0, 0.45);
   --card-border: none;
-  --ambient-glow: 0 0 50px rgba(58, 153, 99, 0.10);
+  --ambient-glow: 0 0 22px rgba(58, 153, 99, 0.10);
 }
 
 html[data-theme="midnight-light"] {
@@ -267,7 +274,7 @@ html[data-theme="midnight-dark"] {
   --surface-hover: #141D32;
   --card-shadow: 0 0 0 1px rgba(145,175,225,0.05), 0 12px 32px rgba(0,0,0,0.42);
   --card-border: none;
-  --ambient-glow: 0 0 52px rgba(91,156,245,0.12);
+  --ambient-glow: 0 0 22px rgba(91,156,245,0.12);
 }
 
 html[data-theme="rosewood-light"] {
@@ -323,7 +330,7 @@ html[data-theme="rosewood-dark"] {
   --surface-hover: #2B2226;
   --card-shadow: 0 0 0 1px rgba(250, 242, 244, 0.04), 0 8px 24px rgba(0, 0, 0, 0.42);
   --card-border: none;
-  --ambient-glow: 0 0 50px rgba(199, 107, 128, 0.12);
+  --ambient-glow: 0 0 22px rgba(199, 107, 128, 0.12);
 }
 
 /* ==========================================================================
@@ -399,8 +406,8 @@ body.bodyStyle > form > center > div > table > tbody > tr > td {
 }
 
 #imgstudent {
-  width: 36px !important;
-  height: 36px !important;
+  width: 40px !important;
+  height: 40px !important;
   border-radius: 50% !important;
   border: 2px solid var(--accent-soft) !important;
   box-shadow: var(--card-shadow) !important;
@@ -464,11 +471,11 @@ tr:has(span[style*="color: blue"]) {
 }
 
 .user-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   background: var(--accent-soft);
   color: var(--accent-dark);
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700;
+  font-size: 13px; font-weight: 700;
   font-family: 'Space Grotesk', sans-serif;
 }
 
@@ -500,7 +507,9 @@ tr:has(span[style*="color: blue"]) {
    Status Strip Scaffold (Dormant)
    ========================================================================== */
 .reecap-status-strip {
-  display: none !important; /* Hidden by default until data wire-up */
+  /* The strip is never hidden after mount. Its empty state is a clear
+     schedule-setup CTA rather than the old forever-running skeleton. */
+  display: grid !important;
   background: var(--surface-strip);
   color: var(--surface-strip-text);
   border-radius: var(--radius);
@@ -514,9 +523,36 @@ tr:has(span[style*="color: blue"]) {
   margin-bottom: 24px;
 }
 .status-identity { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding-right: clamp(16px, 3vw, 36px); border-right: 1px solid rgba(255,255,255,0.1); text-align: right; }
+.status-identity[hidden] { display: none !important; }
 .id-roll { font-family: 'JetBrains Mono', monospace; font-size: clamp(20px, 3vw, 24px); font-weight: 600; line-height: 1; color: var(--surface-strip-text); }
 .id-course { font-size: 12px; color: var(--surface-strip-text-muted); font-weight: 500; margin-top: 6px; }
-.reecap-status-strip[data-reecap-strip-active="true"] { display: grid !important; }
+.reecap-status-strip[data-reecap-state="empty"] { border: var(--card-border); }
+/* One-shot timetable cache warmer. It loads the authenticated portal page in a
+   non-interactive frame, lets the existing decorator parse it, then removes
+   itself as soon as chrome.storage.local receives reecapTimetable. */
+.reecap-timetable-prefetch {
+  position: fixed !important;
+  width: 1px !important;
+  height: 1px !important;
+  inset: -10000px auto auto -10000px !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+.status-strip-cta {
+  display: inline-flex;
+  align-items: center;
+  color: var(--surface-strip-text) !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid currentColor;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.status-strip-cta:hover,
+.status-strip-cta:focus-visible { color: var(--accent) !important; outline: none; }
 .reecap-status-strip::before {
   content: ""; position: absolute; inset: 0;
   background: repeating-linear-gradient(115deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 26px);
@@ -1010,6 +1046,297 @@ input[type=button]:active,
 .links a { color: var(--text-secondary) !important; }
 .links a:hover { color: var(--accent) !important; }
 
+/* ===========================================================================
+   Login Page (Default.aspx) — Ambient Glow Stage
+   ========================================================================== */
+body.reecap-login-page {
+  min-height: 100vh !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+  color: var(--text-primary) !important;
+  background: var(--surface-page-glow) !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+body.reecap-login-page::before,
+body.reecap-login-page::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+body.reecap-login-page::before {
+  width: min(620px, 75vw);
+  height: min(620px, 75vw);
+  top: -240px;
+  left: 50%;
+  background: var(--accent);
+  opacity: 0.08;
+  filter: blur(90px);
+  transform: translateX(-50%);
+}
+
+body.reecap-login-page::after {
+  width: 360px;
+  height: 360px;
+  right: -140px;
+  bottom: -130px;
+  background: var(--accent-soft);
+  opacity: 0.6;
+  filter: blur(80px);
+}
+
+body.reecap-login-page #form1 {
+  position: relative !important;
+  z-index: 1 !important;
+  display: grid !important;
+  grid-template-rows: 1fr auto !important;
+  min-height: 100vh !important;
+}
+
+.reecap-login-original-art,
+body.reecap-login-page header,
+body.reecap-login-page #particles,
+body.reecap-login-page .logo-img,
+body.reecap-login-page .campus-image,
+body.reecap-login-page .theme-image {
+  display: none !important;
+}
+
+body.reecap-login-page .reecap-login-stage {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: auto !important;
+  padding: clamp(28px, 6vh, 64px) 20px 28px !important;
+}
+
+body.reecap-login-page .reecap-login-container,
+body.reecap-login-page .reecap-login-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 520px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+}
+
+body.reecap-login-page .reecap-login-card-column {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 420px !important;
+  padding: 0 !important;
+}
+
+body.reecap-login-page .login_card {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 420px !important;
+  padding: 28px !important;
+  overflow: hidden !important;
+  color: var(--text-primary) !important;
+  background: var(--surface-card) !important;
+  background: color-mix(in srgb, var(--surface-card) 94%, transparent) !important;
+  border: var(--card-border) !important;
+  border-radius: calc(var(--radius) + 8px) !important;
+  box-shadow: var(--card-shadow), var(--ambient-glow) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+
+body.reecap-login-page .login_card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 42%),
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 42%);
+}
+
+body.reecap-login-page .login_card > * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+body.reecap-login-page .reecap-login-title-wrap { margin-bottom: 18px !important; }
+body.reecap-login-page .reecap-login-brand { display: flex; align-items: center; justify-content: center; gap: 13px; color: var(--accent); }
+body.reecap-login-page .reecap-login-mark { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 12px; box-shadow: var(--card-shadow); }
+
+body.reecap-login-page .reecap-login-eyebrow,
+body.reecap-login-page .reecap-role-label {
+  color: var(--text-faint) !important;
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+body.reecap-login-page .reecap-login-wordmark {
+  margin: 2px 0 0 !important;
+  color: var(--text-primary) !important;
+  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-size: 31px !important;
+  font-weight: 700 !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.04em !important;
+}
+
+body.reecap-login-page .reecap-login-subtitle {
+  max-width: 280px;
+  margin: 14px auto 0 !important;
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+  text-align: center !important;
+}
+
+body.reecap-login-page .login_card .divider {
+  height: 1px !important;
+  margin: 18px 0 !important;
+  border: 0 !important;
+  background: var(--border-light) !important;
+}
+
+body.reecap-login-page .reecap-role-label { margin-bottom: 8px !important; text-align: left !important; }
+
+body.reecap-login-page .radio-group {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  margin: 0 0 18px !important;
+  padding: 4px !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 999px !important;
+  background: var(--surface-sunken) !important;
+}
+
+body.reecap-login-page .custom-radio {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 8px !important;
+  border-radius: 999px !important;
+  color: var(--text-secondary) !important;
+  cursor: pointer !important;
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  transition: background 0.16s ease, color 0.16s ease !important;
+}
+
+body.reecap-login-page .custom-radio input[type="radio"] { position: absolute !important; opacity: 0 !important; pointer-events: none !important; }
+body.reecap-login-page .custom-radio span { color: inherit !important; font-weight: inherit !important; }
+body.reecap-login-page .custom-radio:has(input[type="radio"]:checked) { color: #fff !important; background: var(--accent) !important; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 28%, transparent) !important; }
+body.reecap-login-page .custom-radio:hover:not(:has(input[type="radio"]:checked)) { color: var(--text-primary) !important; background: color-mix(in srgb, var(--accent-soft) 55%, transparent) !important; }
+
+body.reecap-login-page .login_card .mb-3 { margin-bottom: 12px !important; }
+
+body.reecap-login-page .input-group {
+  overflow: hidden !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--surface-sunken) !important;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+body.reecap-login-page .input-group:focus-within { border-color: var(--accent) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent) !important; }
+body.reecap-login-page .input-group-text { display: flex !important; justify-content: center !important; width: 42px !important; border: 0 !important; background: transparent !important; color: var(--text-faint) !important; }
+body.reecap-login-page .input-group-text i, body.reecap-login-page .input-group-text .text-primary, body.reecap-login-page .input-group-text .text-success { color: var(--text-faint) !important; }
+
+body.reecap-login-page .custominput,
+body.reecap-login-page .login_card input.form-control {
+  min-height: 46px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-primary) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+body.reecap-login-page .custominput:focus,
+body.reecap-login-page .login_card input.form-control:focus { outline: none !important; background: transparent !important; box-shadow: none !important; color: var(--text-primary) !important; }
+body.reecap-login-page .login_card input::placeholder { color: var(--text-faint) !important; opacity: 1 !important; }
+body.reecap-login-page .cf-turnstile { display: flex !important; justify-content: center !important; min-height: 65px !important; margin: 16px auto 10px !important; }
+
+body.reecap-login-page .submit {
+  display: block !important;
+  width: 100% !important;
+  height: 46px !important;
+  margin: 4px auto 0 !important;
+  border: 0 !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--accent) !important;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 28%, transparent) !important;
+  color: #fff !important;
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease !important;
+}
+
+body.reecap-login-page .submit:hover { background: var(--accent-dark) !important; box-shadow: 0 14px 32px color-mix(in srgb, var(--accent) 34%, transparent) !important; }
+body.reecap-login-page .submit:active { transform: scale(0.98) translateY(1px) !important; }
+body.reecap-login-page #lblResult, body.reecap-login-page #lblError, body.reecap-login-page #Label1 { display: block !important; min-height: 24px !important; margin: 8px 0 0 !important; color: var(--error) !important; font-size: 12px !important; font-weight: 600 !important; text-align: center !important; }
+
+/* Skip-link — hidden until focused, then visible. Anchored to #reecap-content-col. */
+.reecap-skip-link {
+  position: fixed !important;
+  top: -100px !important;
+  left: 16px !important;
+  z-index: 10000;
+  padding: 10px 16px !important;
+  background: var(--accent);
+  color: var(--knob);
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: top 0.18s ease;
+  box-shadow: var(--card-shadow), var(--ambient-glow);
+}
+.reecap-skip-link:focus,
+.reecap-skip-link:focus-visible {
+  top: 16px !important;
+  outline: 2px solid var(--knob);
+  outline-offset: 2px;
+}
+
+body.reecap-login-page .reecap-login-footer { position: relative !important; z-index: 2 !important; width: 100% !important; padding: 0 20px 24px !important; }
+body.reecap-login-page .reecap-login-footer .container, body.reecap-login-page .reecap-login-footer .row { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 14px !important; max-width: 520px !important; margin: 0 auto !important; padding: 0 !important; }
+body.reecap-login-page .reecap-login-footer .links { width: auto !important; flex: 0 1 auto !important; margin: 0 !important; padding: 0 !important; text-align: center !important; }
+body.reecap-login-page .links a { padding: 8px 10px !important; border-radius: 999px !important; background: transparent !important; color: var(--text-secondary) !important; text-shadow: none !important; font-family: 'JetBrains Mono', ui-monospace, monospace !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.02em !important; text-decoration: none !important; transition: color 0.16s ease, background 0.16s ease, transform 0.16s ease !important; }
+body.reecap-login-page .links a::before { display: none !important; }
+body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--accent-soft) 55%, transparent) !important; color: var(--accent) !important; transform: translateY(-1px) !important; }
+
+@media (max-width: 520px) {
+  body.reecap-login-page .reecap-login-stage { align-items: flex-start !important; padding: 18px 14px 20px !important; }
+  body.reecap-login-page .login_card { padding: 22px !important; }
+  body.reecap-login-page .reecap-login-brand { justify-content: flex-start !important; }
+  body.reecap-login-page .reecap-login-subtitle { margin-left: 0 !important; margin-right: 0 !important; text-align: left !important; }
+  body.reecap-login-page .radio-group { grid-template-columns: 1fr !important; border-radius: var(--radius-sm) !important; }
+  body.reecap-login-page .custom-radio { border-radius: 7px !important; }
+  body.reecap-login-page .reecap-login-footer .container, body.reecap-login-page .reecap-login-footer .row { flex-direction: column !important; justify-content: center !important; gap: 6px !important; }
+}
+
 /* ==========================================================================
    Accessibility: Reduced Motion
    ========================================================================== */
@@ -1028,7 +1355,7 @@ input[type=button]:active,
 }
 
 .ring-card {
-  background: var(--surface-card);
+  background: var(--surface-elevated);
   border: var(--card-border);
   border-radius: var(--radius);
   padding: 24px;
@@ -1055,16 +1382,67 @@ input[type=button]:active,
 .ring-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .stat-card {
-  background: var(--surface-card);
+  background: var(--surface-elevated);
   border: var(--card-border);
   border-radius: var(--radius);
   padding: 24px;
-  box-shadow: var(--card-shadow), var(--ambient-glow);
+  box-shadow: var(--card-shadow);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center;
 }
 
 .stat-top { display: flex; align-items: center; justify-content: center; }
 .stat-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Fee Balance split — current semester + total outstanding, each on its
+   own row so the user sees both numbers without ambiguity. */
+.stat-card.fee-balance-card {
+  align-items: stretch;
+  text-align: left;
+  gap: 12px;
+}
+.fee-balance-card .fee-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+  width: 100%;
+}
+.fee-balance-card .fee-row-label {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.fee-balance-card .fee-row-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.fee-balance-card .fee-row-amount.is-critical { color: var(--error); }
+.fee-balance-card .fee-row-amount.is-warning  { color: var(--warning); }
+.fee-balance-card .fee-row-amount.is-success  { color: var(--success); }
+.fee-balance-card .fee-row-amount.is-muted    { color: var(--text-faint); }
+.fee-balance-card .fee-row-caption {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+  margin-top: -6px;
+  text-transform: none;
+}
+.fee-balance-card .fee-divider {
+  height: 1px;
+  background: var(--border-light);
+  width: 100%;
+  margin: 4px 0 0 0;
+}
 
 /* Force accordion container to have proper spacing */
 #tblReport {
@@ -1170,10 +1548,16 @@ td[style*="1000px"] {
 }
 
 /* ==========================================================================
-   Timetable Grid (Pass 2) - Redesigned UI
+   Timetable Grid (Pass 2 → Phase 4, 2026-07-26) Redesigned UI
+   --------------------------------------------------------------------------
+   • 12-colour per-subject palette, hashed from subject code so every cell
+     that renders the same subject uses the same colour across views.
+   • Continuous same-subject periods in a row merge into one cell whose
+     width is `--span` × the standard period column (set via inline style).
+   • A legend strip below the grid chips each subject in matching colours.
    ========================================================================== */
 .reecap-timetable {
-  background: var(--surface-card);
+  background: var(--surface-elevated);
   border: var(--card-border);
   border-radius: var(--radius);
   padding: 24px;
@@ -1185,8 +1569,8 @@ td[style*="1000px"] {
 
 .reecap-timetable .tt-grid {
   display: grid;
-  grid-template-columns: 85px repeat(var(--cols), minmax(130px, 1fr));
-  gap: 12px;
+  grid-template-columns: 90px repeat(var(--cols), minmax(132px, 1fr));
+  gap: 10px;
 }
 
 .tt-cell {
@@ -1194,7 +1578,8 @@ td[style*="1000px"] {
   border-radius: var(--radius-sm);
   font-size: 13px;
   position: relative;
-  transition: all 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  min-height: 78px;
 }
 
 .tt-header {
@@ -1210,6 +1595,7 @@ td[style*="1000px"] {
   justify-content: center;
   background: var(--surface-sunken);
   border: 1px solid var(--border-light);
+  min-height: 40px;
 }
 
 .tt-day {
@@ -1234,7 +1620,7 @@ td[style*="1000px"] {
   justify-content: center;
   color: var(--text-faint);
   font-weight: 500;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .tt-empty::before {
@@ -1242,42 +1628,100 @@ td[style*="1000px"] {
   color: var(--text-faint);
 }
 
+/* Per-subject palette. Twelve hues sit at 30° increments around the wheel,
+   tuned for AA contrast on both light and dark surfaces. */
 .tt-class {
-  background: var(--surface-page);
-  border: var(--card-border);
+  --palette-hue: calc(var(--palette, 0) * 30);
+  --palette-color:        hsl(var(--palette-hue), 70%, 50%);
+  --palette-color-soft:   hsl(var(--palette-hue), 65%, 92%);
+  --palette-color-fg:     hsl(var(--palette-hue), 70%, 22%);
+  --palette-color-border: hsl(var(--palette-hue), 50%, 75%);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   text-align: left;
-  padding: 14px;
+  padding: 12px 14px;
+  background: var(--palette-color-soft);
+  color: var(--palette-color-fg);
+  border: 1px solid var(--palette-color-border);
+  border-left: 3px solid var(--palette-color);
+  border-radius: var(--radius-sm);
   box-shadow: var(--card-shadow);
+  position: relative;
+  overflow: hidden;
+  min-height: 78px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+.tt-class::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--palette-color) 12%, transparent) 0%,
+      transparent 60%);
+  pointer-events: none;
+}
+.tt-class > * { position: relative; z-index: 1; }
+
+/* Dark themes: invert the soft surface into a dark tinted block. */
+html[data-theme="dark"] .tt-class,
+html[data-theme="amoled"] .tt-class,
+html[data-theme="cappuccino-dark"] .tt-class,
+html[data-theme="evergreen-dark"] .tt-class,
+html[data-theme="midnight-dark"] .tt-class,
+html[data-theme="rosewood-dark"] .tt-class {
+  --palette-color-soft: color-mix(in srgb, var(--palette-color) 22%, var(--surface-elevated));
+  --palette-color-fg: color-mix(in srgb, var(--palette-color) 78%, #FFFFFF);
+  --palette-color-border: color-mix(in srgb, var(--palette-color) 50%, transparent);
 }
 
+/* Merged block — covers multiple periods with grid-column: span(--span). */
+.tt-class.tt-merged {
+  grid-column: span var(--span, 1);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--palette-color) 8%, var(--palette-color-soft)),
+      var(--palette-color-soft) 50%,
+      color-mix(in srgb, var(--palette-color) 8%, var(--palette-color-soft)));
+  border-left-width: 4px;
+}
+.tt-class.tt-merged .tt-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tt-class.tt-merged .tt-time::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(45deg,
+      var(--palette-color) 0 2px,
+      transparent 2px 4px);
+  opacity: 0.65;
+  flex-shrink: 0;
+}
+
+/* Hover state: lift and brighten. */
 .tt-class:hover {
-  border-color: var(--accent);
-  background: var(--surface-card);
-  box-shadow: var(--card-shadow), var(--ambient-glow);
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: var(--card-shadow), 0 0 0 2px color-mix(in srgb, var(--palette-color) 30%, transparent);
 }
 
-.is-today {
-  background: var(--accent-soft);
-}
-
-.tt-day.is-today {
+.is-today .tt-day {
   color: var(--accent-dark);
   font-weight: 700;
   border-left: 3px solid var(--accent);
 }
 
 .tt-class.is-today {
-  border-left: 3px solid var(--accent);
-  background: var(--surface-card);
-}
-
-.tt-class.is-today:hover {
-  border-color: var(--accent);
+  box-shadow: var(--card-shadow), inset 0 0 0 2px var(--palette-color);
 }
 
 .tt-tooltip {
@@ -1299,10 +1743,16 @@ td[style*="1000px"] {
   text-align: left;
 }
 
-.tt-class:hover .tt-tooltip {
+.tt-class:hover .tt-tooltip,
+.tt-class:focus-within .tt-tooltip {
   opacity: 1;
   transform: translateX(-50%) scale(1);
   pointer-events: auto;
+}
+
+.tt-class:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .tt-tooltip::after {
@@ -1320,7 +1770,8 @@ td[style*="1000px"] {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--palette-color-fg);
+  opacity: 0.85;
   margin-bottom: 6px;
   letter-spacing: 0.02em;
 }
@@ -1329,9 +1780,99 @@ td[style*="1000px"] {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.3;
+  color: var(--palette-color-fg);
+  line-height: 1.25;
   word-break: break-word;
+}
+
+.tt-subject-name {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--palette-color-fg);
+  opacity: 0.7;
+  line-height: 1.3;
+  margin-top: 4px;
+  word-break: break-word;
+}
+
+/* Legend strip below the grid. Each chip uses the same palette hue as the
+   corresponding timetable cell, giving the user a single visual mapping. */
+.tt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+.tt-legend-chip {
+  --palette-hue: calc(var(--palette, 0) * 30);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 8px;
+  font-size: 11.5px;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-secondary);
+  background: hsl(var(--palette-hue), 70%, 96%);
+  border: 1px solid hsl(var(--palette-hue), 50%, 80%);
+  border-radius: 999px;
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tt-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(var(--palette-hue), 70%, 50%);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px hsl(var(--palette-hue), 70%, 90%);
+}
+.tt-legend-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: hsl(var(--palette-hue), 70%, 28%);
+  font-size: 11px;
+}
+.tt-legend-name {
+  opacity: 0.85;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+html[data-theme="dark"] .tt-legend-chip,
+html[data-theme="amoled"] .tt-legend-chip,
+html[data-theme="cappuccino-dark"] .tt-legend-chip,
+html[data-theme="evergreen-dark"] .tt-legend-chip,
+html[data-theme="midnight-dark"] .tt-legend-chip,
+html[data-theme="rosewood-dark"] .tt-legend-chip {
+  background: color-mix(in srgb, hsl(var(--palette-hue), 70%, 50%) 16%, var(--surface-elevated));
+  border-color: color-mix(in srgb, hsl(var(--palette-hue), 70%, 50%) 35%, transparent);
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .tt-legend-code,
+html[data-theme="amoled"] .tt-legend-code,
+html[data-theme="cappuccino-dark"] .tt-legend-code,
+html[data-theme="evergreen-dark"] .tt-legend-code,
+html[data-theme="midnight-dark"] .tt-legend-code,
+html[data-theme="rosewood-dark"] .tt-legend-code {
+  color: hsl(var(--palette-hue), 70%, 70%);
+}
+
+/* The default tooltip text colour was inherited from .tt-class which now
+   tints text per palette. Keep the tooltip body high-contrast on the active
+   card surface regardless of which subject owns the cell. */
+.tt-tooltip .tt-tt-name,
+.tt-tooltip .tt-tt-meta {
+  color: var(--text-primary);
+}
+.tt-tooltip .tt-tt-meta {
+  color: var(--text-secondary);
+}
+.tt-class.tt-merged .tt-tooltip {
+  width: 320px;
 }
 
 .tt-tt-name {
@@ -1398,81 +1939,6 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > tr > td {
   display: block !important;
   width: 100% !important;
-}
-
-/* ==========================================================================
-   Pass 4: Masthead Reorder
-   ========================================================================== */
-.reecap-masthead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--surface-card);
-  padding: 24px;
-  border-radius: var(--radius);
-  border: var(--card-border);
-  box-shadow: var(--card-shadow);
-  margin-bottom: 24px;
-}
-
-.masthead-left {
-  display: flex;
-  flex: 1;
-}
-
-.masthead-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 16px;
-}
-
-.masthead-identity {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.masthead-identity img {
-  width: 48px !important;
-  height: 48px !important;
-  border-radius: 50% !important;
-  object-fit: cover !important;
-  box-shadow: var(--card-shadow);
-}
-
-.masthead-identity #reecap-user-name {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
-  font-weight: 700 !important;
-  font-size: 20px !important;
-  letter-spacing: -0.02em;
-  color: var(--text-primary) !important;
-}
-
-.masthead-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.masthead-btn {
-  font-family: 'Inter', system-ui, sans-serif !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: var(--text-primary) !important;
-  text-decoration: none !important;
-  padding: 8px 16px;
-  border-radius: 6px;
-  background: var(--surface-page);
-  border: var(--card-border);
-  transition: all 0.2s ease !important;
-  box-shadow: var(--card-shadow);
-}
-
-.masthead-btn:hover {
-  background: var(--surface-hover);
-  border-color: var(--accent);
-  color: var(--accent) !important;
-  box-shadow: var(--card-shadow), var(--ambient-glow);
 }
 
 /* ==========================================================================
@@ -1639,14 +2105,20 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 
 .overview-content-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
   width: 100%;
-  align-items: start;
+  align-items: stretch;
+}
+@media (min-width: 1100px) {
+  .overview-content-row:has(.overview-quicklinks-card) {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+  }
 }
 
 .overview-card {
-  background: var(--surface-card);
+  background: var(--surface-elevated);
   border: var(--card-border);
   border-radius: var(--radius);
   padding: 24px;
@@ -1776,8 +2248,8 @@ table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > 
 
 .quicklinks-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
 }
 
 .quicklink-item {
@@ -1941,7 +2413,8 @@ table.popupTable th a:hover {
   color: var(--accent) !important;
 }
 
-/* 3. Keyboard accessibility focus indicators for custom clickable components */
+/* 3. Keyboard accessibility focus indicators for custom clickable components
+   Phase 3 (2026-07-26): unified through the --focus-ring token defined in :root. */
 .quicklink-item:focus-visible,
 .reecap-tab-btn:focus-visible,
 .tt-class:focus-visible,
@@ -1949,5 +2422,1134 @@ table.popupTable th a:hover {
 .masthead-btn:focus-visible {
   outline: 2px solid var(--accent) !important;
   outline-offset: 2px !important;
-  box-shadow: 0 0 0 4px rgba(224, 101, 76, 0.2), var(--ambient-glow) !important;
+  box-shadow: var(--focus-ring), var(--ambient-glow) !important;
 }
+
+/* ==========================================================================
+   Phase 2 (2026-07-26) — Responsive shell + consistency helpers
+   ========================================================================== */
+
+/* (a) Status-strip skeleton helper kept here for completeness. The DOM that
+       these styles paint is no longer created — the strip mounts in its
+       empty state immediately and self-resolves when storage populates. */
+
+.reecap-strip-skeleton {
+  display: grid !important;
+  grid-template-columns: 1fr auto auto;
+  gap: clamp(16px, 3vw, 36px);
+  align-items: center;
+  background: var(--surface-strip, var(--surface-card));
+  color: var(--surface-strip-text, var(--text-primary));
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: clamp(16px, 2.4vw, 24px);
+  box-shadow: var(--card-shadow);
+  margin-bottom: 24px;
+  animation: reecap-skel-pulse 1.6s ease-in-out infinite;
+}
+.reecap-strip-skeleton > div {
+  height: 14px;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--surface-sunken), var(--border-light), var(--surface-sunken));
+  background-size: 200% 100%;
+  animation: reecap-skel-shimmer 1.4s linear infinite;
+}
+.reecap-strip-skeleton .skel-clock { width: 80px; height: 28px; }
+.reecap-strip-skeleton .skel-date  { width: 56px; height: 12px; margin-top: 8px; }
+@keyframes reecap-skel-pulse { 0%,100% { opacity: 0.95; } 50% { opacity: 0.7; } }
+@keyframes reecap-skel-shimmer { 0% { background-position: 0% 50%; } 100% { background-position: -200% 50%; } }
+@media (prefers-reduced-motion: reduce) { .reecap-strip-skeleton { animation: none !important; } .reecap-strip-skeleton > div { animation: none !important; } }
+
+/* (b) Sidebar Quick-Links — retired 2026-07-26 (Phase 4). Categorized
+       groups already cover every link; the footer produced duplicates. */
+/* (c) Sidebar collapses to a horizontal pill row at <900px. */
+@media (max-width: 900px) {
+  .reecap-layout-columns {
+    flex-direction: column !important;
+  }
+  .reecap-sidebar-col {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  ul.menu {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    padding: 6px !important;
+    gap: 4px !important;
+  }
+  ul.menu > li { flex: 0 0 auto !important; }
+  .reecap-sidebar-link {
+    white-space: nowrap !important;
+  }
+  .reecap-sidebar-overview,
+  .reecap-sidebar-group {
+    display: none !important; /* squeeze the picker down to just the route pills */
+  }
+  .reecap-sidebar-section,
+  .reecap-sidebar-section-inner {
+    grid-template-rows: 1fr !important;
+    overflow: visible !important;
+  }
+  .reecap-sidebar-section.is-collapsed { grid-template-rows: 0fr; display: none !important; }
+  .reecap-sidebar-overview-divider { display: none !important; }
+}
+
+/* (d) Three-column wide-screen overview at >1280px — schedule pinned to the right rail. */
+@media (min-width: 1280px) {
+  .overview-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 320px !important;
+    grid-template-areas:
+      "metrics metrics"
+      "schedule quicklinks";
+    gap: 24px !important;
+    align-items: start;
+  }
+  .overview-section-metrics { grid-area: metrics; }
+  .overview-schedule-card  { grid-area: schedule; position: sticky; top: 24px; }
+  .overview-quicklinks-card { grid-area: quicklinks; align-self: stretch; }
+}
+
+/* (e) Elevated-card color-mix helper — kept as a 0-off guard. The previous
+       fade-from-white top sheen produced a visible band "inside" cards on
+       every dark theme. Card depth now comes from card-shadow alone. */
+@supports (background: color-mix(in srgb, #000, #fff)) {
+  /* intentionally empty — the helper rule was removed in 2026-07-26 to fix
+     the "ghost background" reported on dark-mode overview cards. */
+}
+
+/* ==========================================================================
+   Phase 5 (2026-07-26) — Fees tab ground-up redesign
+   --------------------------------------------------------------------------
+   Visual structure:
+     • .fee-redesign   — outer wrapper that aligns the hero / stats / list.
+     • .fee-hero       — single "current-semester bill" card with progress
+                         meter and Pay Online CTA scoped to the term.
+     • .fee-stats      — 3-up stat strip (Total Payable / Paid / Outstanding).
+     • .fee-semesters  — per-semester stackable blocks with their own
+                         progress meter and a `<details>` disclosure that
+                         surfaces the per-item ledger on demand.
+     • .fee-actions    — secondary + primary CTAs at the bottom.
+   All colours come from existing semantic tokens so any future theme adds
+   propagate for free.
+   ========================================================================== */
+
+.fee-redesign {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---- Hero block --------------------------------------------------------- */
+.fee-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+  padding: 22px 24px;
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  position: relative;
+  overflow: hidden;
+}
+.fee-hero::after {
+  /* A subtle right-side accent strip so the hero block reads as the
+     landmark "your bill" without a glow halo. */
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 6px;
+  background: var(--accent);
+  border-left: none;
+}
+.fee-hero.is-success::after  { background: var(--success); }
+.fee-hero.is-warning::after  { background: var(--warning); }
+.fee-hero.is-pending::after  { background: var(--text-faint); }
+
+.fee-hero-left,
+.fee-hero-right { position: relative; z-index: 1; }
+.fee-hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.fee-hero-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.15;
+  margin-top: 4px;
+}
+.fee-hero-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.fee-hero-subline {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.fee-state-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1px solid transparent;
+}
+.fee-state-pill.is-success { background: var(--success-soft); color: var(--success); border-color: color-mix(in srgb, var(--success) 30%, transparent); }
+.fee-state-pill.is-warning { background: var(--warning-soft); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 30%, transparent); }
+.fee-state-pill.is-pending { background: var(--surface-sunken);   color: var(--text-secondary); border-color: var(--border-light); }
+
+.fee-hero-meter {
+  margin-bottom: 14px;
+}
+.fee-hero-meter-bar {
+  position: relative;
+  height: 10px;
+  background: var(--surface-sunken);
+  border-radius: 100px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+.fee-hero-meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--success) 70%, transparent), var(--success));
+  border-radius: inherit;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fee-hero.is-warning .fee-hero-meter-fill {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--warning) 60%, transparent), var(--warning));
+}
+.fee-hero.is-pending .fee-hero-meter-fill { display: none; }
+.fee-hero-meter-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+.fee-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  background: var(--accent);
+  color: var(--knob);
+  box-shadow: var(--card-shadow);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.fee-hero-cta:hover    { background: var(--accent-dark); transform: translateY(-1px); }
+.fee-hero-cta:active   { transform: scale(0.98); }
+.fee-hero-cta:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.fee-hero.is-success  .fee-hero-cta { background: var(--success); }
+.fee-hero.is-success  .fee-hero-cta:hover { background: color-mix(in srgb, var(--success) 75%, #000 25%); }
+.fee-hero.is-pending  .fee-hero-cta { background: var(--surface-page); color: var(--text-primary); border: 1px solid var(--border); }
+
+@media (max-width: 720px) {
+  .fee-hero { grid-template-columns: 1fr; }
+  .fee-hero-right { padding-top: 0; }
+}
+
+/* ---- Stats strip -------------------------------------------------------- */
+.fee-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 720px) {
+  .fee-stats { grid-template-columns: 1fr; }
+}
+.fee-stat-card {
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fee-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.fee-stat-value {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.fee-stat-sub {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+.fee-stat-card.is-success .fee-stat-value { color: var(--success); }
+.fee-stat-card.is-critical .fee-stat-value { color: var(--error); }
+
+/* ---- Per-semester blocks ----------------------------------------------- */
+.fee-semesters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fee-semester {
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--card-shadow);
+  position: relative;
+}
+.fee-semester.is-active {
+  border-left: 3px solid var(--accent);
+  padding-left: 22px;
+}
+.fee-semester.is-active.is-warning { border-left-color: var(--warning); }
+.fee-semester.is-active.is-success { border-left-color: var(--success); }
+
+.fee-semester-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.fee-semester-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.fee-semester-name {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.fee-semester-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 100px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+.fee-semester-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 100px;
+  border: 1px solid currentColor;
+  color: var(--text-secondary);
+}
+.fee-semester-status.is-success { color: var(--success); }
+.fee-semester-status.is-warning { color: var(--warning); }
+.fee-semester-status.is-muted   { color: var(--text-faint); }
+.fee-semester-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.fee-semester.is-warning .fee-semester-amount { color: var(--warning); }
+.fee-semester.is-success .fee-semester-amount { color: var(--success); }
+
+.fee-sem-meter { margin-bottom: 8px; }
+.fee-sem-meter-bar {
+  position: relative;
+  height: 6px;
+  background: var(--surface-sunken);
+  border-radius: 100px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+.fee-sem-meter-fill {
+  height: 100%;
+  background: var(--success);
+  border-radius: inherit;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fee-sem-meter-fill.is-warning { background: var(--warning); }
+.fee-sem-meter-fill.is-muted   { background: var(--text-faint); width: 100% !important; }
+.fee-sem-meter-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+.fee-sem-details {
+  margin-top: 12px;
+  border-top: 1px dashed var(--border-light);
+  padding-top: 12px;
+}
+.fee-sem-details > summary {
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.fee-sem-details > summary::-webkit-details-marker { display: none; }
+.fee-sem-details > summary::after {
+  content: "▾";
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+.fee-sem-details[open] > summary::after { transform: rotate(180deg); }
+.fee-sem-details > summary:hover { color: var(--accent-dark); }
+.fee-sem-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+}
+.fee-sem-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+.fee-sem-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+}
+.fee-sem-table tr:last-child td { border-bottom: none; }
+.fee-sem-table tbody tr:hover td { background: var(--surface-sunken); }
+.fee-row-name { color: var(--text-primary); font-weight: 600; }
+.fee-row-out.is-warning { color: var(--warning); }
+.fee-row-out.is-muted   { color: var(--text-faint); }
+.fee-row-out.is-success { color: var(--success); }
+.fee-semester.is-success .fee-row-out.is-warning { color: var(--text-faint); }
+
+/* ---- Empty + actions -------------------------------------------------- */
+.fee-empty {
+  padding: 24px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+.fee-balance-words {
+  padding: 14px 18px;
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  box-shadow: var(--card-shadow);
+}
+.fee-balance-words-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.fee-balance-words-value {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.fee-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+.fee-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--card-shadow);
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+.fee-action:hover  { background: var(--surface-hover); transform: translateY(-1px); }
+.fee-action:active { transform: scale(0.98); }
+.fee-action:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.fee-action-primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--knob);
+  margin-left: auto;
+}
+.fee-action-primary:hover { background: var(--accent-dark); }
+@media (max-width: 720px) {
+  .fee-action-primary { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fee-hero-meter-fill, .fee-sem-meter-fill { transition: none; }
+}
+
+/* ==========================================================================
+   Phase 6 (2026-07-26) — Online Payment tab ground-up redesign
+   --------------------------------------------------------------------------
+   Visual structure:
+     • .pay-hero        — identity + payment channel (ICICI / Paytm).
+     • .pay-years       — 4 year select cards showing due totals per year.
+     • .pay-items-card  — 6-column itemised layout (replacing the portal's
+                          18-column horizontal scroll). Keeps the real DOM
+                          checkboxes and inputs relocated inside so postback
+                          handlers stay bound.
+     • .pay-sticky-bar  — bottom bar with Fee Paying / Fine / Total Paying
+                          and relocated Proceed / Cancel buttons.
+   ========================================================================== */
+
+.reecap-payment-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 90px; /* reserve space for sticky bar */
+}
+
+/* ---- Hero ---------------------------------------------------------------- */
+.pay-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 22px 24px;
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+}
+.pay-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.pay-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 4px 0 6px 0;
+  line-height: 1.15;
+}
+.pay-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pay-meta b { color: var(--text-primary); }
+
+.pay-hero-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.channel-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.channel-options {
+  display: flex;
+  gap: 8px;
+}
+.channel-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.channel-label:has(input[type="radio"]:checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+/* ---- Year cards --------------------------------------------------------- */
+.pay-years {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 800px) {
+  .pay-years { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .pay-years { grid-template-columns: 1fr; }
+}
+
+.pay-year-card {
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pay-year-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border);
+}
+.pay-year-card.is-selected {
+  border-color: var(--accent);
+  box-shadow: var(--card-shadow), inset 0 0 0 1px var(--accent);
+}
+.pay-year-card:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.year-card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.year-card-due {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.pay-year-card.has-due .year-card-due { color: var(--error); }
+.pay-year-card.is-cleared .year-card-due { color: var(--success); }
+.year-card-status {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+/* ---- Itemised table ----------------------------------------------------- */
+.pay-items-card {
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+}
+.pay-items-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+.pay-items-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.pay-items-year-label { color: var(--accent); }
+.pay-items-hint { font-size: 12.5px; color: var(--text-secondary); }
+
+.pay-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13.5px;
+}
+.pay-items-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border);
+}
+.pay-items-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.pay-items-table tbody tr:hover td { background: var(--surface-sunken); cursor: pointer; }
+.pay-items-table tr.row-paid td { opacity: 0.75; }
+.pay-items-table tr.row-disabled td { opacity: 0.5; cursor: not-allowed; }
+
+.col-chk { text-align: center; }
+.reecap-native-chk {
+  width: 16px !important;
+  height: 16px !important;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+.item-title { font-weight: 600; color: var(--text-primary); }
+.item-sl { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
+
+.reecap-pay-input {
+  max-width: 90px !important;
+  padding: 6px 8px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface-page) !important;
+  color: var(--text-primary) !important;
+}
+.reecap-pay-input:focus { border-color: var(--accent) !important; outline: none !important; }
+
+/* ---- Sticky bottom bar -------------------------------------------------- */
+.pay-sticky-bar {
+  position: fixed;
+  inset: auto 24px 20px 24px;
+  z-index: 1000;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 24px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+@media (max-width: 720px) {
+  .pay-sticky-bar {
+    inset: auto 12px 12px 12px;
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+.pay-sticky-totals {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.pay-total-item {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.pay-total-item b {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.pay-total-item.is-primary b {
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.pay-sticky-actions {
+  display: flex;
+  gap: 10px;
+}
+@media (max-width: 720px) {
+  .pay-sticky-actions { justify-content: flex-end; }
+}
+.pay-btn {
+  padding: 10px 20px !important;
+  border-radius: var(--radius-sm) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  border: 1px solid transparent !important;
+}
+.pay-btn-secondary {
+  background: var(--surface-sunken) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+.pay-btn-secondary:hover { background: var(--surface-hover) !important; }
+.pay-btn-primary {
+  background: var(--accent) !important;
+  color: var(--knob) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+.pay-btn-primary:hover { background: var(--accent-dark) !important; transform: translateY(-1px); }
+
+/* ==========================================================================
+   Phase 7 (2026-07-27) — Marks Page redesign
+   --------------------------------------------------------------------------
+   • .reecap-marks-page    — outer wrapper
+   • .marks-hero           — title row + CGPA / Credits / Result tiles
+   • .marks-section        — section block (transcript / attendance / internal)
+   • .transcript-card      — one semester with its subject grid
+   • .sem-summary          — Passed / Failed / SGPA / Result strip
+   • .attendance-card      — Held / Attended / % tiles
+   • .internal-card        — internal marks matrix
+   ========================================================================== */
+
+.reecap-marks-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 4px 0 24px 0;
+}
+
+/* ---- Hero block --------------------------------------------------------- */
+.marks-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 24px 28px;
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  position: relative;
+  overflow: hidden;
+}
+.marks-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 6px;
+  background: var(--accent);
+}
+.marks-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.marks-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 4px 0 6px 0;
+  line-height: 1.15;
+}
+.marks-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.marks-meta b { color: var(--text-primary); }
+
+.marks-hero-stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.marks-stat {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  min-width: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.marks-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.marks-stat-value {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.marks-stat-value.is-success { color: var(--success); }
+.marks-stat-value.is-warning { color: var(--warning); }
+
+/* ---- Section blocks ---------------------------------------------------- */
+.marks-section {
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.marks-section-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 12px;
+}
+.marks-empty {
+  padding: 24px;
+  text-align: center;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+/* ---- Transcript list --------------------------------------------------- */
+.marks-transcript-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.transcript-card {
+  background: var(--surface-page);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.transcript-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.transcript-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.sem-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.sem-summary b { color: var(--text-primary); font-weight: 700; }
+.sem-summary span {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* ---- Attendance list -------------------------------------------------- */
+.marks-attendance-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.attendance-card {
+  background: var(--surface-page);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.attendance-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.attendance-stats {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.attendance-stat {
+  flex: 1;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.attendance-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.attendance-stat-value {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ---- Internal marks matrix -------------------------------------------- */
+.marks-internal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.internal-card {
+  background: var(--surface-page);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.internal-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+.internal-marks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.internal-marks-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 8px 10px;
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border-light);
+  text-align: center;
+}
+.internal-marks-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-light);
+  text-align: center;
+}
+.internal-marks-table tr:last-child td { border-bottom: none; }
+.internal-marks-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.internal-marks-table tr:hover td { background: var(--surface-page); }
+.internal-marks-table tr:hover td:first-child { background: var(--surface-sunken); }

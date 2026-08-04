@@ -164,29 +164,31 @@
       transition: background 0.2s ease, color 0.2s ease;
     }
 
+    /* ── Header ── */
     .header {
       display: flex;
       align-items: center;
       gap: 12px;
       margin-bottom: 20px;
       padding-bottom: 14px;
-      border-bottom: 2px solid var(--text-primary);
+      border-bottom: 1px solid var(--border);
     }
 
     .logo-mark {
       width: 38px;
       height: 38px;
-      background: var(--accent);
-      border-radius: var(--radius-sm);
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-weight: 700;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 18px;
+      transition: opacity 0.2s ease;
+    }
+
+    .logo-mark svg {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
       box-shadow: var(--card-shadow);
-      transition: background 0.2s ease;
     }
 
     .title-group h1 {
@@ -208,6 +210,7 @@
       font-weight: 700;
     }
 
+    /* ── Card Container ── */
     .card-container {
       background: var(--surface-card);
       border: 1px solid var(--border);
@@ -219,6 +222,7 @@
       gap: 16px;
     }
 
+    /* ── Toggle Row ── */
     .toggle-row {
       display: flex;
       align-items: center;
@@ -245,7 +249,7 @@
     .status-enabled { color: var(--success); }
     .status-disabled { color: var(--text-faint); }
 
-    /* Modern Switch */
+    /* ── Modern Switch ── */
     .switch {
       position: relative;
       display: inline-block;
@@ -286,17 +290,21 @@
       margin: 2px 0;
     }
 
-    /* Theme Selector */
+    /* ── Section Labels (JetBrains Mono eyebrow) ── */
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ── Theme Selector ── */
     .theme-row {
       display: flex;
       flex-direction: column;
       gap: 10px;
-    }
-    
-    .theme-row-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-secondary);
     }
 
     .theme-switcher {
@@ -320,48 +328,158 @@
       background: transparent;
       color: var(--text-secondary);
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .theme-btn .theme-btn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+    }
+
+    .theme-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     .theme-btn.active {
       background: var(--accent);
-      color: #fff;
+      color: var(--knob);
+    }
+
+    .theme-btn.active .theme-btn-dot {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.4);
     }
 
     .theme-btn:hover:not(.active) {
       color: var(--text-primary);
+      background: var(--surface-sunken);
     }
 
-    #modeRow.is-disabled {
-      opacity: 0.4;
-      pointer-events: none;
-      filter: grayscale(100%);
+    /* ── Mode Segmented Pill ── */
+    .mode-pill {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
+      background: var(--surface-page);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px;
     }
 
-    /* Disabled state for theme switcher when extension is toggled off */
-    body.disabled .theme-switcher {
-      opacity: 0.5;
-      pointer-events: none;
-      filter: grayscale(100%);
+    .mode-pill-track {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: calc(50% - 3px);
+      height: calc(100% - 6px);
+      background: var(--accent);
+      border-radius: 17px;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 0;
     }
 
-    .footer {
-      margin-top: 20px;
-      text-align: center;
+    .mode-pill-track.right {
+      transform: translateX(100%);
+    }
+
+    .mode-btn {
+      position: relative;
+      z-index: 1;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
+      font-weight: 600;
+      padding: 7px 0;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 17px;
+      transition: color 0.2s ease;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      color: var(--knob);
+    }
+
+    .mode-btn:hover:not(.active) {
+      color: var(--text-primary);
+    }
+
+    /* ── Disabled States ── */
+    #modeRow.is-disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    body.disabled .theme-switcher,
+    body.disabled .mode-pill {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    /* Form-semantic borders so fieldset/legend read well */
+    fieldset {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    legend.section-label {
+      padding: 0 0 8px 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
       color: var(--text-faint);
-      line-height: 1.4;
+      letter-spacing: 0.02em;
+    }
+
+    .footer-version {
+      letter-spacing: 0.06em;
+    }
+
+    .footer-help {
+      cursor: help;
+      border-bottom: 1px dotted var(--text-faint);
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
     }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <div class="logo-mark">R</div>
+    <div class="logo-mark">
+      <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+        <rect width="128" height="128" rx="28" fill="currentColor" style="color: var(--accent);"/>
+        <text x="64" y="88" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="76" fill="#FFFFFF">R</text>
+      </svg>
+    </div>
     <div class="title-group">
       <h1>ReEcap</h1>
       <p>AEC Portal Reskin</p>
@@ -379,37 +497,39 @@
         <span class="slider"></span>
       </label>
     </div>
-    
-    <div class="divider"></div>
-    
-    <div class="theme-row">
-      <span class="theme-row-label">Color Family</span>
-      <div class="theme-switcher" id="familySwitcher">
-        <button class="theme-btn" data-family="original">Original</button>
-        <button class="theme-btn" data-family="cappuccino">Cappuccino</button>
-        <button class="theme-btn" data-family="evergreen">Evergreen</button>
-        <button class="theme-btn" data-family="midnight">Midnight</button>
-        <button class="theme-btn" data-family="rosewood">Rosewood</button>
-        <button class="theme-btn" data-family="amoled">AMOLED</button>
-      </div>
-    </div>
 
     <div class="divider"></div>
 
-    <div class="theme-row" id="modeRow">
-      <span class="theme-row-label">Mode</span>
-      <div class="theme-switcher" id="modeSwitcher">
-        <button class="theme-btn mode-btn" data-mode="light">Light</button>
-        <button class="theme-btn mode-btn" data-mode="dark">Dark</button>
+    <fieldset class="theme-row">
+      <legend class="section-label">Color Family</legend>
+      <div class="theme-switcher" id="familySwitcher" role="radiogroup" aria-label="Color family">
+        <button class="theme-btn" data-family="original" role="radio" aria-checked="false">Original</button>
+        <button class="theme-btn" data-family="cappuccino" role="radio" aria-checked="false">Cappuccino</button>
+        <button class="theme-btn" data-family="evergreen" role="radio" aria-checked="false">Evergreen</button>
+        <button class="theme-btn" data-family="midnight" role="radio" aria-checked="false">Midnight</button>
+        <button class="theme-btn" data-family="rosewood" role="radio" aria-checked="false">Rosewood</button>
+        <button class="theme-btn" data-family="amoled" role="radio" aria-checked="false">AMOLED</button>
       </div>
-    </div>
+    </fieldset>
+
+    <div class="divider"></div>
+
+    <fieldset class="theme-row" id="modeRow">
+      <legend class="section-label">Mode</legend>
+      <div class="mode-pill" id="modeSwitcher" role="radiogroup" aria-label="Mode">
+        <div class="mode-pill-track" id="modeTrack"></div>
+        <button class="mode-btn" data-mode="light" role="radio" aria-checked="false">Light</button>
+        <button class="mode-btn" data-mode="dark" role="radio" aria-checked="false">Dark</button>
+      </div>
+    </fieldset>
   </div>
 
   <div class="footer">
-    Changes apply instantly.<br>
-    Toggle off to restore original site styles.
+    <span class="footer-version" aria-label="Version">v1.0.0</span>
+    <span class="footer-help" title="Keyboard shortcuts: T toggles the reskin. The mode switcher is disabled when the AMOLED family is selected.">Shortcuts</span>
   </div>
 
+  <script src="shared/theme.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

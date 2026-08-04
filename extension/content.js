@@ -6,10 +6,30 @@ const STYLE_ID = 'reecap-stylesheet';
 const FONTS_ID = 'reecap-fonts';
 const FONTS_PRE1_ID = 'reecap-fonts-pre1';
 const FONTS_PRE2_ID = 'reecap-fonts-pre2';
+const SKIP_LINK_ID = 'reecap-skip-link';
+const THEME_STORAGE_DEFAULTS = { enabled: true, themeFamily: null, themeMode: null, theme: null };
+
+let reecapEnabled = false;
+
+const reecap = window.__reecap_theme || {};
+const resolveTheme        = reecap.resolveTheme        || ((f, m) => (f === 'amoled' ? 'amoled' : (f === 'original' ? (m || 'light') : `${f}-${m || 'light'}`)));
+const migrateThemeStorage_ = reecap.migrateThemeStorage || ((d) => ({ family: (d && d.themeFamily) || 'original', mode: (d && d.themeMode) || 'light' }));
+const matchActivePage     = reecap.matchActivePage     || (() => null);
+
+function ensureSkipLink() {
+  if (document.getElementById(SKIP_LINK_ID)) return;
+  const target = document.getElementById('reecap-content-col') || document.body;
+  const a = document.createElement('a');
+  a.id = SKIP_LINK_ID;
+  a.href = '#reecap-content-col';
+  a.className = 'reecap-skip-link';
+  a.textContent = 'Skip to main content';
+  document.documentElement.insertBefore(a, document.body || target);
+}
 
 function injectStyle() {
   const head = document.head || document.documentElement;
-  
+
   // Inject Google Fonts directly into <head> to bypass CSS @import CSP issues
   if (!document.getElementById(FONTS_PRE1_ID)) {
     const pre1 = document.createElement('link');
@@ -18,7 +38,7 @@ function injectStyle() {
     pre2.id = FONTS_PRE2_ID; pre2.rel = 'preconnect'; pre2.href = 'https://fonts.gstatic.com'; pre2.crossOrigin = 'anonymous';
     const fontLink = document.createElement('link');
     fontLink.id = FONTS_ID; fontLink.rel = 'stylesheet'; fontLink.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap';
-    
+
     head.appendChild(pre1);
     head.appendChild(pre2);
     head.appendChild(fontLink);
@@ -32,6 +52,8 @@ function injectStyle() {
     link.href = chrome.runtime.getURL('style.css');
     head.appendChild(link);
   }
+
+  ensureSkipLink();
 }
 
 function removeStyle() {
@@ -39,63 +61,59 @@ function removeStyle() {
   if (el) el.remove();
 }
 
-function resolveTheme(family, mode) {
-  if (family === "amoled") return "amoled";
-  if (family === "original") return mode; // returns "light" or "dark"
-  return `${family}-${mode}`;             // returns "cappuccino-light", "cappuccino-dark", etc.
+function migrateThemeStorage(data) {
+  const mapped = migrateThemeStorage_(data);
+  // Migrate only once. The storage-level onChanged listener below ensures the
+  // successful write reaches every iframe — messages alone reach only the
+  // top-level document in many MV3 situations.
+  if (data && !data.themeFamily && window === window.top) {
+    try {
+      chrome.storage.sync.set({ themeFamily: mapped.family, themeMode: mapped.mode, theme: null }, () => {
+        void chrome.runtime && chrome.runtime.lastError;
+      });
+    } catch (e) { /* extension reloaded between read and write — ignore */ }
+  }
+  return mapped;
 }
 
-function migrateThemeStorage(data, callback) {
-  if (data.themeFamily) {
-    callback({ family: data.themeFamily, mode: data.themeMode || "light" });
+function applyStoredTheme(data) {
+  const mapped = migrateThemeStorage(data);
+  reecapEnabled = data.enabled !== false;
+  if (!reecapEnabled) {
+    removeStyle();
+    document.documentElement.removeAttribute('data-theme');
     return;
   }
-  const LEGACY_MAP = {
-    "light":      { family: "original",    mode: "light" },
-    "dark":       { family: "original",    mode: "dark"  },
-    "cappuccino": { family: "cappuccino",  mode: "light" },
-    "amoled":     { family: "amoled",      mode: "dark"  },
-    "evergreen":  { family: "evergreen",   mode: "light" },
-    "midnight":   { family: "midnight",    mode: "dark"  },
-    "rosewood":   { family: "rosewood",    mode: "light" },
-  };
-  const mapped = LEGACY_MAP[data.theme || "light"] || { family: "original", mode: "light" };
-  chrome.storage.sync.set({ themeFamily: mapped.family, themeMode: mapped.mode, theme: null });
-  callback(mapped);
+  injectStyle();
+  document.documentElement.setAttribute('data-theme', resolveTheme(mapped.family, mapped.mode));
 }
 
-// Apply on load based on stored state
-chrome.storage.sync.get({ enabled: true, themeFamily: null, themeMode: null, theme: null }, (data) => {
-  if (data.enabled) {
-    injectStyle();
-    migrateThemeStorage(data, (mapped) => {
-      const resolved = resolveTheme(mapped.family, mapped.mode);
-      document.documentElement.setAttribute('data-theme', resolved);
-    });
-  }
+// Apply once on every parent + iframe document. A later storage update will
+// re-run applyStoredTheme in all frames, keeping theme switching consistent.
+chrome.storage.sync.get(THEME_STORAGE_DEFAULTS, applyStoredTheme);
+
+// Storage is the source of truth and propagates across every content-script
+// frame. This fixes the old behavior where the popup message styled the shell
+// but left iframe pages on their previous theme.
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'sync') return;
+  if (!(changes.enabled || changes.themeFamily || changes.themeMode || changes.theme)) return;
+  chrome.storage.sync.get(THEME_STORAGE_DEFAULTS, applyStoredTheme);
 });
 
-// Listen for live messages from popup (no page reload needed)
+// Popup messages make the top-level page respond immediately. The storage
+// listener above carries the same change to every iframe shortly afterward.
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'REECAP_TOGGLE') {
     if (msg.enabled) {
-      injectStyle();
-      chrome.storage.sync.get({ themeFamily: null, themeMode: null, theme: null }, (data) => {
-        migrateThemeStorage(data, (mapped) => {
-          const resolved = resolveTheme(mapped.family, mapped.mode);
-          document.documentElement.setAttribute('data-theme', resolved);
-        });
-      });
+      chrome.storage.sync.get(THEME_STORAGE_DEFAULTS, applyStoredTheme);
     } else {
+      reecapEnabled = false;
       removeStyle();
       document.documentElement.removeAttribute('data-theme');
     }
-  } else if (msg.type === 'REECAP_THEME') {
-    chrome.storage.sync.get({ enabled: true }, (data) => {
-      if (data.enabled) {
-        document.documentElement.setAttribute('data-theme', msg.theme);
-      }
-    });
+  } else if (msg.type === 'REECAP_THEME' && reecapEnabled) {
+    document.documentElement.setAttribute('data-theme', msg.theme);
   }
 });
 
@@ -169,16 +187,13 @@ function syncSidebarActiveState(iframePath) {
   if (document.documentElement.getAttribute('data-overview-active') === 'true') {
     return;
   }
+  const activeKey = matchActivePage(iframePath);
   const links = document.querySelectorAll('a.reecap-sidebar-link:not(.reecap-sidebar-overview), a.menuLink');
   links.forEach(link => {
-    try {
-      const linkPath = new URL(link.href).pathname.toLowerCase();
-      // If the iframe is currently showing this link's page
-      if (iframePath.includes(linkPath) || linkPath.includes(iframePath)) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
-    } catch (e) {}
+    // The link was stamped with data-route-key at sidebar-build time. A
+    // single equality check fires here — no per-link path math, no
+    // substring .includes() that can light up multiple links at once.
+    const linkKey = link.getAttribute('data-route-key') || null;
+    link.classList.toggle('active', !!activeKey && linkKey === activeKey);
   });
 }
