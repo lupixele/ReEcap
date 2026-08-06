@@ -99,18 +99,76 @@ tr:has(span[style*="color: blue"]) {
    Unified Masthead
    ========================================================================== */
 .masthead {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 76px;
   padding: 0 0 24px 0;
-  margin-bottom: 20px;
-  border-bottom: 3px solid var(--text-primary);
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
 }
 
-.brand-block { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 4px; 
+.masthead::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 72px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--surface-card);
+  border: var(--card-border);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+  flex-shrink: 0;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  transform: translateY(-1px);
+}
+
+.mobile-menu-btn[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.mobile-menu-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.mobile-menu-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.brand-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .eyebrow {
@@ -246,13 +304,7 @@ body.bodyStyle > form > center > br {
 }
 
 .linksBG {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  width: 220px !important;
-  min-width: 220px !important;
-  /* No padding-top — alignment is handled by the flex layout wrapper */
+  display: none !important;
 }
 
 /* === Flex Layout Wrapper (injected by rebuildMainLayout) === */
@@ -278,20 +330,23 @@ body.bodyStyle > form > center > br {
 }
 
 .reecap-layout-columns {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
   width: 100%;
+  position: relative;
 }
 
 .reecap-sidebar-col {
-  width: 220px;
-  min-width: 220px;
+  position: sticky;
+  top: 20px;
   flex-shrink: 0;
+  min-width: 0;
+  z-index: var(--z-navigation);
 }
 
 .reecap-content-col {
-  flex: 1;
   min-width: 0;
 }
 
@@ -330,18 +385,67 @@ body.bodyStyle br {
 }
 
 ul.menu {
+  position: relative;
   list-style: none !important;
   display: flex !important;
   flex-direction: column !important;
   background: var(--surface-card) !important;
   border: var(--card-border) !important;
-  border-radius: var(--radius) !important;
-  padding: 8px !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 12px !important;
   box-shadow: var(--card-shadow) !important;
   margin: 0 !important;
   width: 100% !important;
   box-sizing: border-box !important;
   gap: 2px;
+  overflow: hidden;
+}
+
+.reecap-nav-heading {
+  display: none !important;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  margin: 0 0 10px !important;
+  padding: 0 4px !important;
+}
+
+.reecap-nav-heading-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.reecap-nav-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.reecap-nav-close:hover {
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+}
+
+.reecap-nav-close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.reecap-nav-close svg {
+  width: 20px;
+  height: 20px;
 }
 
 ul.menu li { 
@@ -368,17 +472,28 @@ ul.menu li {
   align-items: center;
   cursor: pointer;
   user-select: none;
-  font-family: var(--font-sans), system-ui, sans-serif !important;
-  font-size: 11px !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 10px !important;
   font-weight: 700 !important;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-faint) !important;
-  padding: 24px 12px 8px !important;
-  transition: color 0.2s ease;
+  padding: 20px 12px 8px !important;
+  transition: color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  width: 100%;
+  text-align: left;
+}
+.reecap-sidebar-group:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
 }
 .reecap-sidebar-group:hover {
   color: var(--text-secondary) !important;
+  background: var(--surface-sunken);
 }
 .reecap-sidebar-group:first-child {
   padding-top: 4px !important;
@@ -418,13 +533,14 @@ ul.menu li {
   display: flex !important;
   align-items: center;
   gap: 12px;
+  min-height: 42px;
   padding: 10px 12px !important;
   font-size: 13.5px !important;
   font-weight: 500 !important;
   color: var(--text-secondary) !important;
   text-decoration: none !important;
   border-radius: var(--radius-sm);
-  transition: all 0.2s ease;
+  transition: color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
   border: none !important;
   background: transparent !important;
 }
@@ -432,12 +548,24 @@ ul.menu li {
 .reecap-sidebar-link:hover {
   color: var(--text-primary) !important;
   background: var(--surface-sunken) !important;
+  transform: translateX(2px);
 }
 
 .reecap-sidebar-link.active {
   color: var(--accent-dark) !important;
   background: var(--accent-soft) !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+}
+
+.reecap-sidebar-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
 }
 
 .reecap-sidebar-icon {
@@ -1579,33 +1707,15 @@ html[data-theme="rosewood-dark"] .tt-legend-code {
 }
 
 
-/* ==========================================================================
-   Pass 4: Infinite Scroll Bug Fix (Flex layout for StudentMaster)
-   ========================================================================== */
-table[width="100%"] > tbody > tr:has(> td.linksBG) {
-  display: flex !important;
-  align-items: flex-start !important;
-  width: 100% !important;
-}
-
-table[width="100%"] > tbody > tr > td.linksBG {
-  display: block !important;
-  flex: 0 0 178px !important;
-}
-
-table[width="100%"] > tbody > tr > td:has(> table iframe#capIframeId) {
-  display: block !important;
-  flex: 1 1 auto !important;
-  width: 100% !important;
-}
-
-/* Fix table wrapper inside that td */
-table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId),
-table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody,
-table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > tr,
-table[width="100%"] > tbody > tr > td > table:has(iframe#capIframeId) > tbody > tr > td {
-  display: block !important;
-  width: 100% !important;
+/* ===========================================================================
+   Legacy StudentMaster shell retirement
+   ===========================================================================
+   `rebuildMainLayout` moves both the menu and iframe into the semantic shell,
+   then hides the original table. Keep its descendants out of flow until then;
+   styling this retired structure as a second flex layout caused competing
+   widths and was the source of the previous tablet drawer instability. */
+table[width="100%"]:has(iframe#capIframeId) {
+  display: none !important;
 }
 
 /* ==========================================================================
@@ -2096,9 +2206,24 @@ table.popupTable th a:hover {
    Phase 2 (2026-07-26) — Responsive shell + consistency helpers
    ========================================================================== */
 
-/* (a) Status-strip skeleton helper kept here for completeness. The DOM that
-       these styles paint is no longer created — the strip mounts in its
-       empty state immediately and self-resolves when storage populates. */
+.reecap-nav-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.46);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: var(--z-overlay);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-standard) var(--ease-standard);
+}
+
+.reecap-nav-scrim.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* (a) Status-strip skeleton helper kept here for completeness. */
 
 .reecap-strip-skeleton {
   display: grid !important;
@@ -2129,36 +2254,90 @@ table.popupTable th a:hover {
 
 /* (b) Sidebar Quick-Links — retired 2026-07-26 (Phase 4). Categorized
        groups already cover every link; the footer produced duplicates. */
-/* (c) Sidebar collapses to a horizontal pill row at <900px. */
-@media (max-width: 900px) {
+
+/* (c) Responsive Navigation Shell:
+       >= 1200px: Full, sticky side rail
+       < 1200px: One predictable off-canvas drawer
+
+   A compact tablet rail tried to serve as both navigation and an overlay.
+   Keeping a single drawer behaviour below the desktop breakpoint prevents its
+   conflicting position, width and inert states from breaking the shell. */
+@media (max-width: 1199px) {
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+
   .reecap-layout-columns {
-    flex-direction: column !important;
+    display: block;
   }
+
   .reecap-sidebar-col {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(344px, calc(100vw - 48px));
+    min-width: 0;
+    padding: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--surface-page);
+    border-right: 1px solid var(--border);
+    box-shadow: 20px 0 48px rgba(0, 0, 0, 0.24);
+    z-index: calc(var(--z-overlay) + 1);
+    transform: translateX(-105%);
+    transition: transform var(--duration-standard) var(--ease-standard);
+  }
+
+  .reecap-sidebar-col.is-open {
+    transform: translateX(0);
+  }
+
+  .reecap-sidebar-col ul.menu {
+    min-height: 100%;
+  }
+
+  .reecap-nav-heading {
+    display: flex !important;
+  }
+
+  html.reecap-nav-open,
+  html.reecap-nav-open body {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 767px) {
+  body.bodyStyle > form > center > div {
     width: 100% !important;
-    min-width: 0 !important;
+    padding: 0 16px 16px !important;
   }
-  ul.menu {
-    flex-direction: row !important;
-    overflow-x: auto !important;
-    padding: 6px !important;
-    gap: 4px !important;
+
+  .masthead {
+    min-height: 64px;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
   }
-  ul.menu > li { flex: 0 0 auto !important; }
-  .reecap-sidebar-link {
-    white-space: nowrap !important;
+
+  .brand-block {
+    gap: 12px;
   }
-  .reecap-sidebar-overview,
-  .reecap-sidebar-group {
-    display: none !important; /* squeeze the picker down to just the route pills */
+
+  .brand-title {
+    font-size: 26px;
   }
-  .reecap-sidebar-section,
-  .reecap-sidebar-section-inner {
-    grid-template-rows: 1fr !important;
-    overflow: visible !important;
+
+  .user-cluster {
+    gap: 6px;
   }
-  .reecap-sidebar-section.is-collapsed { grid-template-rows: 0fr; display: none !important; }
-  .reecap-sidebar-overview-divider { display: none !important; }
+
+  .user-name,
+  .user-cluster .pill-btn:not(#lnkLogOut) {
+    display: none;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 /* (d) Three-column wide-screen overview at >1280px — schedule pinned to the right rail. */
@@ -2168,7 +2347,7 @@ table.popupTable th a:hover {
     grid-template-columns: minmax(0, 1fr) 320px !important;
     grid-template-areas:
       "metrics metrics"
-      "schedule quicklinks";
+      "quicklinks schedule";
     gap: 24px !important;
     align-items: start;
   }

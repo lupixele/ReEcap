@@ -8,8 +8,14 @@
   <style>
     * { box-sizing: border-box; }
 
+    html {
+      width: min(24rem, 100vw);
+      background: var(--surface-page-glow);
+    }
+
     body {
-      width: min(23rem, 100vw);
+      min-width: 20rem;
+      width: min(24rem, 100vw);
       margin: 0;
       padding: var(--space-lg);
       background: var(--surface-page-glow);

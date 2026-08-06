@@ -28,7 +28,7 @@ function initDecorators() {
       const mainLayoutTable = userDataRow ? userDataRow.closest('table') : null;
       const topContainer = mainLayoutTable ? mainLayoutTable.parentElement : null;
       
-      if (topContainer && userDataRow) {
+      if (topContainer && userDataRow && !document.querySelector('.masthead')) {
          // 1. Hide original userData row entirely
          userDataRow.style.setProperty('display', 'none', 'important');
          
@@ -45,7 +45,17 @@ function initDecorators() {
          
          const brandBlock = document.createElement('div');
          brandBlock.className = 'brand-block';
-         brandBlock.innerHTML = '<div class="eyebrow">Student Portal</div><h1 class="brand-title">ReEcap</h1>';
+         brandBlock.innerHTML = `
+           <button type="button" class="mobile-menu-btn" aria-label="Open navigation" aria-expanded="false" aria-controls="reecap-sidebar">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+               <path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>
+             </svg>
+           </button>
+           <div class="brand-identity">
+             <div class="eyebrow">Student Portal</div>
+             <h1 class="brand-title">ReEcap</h1>
+           </div>
+         `;
          
          const userCluster = document.createElement('div');
          userCluster.className = 'user-cluster';
@@ -2750,16 +2760,30 @@ function buildSidebar() {
   chrome.storage.sync.get({ sidebarOpen: { Academics: true, Finance: false, Account: false } }, ({ sidebarOpen }) => {
     menu.innerHTML = '';
 
+    const navigationHeading = document.createElement('li');
+    navigationHeading.className = 'reecap-nav-heading';
+    navigationHeading.innerHTML = `
+      <span class="reecap-nav-heading-label">Navigation</span>
+      <button type="button" class="reecap-nav-close" aria-label="Close navigation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+    `;
+    menu.appendChild(navigationHeading);
+
     // Add OVERVIEW item at top
     const overviewLi = document.createElement('li');
     const overviewA = document.createElement('a');
     overviewA.className = 'reecap-sidebar-link reecap-sidebar-overview';
     overviewA.href = 'javascript:void(0);';
     const overviewIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>';
+    overviewA.title = 'Overview';
     overviewA.innerHTML = `<span class="reecap-sidebar-icon">${overviewIcon}</span><span class="reecap-sidebar-text">OVERVIEW</span>`;
     overviewA.addEventListener('click', (e) => {
       e.preventDefault();
       if (typeof showOverview === 'function') showOverview();
+      if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
     });
     overviewLi.appendChild(overviewA);
     menu.appendChild(overviewLi);
@@ -2771,20 +2795,21 @@ function buildSidebar() {
     for (const [groupName, items] of Object.entries(categorized)) {
       if (items.length === 0) continue;
 
-      const groupHeader = document.createElement('div');
+      const groupId = `reecap-sidebar-group-${groupName.toLowerCase()}`;
+      const sectionId = `reecap-sidebar-section-${groupName.toLowerCase()}`;
+      const groupHeader = document.createElement('button');
+      groupHeader.type = 'button';
+      groupHeader.id = groupId;
       groupHeader.className = 'reecap-sidebar-group';
       groupHeader.dataset.group = groupName;
-      groupHeader.innerHTML = `<span>${groupName}</span><span class="reecap-sidebar-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>`;
-
-      if (sidebarOpen[groupName] === false) {
-        groupHeader.classList.add('is-collapsed');
-      }
+      groupHeader.setAttribute('aria-controls', sectionId);
+      groupHeader.innerHTML = `<span>${groupName}</span><span class="reecap-sidebar-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></span>`;
 
       const section = document.createElement('div');
+      section.id = sectionId;
       section.className = 'reecap-sidebar-section';
-      if (sidebarOpen[groupName] === false) {
-        section.classList.add('is-collapsed');
-      }
+      section.setAttribute('role', 'region');
+      section.setAttribute('aria-labelledby', groupId);
 
       const sectionInner = document.createElement('div');
       sectionInner.className = 'reecap-sidebar-section-inner';
@@ -2812,9 +2837,11 @@ function buildSidebar() {
           a.classList.toggle('active', shellKey === routeKey);
         }
 
+        a.title = item.text;
         a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>`;
         a.addEventListener('click', () => {
           if (typeof showIframe === 'function') showIframe();
+          if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
         });
         const li = document.createElement('li');
         li.appendChild(a);
@@ -2822,10 +2849,20 @@ function buildSidebar() {
       });
       
       section.appendChild(sectionInner);
-      
-      groupHeader.addEventListener('click', () => {
-        const isCollapsed = groupHeader.classList.toggle('is-collapsed');
+
+      const setGroupCollapsed = (isCollapsed) => {
+        groupHeader.classList.toggle('is-collapsed', isCollapsed);
+        groupHeader.setAttribute('aria-expanded', String(!isCollapsed));
         section.classList.toggle('is-collapsed', isCollapsed);
+        section.setAttribute('aria-hidden', String(isCollapsed));
+        sectionInner.inert = isCollapsed;
+      };
+
+      setGroupCollapsed(sidebarOpen[groupName] === false);
+
+      groupHeader.addEventListener('click', () => {
+        const isCollapsed = !groupHeader.classList.contains('is-collapsed');
+        setGroupCollapsed(isCollapsed);
 
         // An extension reload invalidates this page's existing content-script
         // context. Keep the visual toggle working and skip preference storage
@@ -2850,7 +2887,7 @@ function buildSidebar() {
           // The extension context has been invalidated; a page refresh reconnects it.
         }
       });
-      
+
       menu.appendChild(groupHeader);
       menu.appendChild(section);
     }
@@ -2895,6 +2932,70 @@ function showIframe() {
   }
 }
 
+let responsiveNavigationController = null;
+
+function initResponsiveNavigation() {
+  if (responsiveNavigationController) return responsiveNavigationController;
+
+  const sidebar = document.getElementById('reecap-sidebar');
+  const trigger = document.querySelector('.mobile-menu-btn');
+  const scrim = document.querySelector('.reecap-nav-scrim');
+  if (!sidebar || !trigger || !scrim) return null;
+
+  const drawerQuery = window.matchMedia('(max-width: 1199px)');
+  let lastTrigger = null;
+
+  const setOpen = (isOpen, { restoreFocus = false, focusDrawer = false } = {}) => {
+    const open = drawerQuery.matches && isOpen;
+    sidebar.classList.toggle('is-open', open);
+    sidebar.inert = drawerQuery.matches && !open;
+    scrim.classList.toggle('is-visible', open);
+    scrim.setAttribute('aria-hidden', String(!open));
+    trigger.setAttribute('aria-expanded', String(open));
+    trigger.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+    document.documentElement.classList.toggle('reecap-nav-open', open);
+
+    if (open && focusDrawer) {
+      requestAnimationFrame(() => {
+        const closeButton = sidebar.querySelector('.reecap-nav-close');
+        (closeButton || sidebar).focus();
+      });
+    }
+    if (restoreFocus && lastTrigger) lastTrigger.focus();
+  };
+
+  const close = (options) => setOpen(false, options);
+  const toggle = () => {
+    lastTrigger = trigger;
+    const willOpen = !sidebar.classList.contains('is-open');
+    setOpen(willOpen, { focusDrawer: willOpen });
+  };
+  const onViewportChange = () => setOpen(false);
+
+  trigger.addEventListener('click', toggle);
+  sidebar.addEventListener('click', (event) => {
+    if (event.target.closest('.reecap-nav-close')) {
+      close({ restoreFocus: true });
+    }
+  });
+  scrim.addEventListener('click', () => close({ restoreFocus: true }));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && sidebar.classList.contains('is-open')) {
+      event.preventDefault();
+      close({ restoreFocus: true });
+    }
+  });
+  drawerQuery.addEventListener('change', onViewportChange);
+  setOpen(false);
+
+  responsiveNavigationController = { close, sync: () => setOpen(false) };
+  return responsiveNavigationController;
+}
+
+function closeResponsiveNavigation(options) {
+  responsiveNavigationController?.close(options);
+}
+
 function rebuildMainLayout() {
   const iframe = document.getElementById('capIframeId');
   const menu = document.getElementById('menu');
@@ -2919,10 +3020,13 @@ function rebuildMainLayout() {
   columns.className = 'reecap-layout-columns';
 
   const sidebarCol = document.createElement('aside');
+  sidebarCol.id = 'reecap-sidebar';
   sidebarCol.className = 'reecap-sidebar-col';
+  sidebarCol.setAttribute('aria-label', 'Portal navigation');
   sidebarCol.appendChild(menu);
 
   const contentCol = document.createElement('main');
+  contentCol.id = 'reecap-content-col';
   contentCol.className = 'reecap-content-col';
   contentCol.appendChild(pageTitle); // Title is now inside the content column
 
@@ -2939,8 +3043,14 @@ function rebuildMainLayout() {
   columns.appendChild(contentCol);
   layoutWrapper.appendChild(columns);
 
+  const navigationScrim = document.createElement('div');
+  navigationScrim.className = 'reecap-nav-scrim';
+  navigationScrim.setAttribute('aria-hidden', 'true');
+
   masterTable.parentNode.insertBefore(layoutWrapper, masterTable);
+  layoutWrapper.insertAdjacentElement('afterend', navigationScrim);
   masterTable.style.display = 'none';
+  initResponsiveNavigation();
 
   // Listen for updates from iframe
   window.addEventListener('message', (e) => {
