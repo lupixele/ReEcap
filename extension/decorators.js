@@ -1257,7 +1257,7 @@ function extractAttendanceProfileData(pane) {
       }
 
       const rawCells = cells.map(c => c.textContent.trim());
-      if (rawCells.length && rawCells[0].toUpperCase() === 'TOTAL') {
+      if (rawCells.length && rawCells[0].toUpperCase().includes('TOTAL')) {
         const offset = rawCells.length - 3;
         if (offset >= 0) {
           held = parseInt(rawCells[offset], 10) || 0;
@@ -3167,7 +3167,7 @@ function buildOverviewPage(container) {
 
       renderDashboardCards(metricsSlot, data ? data.reecapProfileData : null);
       renderScheduleCard(grid, data ? data.reecapTimetable : null);
-      renderQuickLinksCard(grid);
+      // renderQuickLinksCard(grid);
       // The categorized sidebar groups are the single source of truth for
       // navigation. Rendering a second quick-links strip there created
       // duplicate entries, so we no longer inject reecap-sidebar-quicklinks.
