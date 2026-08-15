@@ -247,6 +247,7 @@ tr:has(span[style*="color: blue"]) {
   overflow: hidden;
   margin-bottom: 24px;
 }
+.status-content { display: flex; flex-direction: column; text-align: left; min-width: 0; }
 .status-identity { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding-right: clamp(16px, 3vw, 36px); border-right: 1px solid rgba(255,255,255,0.1); text-align: right; }
 .status-identity[hidden] { display: none !important; }
 .id-roll { font-family: var(--font-mono), monospace; font-size: clamp(20px, 3vw, 24px); font-weight: 600; line-height: 1; color: var(--surface-strip-text); }
@@ -288,7 +289,8 @@ tr:has(span[style*="color: blue"]) {
 .status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 4px 11px; border-radius: 100px; font-size: 11.5px; font-weight: 600; font-family: var(--font-mono), monospace; width: fit-content; background: var(--success); color: #fff; }
 .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: #7DFFA8; animation: pulse 1.8s infinite; }
 .status-subject { font-size: 16px; font-weight: 700; line-height: 1.3; }
-.status-meta { font-size: 12px; color: var(--surface-strip-text-muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.status-title { text-align: left; }
+.status-meta { justify-content: flex-start; font-size: 12px; color: var(--surface-strip-text-muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .status-meta b { color: var(--surface-strip-text); font-weight: 600; }
 .status-cta { font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 600; color: var(--surface-strip); background: var(--surface-strip-text); border: none; padding: 9px 16px; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(125,255,168,0.55); } 70% { box-shadow: 0 0 0 8px rgba(125,255,168,0); } 100% { box-shadow: 0 0 0 0 rgba(125,255,168,0); } }
@@ -1173,6 +1175,7 @@ body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--acc
 }
 
 .ring-value { font-family: var(--font-sans), system-ui, sans-serif; font-size: 32px; font-weight: 700; color: var(--success); }
+.overview-ring-value { width: 76px; text-align: center; font-size: clamp(14px, 1.3vw, 17px); letter-spacing: -0.05em; white-space: nowrap; }
 .ring-caption { font-family: var(--font-sans), system-ui, sans-serif; font-size: 11px; color: var(--text-faint); }
 .ring-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
 
@@ -1887,12 +1890,6 @@ table[width="100%"]:has(iframe#capIframeId) {
   width: 100%;
   align-items: stretch;
 }
-@media (min-width: 1100px) {
-  .overview-content-row:has(.overview-quicklinks-card) {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-    align-items: start;
-  }
-}
 
 .overview-card {
   background: var(--surface-elevated);
@@ -2340,20 +2337,24 @@ table.popupTable th a:hover {
   }
 }
 
-/* (d) Three-column wide-screen overview at >1280px — schedule pinned to the right rail. */
-@media (min-width: 1280px) {
+/* (d) Wide-screen overview — summary cards left, full schedule right. */
+@media (min-width: 900px) {
   .overview-grid {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 320px !important;
+    grid-template-columns: minmax(260px, 0.72fr) minmax(420px, 1.58fr) !important;
     grid-template-areas:
-      "metrics metrics"
+      "metrics schedule"
       "quicklinks schedule";
     gap: 24px !important;
     align-items: start;
   }
-  .overview-section-metrics { grid-area: metrics; }
-  .overview-schedule-card  { grid-area: schedule; position: sticky; top: 24px; }
-  .overview-quicklinks-card { grid-area: quicklinks; align-self: stretch; }
+  .overview-section-metrics {
+    grid-area: metrics;
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+  .overview-schedule-card  { grid-area: schedule; margin-top: 0; min-width: 0; }
+  .overview-quicklinks-card { grid-area: quicklinks; align-self: stretch; min-width: 0; }
 }
 
 /* (e) Elevated-card color-mix helper — kept as a 0-off guard. The previous
