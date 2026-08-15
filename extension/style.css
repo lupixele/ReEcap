@@ -3436,3 +3436,141 @@ table.popupTable th a:hover {
   opacity: 1;
   color: var(--accent);
 }
+
+
+/* Shared Attendance surfaces — used by the standalone Attendance page and
+   Profile → Performance (Present). Keep the metric geometry isolated from the
+   generic .ring-card used by compact Overview cards. */
+.reecap-attendance-content {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.reecap-attendance-summary {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  gap: 24px;
+  min-height: 144px;
+  padding: 24px 32px;
+  text-align: left;
+}
+
+.reecap-attendance-summary .ring-wrap {
+  width: 96px;
+  height: 96px;
+  flex: 0 0 96px;
+}
+
+.reecap-attendance-summary .ring-center {
+  width: 96px;
+  height: 96px;
+  inset: auto;
+}
+
+.reecap-attendance-ring-value {
+  display: block;
+  width: 100%;
+  margin: 0;
+  color: var(--success);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.reecap-attendance-summary-copy {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.reecap-attendance-summary-copy h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.reecap-attendance-summary-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.reecap-attendance-summary-copy .mono {
+  color: var(--text-primary);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.reecap-attendance-status {
+  color: var(--text-secondary);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.reecap-attendance-source,
+.reecap-attendance-faculty {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.reecap-attendance-source {
+  margin: -4px 0 0;
+}
+
+.reecap-attendance-subject {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+.reecap-present-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.reecap-present-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .reecap-attendance-summary {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .reecap-attendance-summary-copy {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .reecap-present-notes-grid {
+    grid-template-columns: 1fr;
+  }
+}
