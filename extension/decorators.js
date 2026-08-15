@@ -127,6 +127,10 @@ function initDecorators() {
     }
 
     // 2. Profile Dashboard (Pass 1)
+    const route = (window.location.pathname + window.location.search).toLowerCase();
+    if (route.includes('studentattendance.aspx')) {
+      redesignAttendancePage();
+    }
     if (window.location.pathname.toLowerCase().includes('studentprofile.aspx')) {
       observeProfileDashboard();
     }
@@ -1218,27 +1222,86 @@ function observeProfileDashboard() {
   observer.observe(targetNode, { childList: true, subtree: true });
 }
 
+
+function extractAttendanceProfileData(pane) {
+  let held = 0, attended = 0, percent = 0;
+  const subjects = [];
+
+  if (!pane) return { held, attended, percent, subjects };
+
+  let currentSection = null;
+  const allRows = pane.querySelectorAll('tr');
+
+  let colCourse = 1, colFaculty = -1, colHeld = 2, colAttend = 3, colPercent = 4;
+
+  for (const row of allRows) {
+    const text = row.textContent.trim().toUpperCase();
+
+    if (text.includes('INTERNAL MARKS') || text === 'ACHIEVEMENTS' || text.startsWith('ACHIEVEMENTS') || text === 'PAPER PRESENTATIONS' || text.startsWith('PAPER PRESENTATIONS')) {
+      currentSection = 'OTHER';
+    } else if (text.includes('ATTENDANCE')) {
+      currentSection = 'ATTENDANCE';
+    }
+
+    if (currentSection === 'ATTENDANCE') {
+      const cells = Array.from(row.querySelectorAll('td, th'));
+      const cTexts = cells.map(c => c.textContent.trim().toUpperCase());
+
+      if (cTexts.includes('COURSE') || cTexts.includes('SUBJECT')) {
+        colCourse = cTexts.indexOf('COURSE') !== -1 ? cTexts.indexOf('COURSE') : cTexts.indexOf('SUBJECT');
+        colFaculty = cTexts.indexOf('FACULTY');
+        colHeld = cTexts.indexOf('HELD') !== -1 ? cTexts.indexOf('HELD') : (colFaculty !== -1 ? colFaculty + 1 : colCourse + 1);
+        colAttend = cTexts.indexOf('ATTEND') !== -1 ? cTexts.indexOf('ATTEND') : colHeld + 1;
+        colPercent = cTexts.indexOf('%') !== -1 ? cTexts.indexOf('%') : colAttend + 1;
+        continue;
+      }
+
+      const rawCells = cells.map(c => c.textContent.trim());
+      if (rawCells.length && rawCells[0].toUpperCase() === 'TOTAL') {
+        const offset = rawCells.length - 3;
+        if (offset >= 0) {
+          held = parseInt(rawCells[offset], 10) || 0;
+          attended = parseInt(rawCells[offset + 1], 10) || 0;
+          let p = parseFloat(rawCells[offset + 2]);
+          percent = isNaN(p) ? (held > 0 ? parseFloat(((attended / held) * 100).toFixed(2)) : 0) : p;
+        }
+      } else if (rawCells.length >= 4 && !isNaN(parseInt(rawCells[0], 10))) {
+        let h = parseInt(rawCells[colHeld], 10) || 0;
+        let a = parseInt(rawCells[colAttend], 10) || 0;
+        let p = parseFloat(rawCells[colPercent]);
+        if (isNaN(p)) p = h > 0 ? parseFloat(((a / h) * 100).toFixed(2)) : 0;
+
+        subjects.push({
+          subjName: String(rawCells[colCourse] || 'Subject').trim(),
+          faculty: colFaculty !== -1 ? String(rawCells[colFaculty] || '').trim() : '',
+          held: h,
+          attend: a,
+          percent: p
+        });
+      }
+    }
+  }
+
+  if (held === 0 && subjects.length > 0) {
+    held = subjects.reduce((sum, s) => sum + s.held, 0);
+    attended = subjects.reduce((sum, s) => sum + s.attend, 0);
+    percent = held > 0 ? parseFloat(((attended / held) * 100).toFixed(2)) : 0;
+  }
+
+  return { held, attended, percent, subjects };
+}
+
 function buildProfileDashboard(accordion) {
   // --- A. Scrape Data ---
-  let held = 0, attended = 0, percent = 0;
+  const attendance = extractAttendanceProfileData(accordion);
+  const held = attendance.held;
+  const attended = attendance.attended;
+  const percent = attendance.percent;
+  const attendanceSubjects = attendance.subjects;
   let backlogsText = "No data";
   let feeDue = "0.00";
 
-  // 1. Attendance
   const tds = accordion.querySelectorAll('td');
-  for (let td of tds) {
-    if (td.textContent.trim() === 'TOTAL') {
-      const row = td.parentElement;
-      const cells = row.querySelectorAll('td');
-      // Structure: [TOTAL (colspan=2), Held, Attend, %]
-      if (cells.length >= 4) {
-        held = parseInt(cells[1].textContent.trim(), 10) || 0;
-        attended = parseInt(cells[2].textContent.trim(), 10) || 0;
-        percent = parseFloat(cells[3].textContent.trim()) || 0;
-      }
-      break;
-    }
-  }
 
   // 2. Backlogs
   const backlogsDiv = document.getElementById('divProfile_Backlogs');
@@ -1339,15 +1402,18 @@ function buildProfileDashboard(accordion) {
     }
   } catch (e) { /* fee breakdown is best-effort — fall back to feeDue */ }
 
+  const profileData = {
+    held, attended, percent, attendanceSubjects, backlogsText, feeDue,
+    feeCurrentSem, feeCurrentSemLabel,
+    feeCurrentSemPayable,
+    feeCurrentSemStatus,
+    feeTotalDue, feeBalanceWords,
+    lastUpdated: Date.now()
+  };
+  chrome.storage.local.set({ reecapProfileData: profileData });
   window.parent.postMessage({
     type: 'REECAP_PROFILE_DATA',
-    data: {
-      held, attended, percent, backlogsText, feeDue,
-      feeCurrentSem, feeCurrentSemLabel,
-      feeCurrentSemPayable,
-      feeCurrentSemStatus,
-      feeTotalDue, feeBalanceWords
-    }
+    data: profileData
   }, '*');
 
   // Zero all ancestor top padding/margin inside the iframe so the tab section
@@ -1736,7 +1802,7 @@ function rebuildPresentSemTab() {
             <circle class="ring-fg" cx="48" cy="48" r="${ringRadius}" stroke-width="8" stroke="${ringColor}" stroke-dasharray="${ringCircumf}" stroke-dashoffset="${offset}"></circle>
           </svg>
           <div class="ring-center">
-            <div class="ring-value" style="font-size: 20px; color: ${ringColor}">${totalHeld > 0 ? totalPercent.toFixed(1) + '%' : '0%'}</div>
+            <div class="ring-value" style="font-size: 15px; font-weight: 700; color: ${ringColor}">${totalHeld > 0 ? totalPercent.toFixed(1) + '%' : '0%'}</div>
           </div>
         </div>
         <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -3094,18 +3160,14 @@ function buildOverviewPage(container) {
   metricsSlot.className = 'overview-section-metrics';
   grid.appendChild(metricsSlot);
 
-  const contentRow = document.createElement('div');
-  contentRow.className = 'overview-content-row';
-  grid.appendChild(contentRow);
-
   if (!chrome || !chrome.storage || !chrome.storage.local) return;
   try {
     chrome.storage.local.get(['reecapTimetable', 'reecapIdentity', 'reecapProfileData'], (data) => {
       if (chrome.runtime && chrome.runtime.lastError) return;
 
       renderDashboardCards(metricsSlot, data ? data.reecapProfileData : null);
-      renderScheduleCard(contentRow, data ? data.reecapTimetable : null);
-      renderQuickLinksCard(contentRow);
+      renderScheduleCard(grid, data ? data.reecapTimetable : null);
+      renderQuickLinksCard(grid);
       // The categorized sidebar groups are the single source of truth for
       // navigation. Rendering a second quick-links strip there created
       // duplicate entries, so we no longer inject reecap-sidebar-quicklinks.
@@ -3113,9 +3175,9 @@ function buildOverviewPage(container) {
       // When the hidden cache warmer finishes, replace only the schedule card
       // in place — no page refresh and no user navigation required.
       chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName !== 'local' || !changes.reecapTimetable || !contentRow.isConnected) return;
-        const existingSchedule = contentRow.querySelector('.overview-schedule-card');
-        renderScheduleCard(contentRow, changes.reecapTimetable.newValue, existingSchedule);
+        if (areaName !== 'local' || !changes.reecapTimetable || !grid.isConnected) return;
+        const existingSchedule = grid.querySelector('.overview-schedule-card');
+        renderScheduleCard(grid, changes.reecapTimetable.newValue, existingSchedule);
       });
 
       // No schedule yet? Load the existing portal page silently in a one-shot
@@ -3268,7 +3330,7 @@ function renderDashboardCards(slot, profileData) {
                   stroke-dashoffset="${ringOffset}"></circle>
         </svg>
         <div class="ring-center">
-          <div class="ring-value" style="color: ${ringColor}">${ringDisplay}</div>
+          <div class="ring-value overview-ring-value" style="color: ${ringColor}">${ringDisplay}</div>
         </div>
       </div>
       <div class="ring-label">Attendance</div>
@@ -3596,4 +3658,153 @@ function updateStatusStrip(strip) {
   } catch (e) {
     // Ignore context invalidated errors during extension reload
   }
+}
+
+function redesignAttendancePage() {
+  // Let's hide the direct body content (usually a sorry / server error trace)
+  Array.from(document.body.children).forEach(c => {
+    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+      c.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'reecap-attendance-standalone';
+  wrapper.style.padding = '24px';
+  wrapper.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+  document.body.appendChild(wrapper);
+
+  // Send the title update up to the shell
+  if (window.parent && window.parent.postMessage) {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'ATTENDANCE (PRESENT)' }, '*');
+  }
+
+  if (!chrome || !chrome.storage || !chrome.storage.local) {
+    wrapper.innerHTML = '<div class="marks-empty">Unable to access storage.</div>';
+    return;
+  }
+
+  function renderView(profileData) {
+    if (!profileData || !profileData.attendanceSubjects || !profileData.attendanceSubjects.length) {
+      wrapper.innerHTML = '<div class="marks-empty" style="text-align:center; margin-top: 40px; color: var(--text-secondary);">No attendance data synced yet.<br><br><span style="font-size:12px;opacity:0.7">Loading Profile in the background...</span></div>';
+      return;
+    }
+
+    const { held, attended, percent, attendanceSubjects, lastUpdated } = profileData;
+
+    const ringRadius = 40;
+    const ringCircumf = 2 * Math.PI * ringRadius;
+    const offset = ringCircumf - (percent / 100) * ringCircumf;
+    const ringColor = percent >= 75 ? "var(--success)" : (percent >= 65 ? "var(--warning)" : (held === 0 ? "var(--text-faint)" : "var(--error)"));
+
+    let html = `
+      <!-- Top Overall Attendance Meter -->
+      <div class="overview-section-metrics" style="margin-bottom: 24px; display: flex; flex-direction: column;">
+        <div class="ring-card" style="flex: 1; min-width: 280px; flex-direction: row; gap: 24px; text-align: left; justify-content: flex-start; padding: 24px 32px;">
+          <div class="ring-wrap" style="width: 96px; height: 96px; flex-shrink: 0;">
+            <svg width="96" height="96">
+              <circle class="ring-bg" cx="48" cy="48" r="${ringRadius}" stroke-width="8"></circle>
+              <circle class="ring-fg" cx="48" cy="48" r="${ringRadius}" stroke-width="8" stroke="${ringColor}" stroke-dasharray="${ringCircumf}" stroke-dashoffset="${offset}"></circle>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-value" style="font-size: 15px; font-weight: 700; color: ${ringColor}">${held > 0 ? percent.toFixed(1) + '%' : '0%'}</div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin: 0; color: var(--text-primary);">Present Semester Attendance</h3>
+            <div style="font-size: 14px; color: var(--text-secondary); font-weight: 500;">
+              ${held > 0 ? `<span class="mono" style="font-weight: 600; color: var(--text-primary);">${attended}</span> attended out of <span class="mono" style="font-weight: 600; color: var(--text-primary);">${held}</span> total lectures held` : 'No attendance lectures logged for this term yet.'}
+            </div>
+            <div style="font-size: 12px; color: var(--text-faint); margin-top: 4px;">Status: ${held === 0 ? 'Not yet started / Vacation' : (percent >= 75 ? 'Satisfactory Standing' : 'Below 75% Requirement')}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subject Attendance Record Table -->
+      <div class="overview-card" style="margin-bottom: 24px;">
+        <div class="overview-card-header">
+          <span class="overview-card-title">Subject Attendance Record</span>
+          <span class="overview-card-subtitle">${lastUpdated ? 'Last synced: ' + new Date(lastUpdated).toLocaleString() : 'Current Term'}</span>
+        </div>
+        <div class="reecap-table-wrap">
+          <table class="reecap-data-table">
+            <thead>
+              <tr>
+                <th>Subject Name</th>
+                <th style="text-align: right;">Held</th>
+                <th style="text-align: right;">Attended</th>
+                <th style="text-align: right;">Percentage</th>
+                <th style="width: 150px; text-align: left;">Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    attendanceSubjects.forEach(s => {
+      const sColor = s.percent >= 75 ? "var(--success)" : (s.percent >= 65 ? "var(--warning)" : (s.held === 0 ? "var(--text-faint)" : "var(--error)"));
+      html += `
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--text-primary);">${s.subjName}</div>
+            ${s.faculty ? `<div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; font-weight: 500;">${s.faculty}</div>` : ''}
+          </td>
+          <td class="mono" style="text-align: right;">${s.held}</td>
+          <td class="mono" style="text-align: right; font-weight: 600;">${s.attend}</td>
+          <td class="mono" style="text-align: right; font-weight: 700; color: ${sColor};">${s.percent}%</td>
+          <td>
+            <div class="progress-track" style="margin-top: 2px;">
+              <div class="progress-bar" style="width: ${Math.min(100, s.percent)}%; background: ${sColor};"></div>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    wrapper.innerHTML = html;
+  }
+
+  chrome.storage.local.get(['reecapProfileData'], (data) => {
+    if (chrome.runtime && chrome.runtime.lastError) return;
+
+    // First, sync it immediately if we have it
+    let prof = data ? data.reecapProfileData : null;
+    renderView(prof);
+
+    // If it's missing or subjects aren't populated, we need to spin up the hidden iframe to profile page
+    if (!prof || !prof.attendanceSubjects || !prof.attendanceSubjects.length) {
+      const prefetch = document.createElement('iframe');
+      prefetch.id = 'reecap-profile-prefetch';
+      prefetch.style.cssText = 'position:fixed !important; width:1px !important; height:1px !important; inset:-10000px auto auto -10000px !important; border:0 !important; opacity:0 !important; pointer-events:none !important; visibility:hidden !important;';
+      prefetch.src = '/aus/Academics/StudentProfile.aspx?scrid=17';
+      prefetch.title = '';
+      prefetch.tabIndex = -1;
+      prefetch.setAttribute('aria-hidden', 'true');
+      prefetch.setAttribute('inert', '');
+      document.body.appendChild(prefetch);
+
+      let cleaned = false;
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        try { prefetch.remove(); } catch (e) {}
+        try { chrome.storage.onChanged.removeListener(onStorageChange); } catch (e) {}
+      };
+
+      const onStorageChange = (changes, areaName) => {
+        if (areaName === 'local' && changes.reecapProfileData) {
+          renderView(changes.reecapProfileData.newValue);
+          cleanup();
+        }
+      };
+
+      chrome.storage.onChanged.addListener(onStorageChange);
+      setTimeout(cleanup, 20000); // 20s hard timeout
+    }
+  });
 }
