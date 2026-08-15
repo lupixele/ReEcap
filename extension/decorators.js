@@ -2814,11 +2814,16 @@ function buildSidebar() {
   const genericIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
 
   const categorized = { 'Academics': [], 'Finance': [], 'Account': [] };
-  
+  let profileItem = null;
+
   links.forEach(link => {
     let text = link.textContent.replace('»', '').trim().toUpperCase();
     if (text === 'ONLINE PAYMENT') return; // Skip dropdown parent
-    
+    if (text === 'PROFILE') {
+      profileItem = { text, link };
+      return;
+    }
+
     let matched = false;
     for (const [groupName, texts] of Object.entries(groups)) {
       if (texts.includes(text)) {
@@ -2860,6 +2865,22 @@ function buildSidebar() {
     });
     overviewLi.appendChild(overviewA);
     menu.appendChild(overviewLi);
+
+    if (profileItem) {
+      const profileLink = profileItem.link;
+      profileLink.className = 'reecap-sidebar-link';
+      const profileRouteKey = window.__reecap_theme?.routeKeyForHref(profileLink.getAttribute('href') || '');
+      if (profileRouteKey) profileLink.setAttribute('data-route-key', profileRouteKey);
+      profileLink.title = profileItem.text;
+      profileLink.innerHTML = `<span class="reecap-sidebar-icon">${icons.PROFILE || genericIcon}</span><span class="reecap-sidebar-text">${profileItem.text}</span>`;
+      profileLink.addEventListener('click', () => {
+        if (typeof showIframe === 'function') showIframe();
+        if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
+      });
+      const profileLi = document.createElement('li');
+      profileLi.appendChild(profileLink);
+      menu.appendChild(profileLi);
+    }
 
     const divider = document.createElement('div');
     divider.className = 'reecap-sidebar-overview-divider';
