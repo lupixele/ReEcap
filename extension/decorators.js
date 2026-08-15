@@ -1229,56 +1229,55 @@ function extractAttendanceProfileData(pane) {
 
   if (!pane) return { held, attended, percent, subjects };
 
-  let currentSection = null;
-  const allRows = pane.querySelectorAll('tr');
+  const attTable = pane.querySelector('table.reportTable') || pane.querySelector('table');
+  if (!attTable) return { held, attended, percent, subjects };
 
+  const rows = attTable.querySelectorAll(':scope > tbody > tr, :scope > tr, tr');
   let colCourse = 1, colFaculty = -1, colHeld = 2, colAttend = 3, colPercent = 4;
 
-  for (const row of allRows) {
-    const text = row.textContent.trim().toUpperCase();
+  for (const row of rows) {
+    const cells = Array.from(row.querySelectorAll(':scope > td, :scope > th, td, th'));
+    if (!cells.length) continue;
+    
+    // Ignore nested tables preventing pollution
+    if (row.querySelector('table')) continue;
 
-    if (text.includes('INTERNAL MARKS') || text === 'ACHIEVEMENTS' || text.startsWith('ACHIEVEMENTS') || text === 'PAPER PRESENTATIONS' || text.startsWith('PAPER PRESENTATIONS')) {
-      currentSection = 'OTHER';
-    } else if (text.includes('ATTENDANCE')) {
-      currentSection = 'ATTENDANCE';
+    const cTexts = cells.map(c => c.textContent.trim().toUpperCase());
+    const rawCells = cells.map(c => c.textContent.trim());
+
+    if (cTexts.includes('COURSE') || cTexts.includes('SUBJECT')) {
+      colCourse = cTexts.indexOf('COURSE') !== -1 ? cTexts.indexOf('COURSE') : cTexts.indexOf('SUBJECT');
+      colFaculty = cTexts.indexOf('FACULTY');
+      colHeld = cTexts.indexOf('HELD') !== -1 ? cTexts.indexOf('HELD') : (colFaculty !== -1 ? colFaculty + 1 : colCourse + 1);
+      colAttend = cTexts.indexOf('ATTEND') !== -1 ? cTexts.indexOf('ATTEND') : colHeld + 1;
+      colPercent = cTexts.indexOf('%') !== -1 ? cTexts.indexOf('%') : colAttend + 1;
+      continue;
     }
 
-    if (currentSection === 'ATTENDANCE') {
-      const cells = Array.from(row.querySelectorAll('td, th'));
-      const cTexts = cells.map(c => c.textContent.trim().toUpperCase());
-
-      if (cTexts.includes('COURSE') || cTexts.includes('SUBJECT')) {
-        colCourse = cTexts.indexOf('COURSE') !== -1 ? cTexts.indexOf('COURSE') : cTexts.indexOf('SUBJECT');
-        colFaculty = cTexts.indexOf('FACULTY');
-        colHeld = cTexts.indexOf('HELD') !== -1 ? cTexts.indexOf('HELD') : (colFaculty !== -1 ? colFaculty + 1 : colCourse + 1);
-        colAttend = cTexts.indexOf('ATTEND') !== -1 ? cTexts.indexOf('ATTEND') : colHeld + 1;
-        colPercent = cTexts.indexOf('%') !== -1 ? cTexts.indexOf('%') : colAttend + 1;
-        continue;
+    if (rawCells.length && rawCells[0].toUpperCase().includes('TOTAL')) {
+      const offset = rawCells.length - 3;
+      if (offset >= 0) {
+        held = parseInt(rawCells[offset], 10) || 0;
+        attended = parseInt(rawCells[offset + 1], 10) || 0;
+        let p = parseFloat(rawCells[offset + 2]);
+        percent = isNaN(p) ? (held > 0 ? parseFloat(((attended / held) * 100).toFixed(2)) : 0) : p;
       }
+      continue;
+    }
 
-      const rawCells = cells.map(c => c.textContent.trim());
-      if (rawCells.length && rawCells[0].toUpperCase().includes('TOTAL')) {
-        const offset = rawCells.length - 3;
-        if (offset >= 0) {
-          held = parseInt(rawCells[offset], 10) || 0;
-          attended = parseInt(rawCells[offset + 1], 10) || 0;
-          let p = parseFloat(rawCells[offset + 2]);
-          percent = isNaN(p) ? (held > 0 ? parseFloat(((attended / held) * 100).toFixed(2)) : 0) : p;
-        }
-      } else if (rawCells.length >= 4 && !isNaN(parseInt(rawCells[0], 10))) {
-        let h = parseInt(rawCells[colHeld], 10) || 0;
-        let a = parseInt(rawCells[colAttend], 10) || 0;
-        let p = parseFloat(rawCells[colPercent]);
-        if (isNaN(p)) p = h > 0 ? parseFloat(((a / h) * 100).toFixed(2)) : 0;
+    if (rawCells.length >= 4 && !isNaN(parseInt(rawCells[0], 10))) {
+      let h = parseInt(rawCells[colHeld], 10) || 0;
+      let a = parseInt(rawCells[colAttend], 10) || 0;
+      let p = parseFloat(rawCells[colPercent]);
+      if (isNaN(p)) p = h > 0 ? parseFloat(((a / h) * 100).toFixed(2)) : 0;
 
-        subjects.push({
-          subjName: String(rawCells[colCourse] || 'Subject').trim(),
-          faculty: colFaculty !== -1 ? String(rawCells[colFaculty] || '').trim() : '',
-          held: h,
-          attend: a,
-          percent: p
-        });
-      }
+      subjects.push({
+        subjName: String(rawCells[colCourse] || 'Subject').trim(),
+        faculty: colFaculty !== -1 ? String(rawCells[colFaculty] || '').trim() : '',
+        held: h,
+        attend: a,
+        percent: p
+      });
     }
   }
 
