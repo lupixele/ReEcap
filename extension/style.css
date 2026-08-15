@@ -3465,9 +3465,12 @@ table.popupTable th a:hover {
 }
 
 .reecap-attendance-summary .ring-center {
-  width: 96px;
-  height: 96px;
-  inset: auto;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .reecap-attendance-ring-value {
