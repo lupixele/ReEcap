@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Users/lupixele/AppData/Local/Python/pythoncore-3.14-64/Scripts/graphify.EXE hook-guard search"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Users/lupixele/AppData/Local/Python/pythoncore-3.14-64/Scripts/graphify.EXE hook-guard read"
+          }
+        ]
+      }
+    ]
+  }
+}
