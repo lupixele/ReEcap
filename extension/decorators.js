@@ -1293,7 +1293,8 @@ function extractAttendanceProfileData(pane) {
 
 function buildProfileDashboard(accordion) {
   // --- A. Scrape Data ---
-  const attendance = extractAttendanceProfileData(accordion);
+  const presentPane = accordion.querySelector('#divProfile_Present') || document.getElementById('divProfile_Present') || accordion;
+  const attendance = extractAttendanceProfileData(presentPane);
   const held = attendance.held;
   const attended = attendance.attended;
   const percent = attendance.percent;
