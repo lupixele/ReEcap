@@ -1229,71 +1229,77 @@ function extractAttendanceProfileData(pane) {
 
   if (!pane) return { held, attended, percent, subjects };
 
-  const attTable = pane.querySelector('table.reportTable') || pane.querySelector('table');
-  if (!attTable) return { held, attended, percent, subjects };
+  // The first reportTable inside the Present pane is the current-semester
+  // Attendance table. Its .rows/.cells collections deliberately exclude the
+  // containing layout rows, which contain text from all later sections.
+  const table = pane.querySelector('table.reportTable');
+  if (!table) return { held, attended, percent, subjects };
 
-  const rows = attTable.querySelectorAll(':scope > tbody > tr, :scope > tr, tr');
-  let colCourse = 1, colFaculty = -1, colHeld = 2, colAttend = 3, colPercent = 4;
+  let colCourse = 1;
+  let colFaculty = -1;
+  let colHeld = 2;
+  let colAttend = 3;
+  let colPercent = 4;
 
-  for (const row of rows) {
-    const cells = Array.from(row.querySelectorAll(':scope > td, :scope > th, td, th'));
-    if (!cells.length) continue;
-    
-    // Ignore nested tables preventing pollution
-    if (row.querySelector('table')) continue;
+  Array.from(table.rows).forEach(row => {
+    const cells = Array.from(row.cells);
+    if (!cells.length) return;
 
-    const cTexts = cells.map(c => c.textContent.trim().toUpperCase());
-    const rawCells = cells.map(c => c.textContent.trim());
+    const raw = cells.map(cell => cell.textContent.trim());
+    const labels = raw.map(value => value.toUpperCase());
 
-    if (cTexts.includes('COURSE') || cTexts.includes('SUBJECT')) {
-      colCourse = cTexts.indexOf('COURSE') !== -1 ? cTexts.indexOf('COURSE') : cTexts.indexOf('SUBJECT');
-      colFaculty = cTexts.indexOf('FACULTY');
-      colHeld = cTexts.indexOf('HELD') !== -1 ? cTexts.indexOf('HELD') : (colFaculty !== -1 ? colFaculty + 1 : colCourse + 1);
-      colAttend = cTexts.indexOf('ATTEND') !== -1 ? cTexts.indexOf('ATTEND') : colHeld + 1;
-      colPercent = cTexts.indexOf('%') !== -1 ? cTexts.indexOf('%') : colAttend + 1;
-      continue;
+    if (labels.includes('COURSE') || labels.includes('SUBJECT')) {
+      colCourse = labels.includes('COURSE') ? labels.indexOf('COURSE') : labels.indexOf('SUBJECT');
+      colFaculty = labels.indexOf('FACULTY');
+      colHeld = labels.indexOf('HELD');
+      colAttend = labels.indexOf('ATTEND');
+      colPercent = labels.indexOf('%');
+
+      if (colHeld < 0) colHeld = colFaculty >= 0 ? colFaculty + 1 : colCourse + 1;
+      if (colAttend < 0) colAttend = colHeld + 1;
+      if (colPercent < 0) colPercent = colAttend + 1;
+      return;
     }
 
-    if (rawCells.length && rawCells[0].toUpperCase().includes('TOTAL')) {
-      const offset = rawCells.length - 3;
-      if (offset >= 0) {
-        held = parseInt(rawCells[offset], 10) || 0;
-        attended = parseInt(rawCells[offset + 1], 10) || 0;
-        let p = parseFloat(rawCells[offset + 2]);
-        percent = isNaN(p) ? (held > 0 ? parseFloat(((attended / held) * 100).toFixed(2)) : 0) : p;
-      }
-      continue;
+    if (raw[0].toUpperCase().includes('TOTAL')) {
+      const tail = raw.slice(-3);
+      held = parseInt(tail[0], 10) || 0;
+      attended = parseInt(tail[1], 10) || 0;
+      const totalPercent = parseFloat(tail[2]);
+      percent = Number.isFinite(totalPercent)
+        ? totalPercent
+        : (held > 0 ? Number(((attended / held) * 100).toFixed(2)) : 0);
+      return;
     }
 
-    if (rawCells.length >= 4 && !isNaN(parseInt(rawCells[0], 10))) {
-      let h = parseInt(rawCells[colHeld], 10) || 0;
-      let a = parseInt(rawCells[colAttend], 10) || 0;
-      let p = parseFloat(rawCells[colPercent]);
-      if (isNaN(p)) p = h > 0 ? parseFloat(((a / h) * 100).toFixed(2)) : 0;
+    if (!Number.isFinite(parseInt(raw[0], 10))) return;
+    const subjectHeld = parseInt(raw[colHeld], 10) || 0;
+    const subjectAttend = parseInt(raw[colAttend], 10) || 0;
+    const suppliedPercent = parseFloat(raw[colPercent]);
+    const subjectPercent = Number.isFinite(suppliedPercent)
+      ? suppliedPercent
+      : (subjectHeld > 0 ? Number(((subjectAttend / subjectHeld) * 100).toFixed(2)) : 0);
 
-      subjects.push({
-        subjName: String(rawCells[colCourse] || 'Subject').trim(),
-        faculty: colFaculty !== -1 ? String(rawCells[colFaculty] || '').trim() : '',
-        held: h,
-        attend: a,
-        percent: p
-      });
-    }
-  }
+    subjects.push({
+      subjName: String(raw[colCourse] || 'Subject').trim(),
+      faculty: colFaculty >= 0 ? String(raw[colFaculty] || '').trim() : '',
+      held: subjectHeld,
+      attend: subjectAttend,
+      percent: subjectPercent
+    });
+  });
 
-  if (held === 0 && subjects.length > 0) {
-    held = subjects.reduce((sum, s) => sum + s.held, 0);
-    attended = subjects.reduce((sum, s) => sum + s.attend, 0);
-    percent = held > 0 ? parseFloat(((attended / held) * 100).toFixed(2)) : 0;
+  if (!held && subjects.length) {
+    held = subjects.reduce((sum, subject) => sum + subject.held, 0);
+    attended = subjects.reduce((sum, subject) => sum + subject.attend, 0);
+    percent = held > 0 ? Number(((attended / held) * 100).toFixed(2)) : 0;
   }
 
   return { held, attended, percent, subjects };
 }
-
 function buildProfileDashboard(accordion) {
   // --- A. Scrape Data ---
-  const presentPane = accordion.querySelector('#divProfile_Present') || document.getElementById('divProfile_Present') || accordion;
-  const attendance = extractAttendanceProfileData(presentPane);
+  const attendance = extractAttendanceProfileData(accordion);
   const held = attendance.held;
   const attended = attendance.attended;
   const percent = attendance.percent;
@@ -1719,116 +1725,60 @@ function hideLegacyChildren(pane) {
   });
 }
 
-function rebuildPresentSemTab() {
-  const pane = document.getElementById('divProfile_Present') || document.getElementById('divProfile_PresentSem');
-  if (!pane || pane.dataset.reecapEnhanced === 'true') return;
+function getAttendanceColor(attendance) {
+  if (!attendance || !attendance.held) return 'var(--text-faint)';
+  if (attendance.percent >= 75) return 'var(--success)';
+  if (attendance.percent >= 65) return 'var(--warning)';
+  return 'var(--error)';
+}
 
-  // 1. Scrape data across all sections
-  let totalHeld = 0, totalAttend = 0, totalPercent = 0;
-  const subjects = [];
-  const internalMarksHeaders = [];
-  const internalMarksRows = [];
-  let achievementsText = 'No achievements recorded.';
-  let presentationsText = 'No paper presentations recorded.';
-
-  let currentSection = 'ATTENDANCE';
-  const allRows = pane.querySelectorAll('tr');
-
-  allRows.forEach(row => {
-    const text = row.textContent.trim().toUpperCase();
-    if (text.includes('INTERNAL MARKS')) {
-      currentSection = 'INTERNAL';
-      return;
-    }
-    if (text === 'ACHIEVEMENTS' || text.startsWith('ACHIEVEMENTS')) {
-      currentSection = 'ACHIEVEMENTS';
-      return;
-    }
-    if (text === 'PAPER PRESENTATIONS' || text.startsWith('PAPER PRESENTATIONS')) {
-      currentSection = 'PRESENTATIONS';
-      return;
-    }
-
-    const cells = Array.from(row.querySelectorAll('td, th')).map(c => c.textContent.trim());
-    if (!cells.length) return;
-
-    if (currentSection === 'ATTENDANCE') {
-      if (cells.length >= 4 && cells[0].toUpperCase() === 'TOTAL') {
-        totalHeld = parseInt(cells[1], 10) || 0;
-        totalAttend = parseInt(cells[2], 10) || 0;
-        totalPercent = parseFloat(cells[3]) || 0;
-      } else if (cells.length >= 5 && !isNaN(parseInt(cells[0], 10))) {
-        subjects.push({
-          subjName: cells[1] || 'Subject',
-          held: parseInt(cells[2], 10) || 0,
-          attend: parseInt(cells[3], 10) || 0,
-          percent: parseFloat(cells[4]) || 0
-        });
-      }
-    } else if (currentSection === 'INTERNAL') {
-      if (cells.length > 2 && (row.classList.contains('reportHeading2WithBackground') || cells[0].toLowerCase() === 'sl.no.' || cells[0].toLowerCase() === 's.no')) {
-        if (!internalMarksHeaders.length) internalMarksHeaders.push(...cells);
-      } else if (cells.length > 2 && !isNaN(parseInt(cells[0], 10))) {
-        internalMarksRows.push(cells);
-      }
-    } else if (currentSection === 'ACHIEVEMENTS') {
-      if (cells[0] && !cells[0].toUpperCase().includes('ACHIEVEMENTS')) {
-        achievementsText = cells[0];
-      }
-    } else if (currentSection === 'PRESENTATIONS') {
-      if (cells[0] && !cells[0].toUpperCase().includes('PRESENTATIONS')) {
-        presentationsText = cells[0];
-      }
-    }
-  });
-
-  pane.dataset.reecapEnhanced = 'true';
-  const newView = document.createElement('div');
-  newView.className = 'reecap-enhanced-tab';
-  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
-
+function renderAttendanceContent(attendance, options = {}) {
+  const data = attendance || { held: 0, attended: 0, percent: 0, subjects: [] };
+  const title = options.title || 'Present Semester Attendance';
+  const subtitle = options.subtitle || 'Current Term';
+  const sourceNote = options.sourceNote || '';
+  const includeSectionWrapper = options.includeSectionWrapper !== false;
+  const held = Number(data.held) || 0;
+  const attended = Number(data.attended) || 0;
+  const percent = Number(data.percent) || 0;
+  const subjects = Array.isArray(data.subjects) ? data.subjects : [];
   const ringRadius = 40;
-  const ringCircumf = 2 * Math.PI * ringRadius;
-  const offset = ringCircumf - (totalPercent / 100) * ringCircumf;
-  const ringColor = totalPercent >= 75 ? "var(--success)" : (totalPercent >= 65 ? "var(--warning)" : (totalHeld === 0 ? "var(--text-faint)" : "var(--error)"));
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference - (Math.max(0, Math.min(percent, 100)) / 100) * ringCircumference;
+  const ringColor = getAttendanceColor({ held, percent });
+  const status = held === 0
+    ? 'No attendance lectures logged for this term yet.'
+    : (percent >= 75 ? 'Satisfactory Standing' : 'Below 75% Requirement');
 
   let html = `
-    <!-- Top Overall Attendance Meter -->
-    <div class="overview-section-metrics" style="margin-bottom: 24px;">
-      <div class="ring-card" style="flex: 1; min-width: 280px; flex-direction: row; gap: 24px; text-align: left; justify-content: flex-start; padding: 24px 32px;">
-        <div class="ring-wrap" style="width: 96px; height: 96px; flex-shrink: 0;">
-          <svg width="96" height="96">
+    <section class="reecap-attendance-content">
+      <div class="reecap-attendance-summary ring-card">
+        <div class="ring-wrap" aria-hidden="true">
+          <svg width="96" height="96" viewBox="0 0 96 96">
             <circle class="ring-bg" cx="48" cy="48" r="${ringRadius}" stroke-width="8"></circle>
-            <circle class="ring-fg" cx="48" cy="48" r="${ringRadius}" stroke-width="8" stroke="${ringColor}" stroke-dasharray="${ringCircumf}" stroke-dashoffset="${offset}"></circle>
+            <circle class="ring-fg" cx="48" cy="48" r="${ringRadius}" stroke-width="8" stroke="${ringColor}" stroke-dasharray="${ringCircumference}" stroke-dashoffset="${ringOffset}"></circle>
           </svg>
           <div class="ring-center">
-            <div class="ring-value" style="font-size: 15px; font-weight: 700; color: ${ringColor}">${totalHeld > 0 ? totalPercent.toFixed(1) + '%' : '0%'}</div>
+            <div class="ring-value reecap-attendance-ring-value" style="color: ${ringColor}">${held > 0 ? percent.toFixed(2) + '%' : '0%'}</div>
           </div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin: 0; color: var(--text-primary);">Present Semester Attendance</h3>
-          <div style="font-size: 14px; color: var(--text-secondary); font-weight: 500;">
-            ${totalHeld > 0 ? `<span class="mono" style="font-weight: 600; color: var(--text-primary);">${totalAttend}</span> attended out of <span class="mono" style="font-weight: 600; color: var(--text-primary);">${totalHeld}</span> total lectures held` : 'No attendance lectures logged for this term yet.'}
-          </div>
-          <div style="font-size: 12px; color: var(--text-faint); margin-top: 4px;">Status: ${totalHeld === 0 ? 'Not yet started / Vacation' : (totalPercent >= 75 ? 'Satisfactory Standing' : 'Below 75% Requirement')}</div>
+        <div class="reecap-attendance-summary-copy">
+          <h2>${title}</h2>
+          <p>${held > 0 ? `<span class="mono">${attended}</span> attended out of <span class="mono">${held}</span> total lectures held` : 'No attendance lectures logged for this term yet.'}</p>
+          <span class="reecap-attendance-status">Status: ${status}</span>
         </div>
       </div>
-    </div>
 
-    <!-- Subject Attendance Record Table -->
-    <div class="overview-card" style="margin-bottom: 24px;">
-      <div class="overview-card-header">
-        <span class="overview-card-title">Subject Attendance Record</span>
-        <span class="overview-card-subtitle">Current Term</span>
-      </div>
+      <div class="overview-card reecap-attendance-table-card">
+        <div class="overview-card-header">
+          <span class="overview-card-title">Subject Attendance Record</span>
+          <span class="overview-card-subtitle">${subtitle}</span>
+        </div>
+        ${sourceNote ? `<p class="reecap-attendance-source">${sourceNote}</p>` : ''}
   `;
 
   if (!subjects.length) {
-    html += `
-      <div style="text-align: center; padding: 32px; background: var(--surface-sunken); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 14px;">
-        No course subject attendance rows recorded for this term yet.
-      </div>
-    `;
+    html += `<div class="schedule-empty">No course subject attendance rows recorded for this term yet.</div>`;
   } else {
     html += `
       <div class="reecap-table-wrap">
@@ -1844,90 +1794,147 @@ function rebuildPresentSemTab() {
           </thead>
           <tbody>
     `;
-    subjects.forEach(s => {
-      const sColor = s.percent >= 75 ? "var(--success)" : (s.percent >= 65 ? "var(--warning)" : (s.held === 0 ? "var(--text-faint)" : "var(--error)"));
+
+    subjects.forEach(subject => {
+      const subjectColor = getAttendanceColor(subject);
       html += `
         <tr>
-          <td style="font-weight: 600; color: var(--text-primary);">${s.subjName}</td>
-          <td class="mono" style="text-align: right;">${s.held}</td>
-          <td class="mono" style="text-align: right; font-weight: 600;">${s.attend}</td>
-          <td class="mono" style="text-align: right; font-weight: 700; color: ${sColor};">${s.percent}%</td>
           <td>
-            <div class="progress-track" style="margin-top: 2px;">
-              <div class="progress-bar" style="width: ${Math.min(100, s.percent)}%; background: ${sColor};"></div>
+            <div class="reecap-attendance-subject">${subject.subjName}</div>
+            ${subject.faculty ? `<div class="reecap-attendance-faculty">${subject.faculty}</div>` : ''}
+          </td>
+          <td class="mono" style="text-align: right;">${subject.held}</td>
+          <td class="mono" style="text-align: right; font-weight: 600;">${subject.attend}</td>
+          <td class="mono" style="text-align: right; font-weight: 700; color: ${subjectColor};">${subject.percent.toFixed ? subject.percent.toFixed(2) : subject.percent}%</td>
+          <td>
+            <div class="progress-track" aria-label="${subject.subjName} attendance ${subject.percent}%">
+              <div class="progress-bar" style="width: ${Math.min(100, Math.max(0, subject.percent))}%; background: ${subjectColor};"></div>
             </div>
           </td>
         </tr>
       `;
     });
-    html += `
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
-  html += `</div>`;
 
-  // Internal Marks Card
+    html += `</tbody></table></div>`;
+  }
+
+  html += `</div></section>`;
+  return includeSectionWrapper ? html : html.replace(/^\s*<section[^>]*>|<\/section>\s*$/g, '');
+}
+
+function extractPresentTabSupplementalData(pane) {
+  const internalMarksHeaders = [];
+  const internalMarksRows = [];
+  let achievementsText = 'No achievements recorded.';
+  let presentationsText = 'No paper presentations recorded.';
+
+  if (!pane) return { internalMarksHeaders, internalMarksRows, achievementsText, presentationsText };
+
+  const headingRows = Array.from(pane.querySelectorAll('tr')).filter(row => {
+    if (row.querySelector('table')) return false;
+    const cells = Array.from(row.querySelectorAll(':scope > td, :scope > th'));
+    return cells.length === 1;
+  });
+
+  let internalHeading = null;
+  let achievementsHeading = null;
+  let presentationsHeading = null;
+  headingRows.forEach(row => {
+    const text = row.textContent.trim().toUpperCase();
+    if (text === 'INTERNAL MARKS') internalHeading = row;
+    if (text === 'ACHIEVEMENTS') achievementsHeading = row;
+    if (text === 'PAPER PRESENTATIONS') presentationsHeading = row;
+  });
+
+  function nextLeafValue(heading) {
+    if (!heading) return '';
+    let current = heading.nextElementSibling;
+    while (current) {
+      if (!current.querySelector('table')) {
+        const value = current.textContent.trim();
+        if (value) return value;
+      }
+      current = current.nextElementSibling;
+    }
+    return '';
+  }
+
+  if (achievementsHeading) achievementsText = nextLeafValue(achievementsHeading) || achievementsText;
+  if (presentationsHeading) presentationsText = nextLeafValue(presentationsHeading) || presentationsText;
+
+  if (internalHeading) {
+    const internalWrapper = internalHeading.nextElementSibling;
+    const internalTable = internalWrapper ? internalWrapper.querySelector('table') : null;
+    if (internalTable) {
+      const rows = Array.from(internalTable.querySelectorAll('tr')).filter(row => !row.querySelector('table'));
+      rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll(':scope > td, :scope > th')).map(cell => cell.textContent.trim());
+        if (!cells.length) return;
+        const isHeader = cells[0].toUpperCase() === 'SL.NO.' || cells[0].toUpperCase() === 'S.NO' || row.classList.contains('reportHeading2WithBackground');
+        if (isHeader && cells.length > 1 && !internalMarksHeaders.length) {
+          internalMarksHeaders.push(...cells);
+        } else if (internalMarksHeaders.length && cells.length === internalMarksHeaders.length && !isNaN(parseInt(cells[0], 10))) {
+          internalMarksRows.push(cells);
+        }
+      });
+    }
+  }
+
+  return { internalMarksHeaders, internalMarksRows, achievementsText, presentationsText };
+}
+
+function rebuildPresentSemTab() {
+  const pane = document.getElementById('divProfile_Present') || document.getElementById('divProfile_PresentSem');
+  if (!pane || pane.dataset.reecapEnhanced === 'true') return;
+
+  const attendance = extractAttendanceProfileData(pane);
+  const supplemental = extractPresentTabSupplementalData(pane);
+
+  pane.dataset.reecapEnhanced = 'true';
+  const newView = document.createElement('div');
+  newView.className = 'reecap-enhanced-tab reecap-present-performance-tab';
+  newView.setAttribute('data-reecap-pane', (pane.id || 'unknown').toLowerCase());
+
+  let html = renderAttendanceContent(attendance, {
+    title: 'Present Semester Attendance',
+    subtitle: 'Performance (Present)',
+    sourceNote: 'Live data from this Performance (Present) record.'
+  });
+
   html += `
-    <div class="overview-card" style="margin-bottom: 24px;">
+    <section class="overview-card reecap-internal-marks-card">
       <div class="overview-card-header">
         <span class="overview-card-title">Internal Marks & Mid-Terms</span>
         <span class="overview-card-subtitle">Continuous Evaluation</span>
       </div>
   `;
-  if (!internalMarksRows.length) {
-    html += `
-      <div style="text-align: center; padding: 28px; background: var(--surface-sunken); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 13.5px;">
-        No internal exam marks have been published for this semester yet.
-      </div>
-    `;
+
+  if (!supplemental.internalMarksRows.length) {
+    html += `<div class="schedule-empty">No internal exam marks have been published for this semester yet.</div>`;
   } else {
     html += `
       <div class="reecap-table-wrap">
-        <table class="reecap-data-table">
-          <thead>
-            <tr>
-              ${internalMarksHeaders.map(h => `<th>${h}</th>`).join('') || '<th>Subject</th><th>Marks</th>'}
-            </tr>
-          </thead>
+        <table class="reecap-data-table reecap-internal-marks-table">
+          <thead><tr>${supplemental.internalMarksHeaders.map(header => `<th>${header}</th>`).join('')}</tr></thead>
           <tbody>
-            ${internalMarksRows.map(rowCells => `
-              <tr>
-                ${rowCells.map((c, idx) => idx === 0 ? `<td class="mono">${c}</td>` : (idx === 1 ? `<td style="font-weight: 600; color: var(--text-primary);">${c}</td>` : `<td class="mono" style="font-weight: 500;">${c}</td>`)).join('')}
-              </tr>
-            `).join('')}
+            ${supplemental.internalMarksRows.map(row => `<tr>${row.map((value, index) => index === 0 ? `<td class="mono">${value}</td>` : `<td>${value}</td>`).join('')}</tr>`).join('')}
           </tbody>
         </table>
       </div>
     `;
   }
-  html += `</div>`;
+  html += `</section>`;
 
-  // Achievements & Paper Presentations Two-Column Grid
   html += `
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
-      <div class="overview-card">
-        <div class="overview-card-header">
-          <span class="overview-card-title">Achievements</span>
-        </div>
-        <div style="background: var(--surface-sunken); padding: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
-          <p style="margin: 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5;">
-            ${achievementsText || 'No extra-curricular or departmental achievements recorded.'}
-          </p>
-        </div>
-      </div>
-
-      <div class="overview-card">
-        <div class="overview-card-header">
-          <span class="overview-card-title">Paper Presentations</span>
-        </div>
-        <div style="background: var(--surface-sunken); padding: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
-          <p style="margin: 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5;">
-            ${presentationsText || 'No paper presentations recorded for this session.'}
-          </p>
-        </div>
-      </div>
+    <div class="reecap-present-notes-grid">
+      <section class="overview-card">
+        <div class="overview-card-header"><span class="overview-card-title">Achievements</span></div>
+        <p class="reecap-present-note">${supplemental.achievementsText}</p>
+      </section>
+      <section class="overview-card">
+        <div class="overview-card-header"><span class="overview-card-title">Paper Presentations</span></div>
+        <p class="reecap-present-note">${supplemental.presentationsText}</p>
+      </section>
     </div>
   `;
 
