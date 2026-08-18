@@ -1242,6 +1242,57 @@ body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--acc
   margin: 4px 0 0 0;
 }
 
+/* Fee status badge for cleared/paid state */
+.fee-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.fee-status-badge.is-success {
+  background: var(--success-soft);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 20%, transparent);
+}
+
+/* Filled pill Pay button */
+.fee-pay-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  margin-top: 8px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--action-primary);
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--action-primary) 30%, transparent);
+  width: 100%;
+}
+
+.fee-pay-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--action-primary) 40%, transparent);
+}
+
+.fee-pay-pill:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--action-primary) 25%, transparent);
+}
+
 /* Force accordion container to have proper spacing */
 #tblReport {
   margin-top: 16px !important;
