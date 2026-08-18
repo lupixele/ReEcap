@@ -13,7 +13,7 @@ function formatCurrencyAmount(val) {
   if (val === undefined || val === null || val === '--' || val === '' || val === '—') return '--';
   const num = parseFloat(String(val).replace(/,/g, ''));
   if (isNaN(num)) return val;
-  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function initDecorators() {

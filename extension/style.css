@@ -196,12 +196,16 @@ tr:has(span[style*="color: blue"]) {
 }
 
 .user-avatar {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 10px;
   background: var(--accent-soft);
   color: var(--accent-dark);
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 700;
   font-family: var(--font-sans), sans-serif;
+  object-fit: cover;
+  object-position: center top;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
 }
 
 .user-name { 
@@ -1802,8 +1806,9 @@ table[width="100%"]:has(iframe#capIframeId) {
 .bio-avatar {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: 18px;
   object-fit: cover;
+  object-position: center top;
   border: 3px solid var(--accent-soft);
   box-shadow: var(--card-shadow);
 }
@@ -1811,7 +1816,7 @@ table[width="100%"]:has(iframe#capIframeId) {
 .bio-avatar-placeholder {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: 18px;
   background: var(--surface-sunken);
   border: 3px solid var(--accent-soft);
 }
