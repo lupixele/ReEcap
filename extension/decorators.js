@@ -78,6 +78,11 @@ function initDecorators() {
                img.style.removeProperty('border-radius');
                img.style.objectFit = 'cover';
                img.style.objectPosition = 'center top';
+               img.decoding = 'async';
+               img.loading = 'eager';
+               img.style.imageRendering = 'smooth';
+               img.style.transform = 'translateZ(0)';
+               img.style.backfaceVisibility = 'hidden';
                userCluster.appendChild(img);
             }
          }

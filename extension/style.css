@@ -86,6 +86,12 @@ body.bodyStyle > form > center > div > table > tbody > tr > td {
   aspect-ratio: 1 / 1 !important;
   flex-shrink: 0 !important;
   display: block !important;
+  /* High-quality downscaling & anti-aliasing */
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: smooth !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
+  overflow: hidden !important;
 }
 
 /* Hide the redundant news ticker banner and the blue payment text rows */
@@ -2401,6 +2407,10 @@ table.popupTable th a:hover {
     max-width: 36px !important;
     max-height: 36px !important;
     border-radius: 9px !important;
+    image-rendering: -webkit-optimize-contrast !important;
+    image-rendering: smooth !important;
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
   }
 }
 
