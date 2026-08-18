@@ -3,10 +3,17 @@
 
 function escapeAttr(s) {
   return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/&/g, '&')
+    .replace(/"/g, '"')
+    .replace(/</g, '<')
+    .replace(/>/g, '>');
+}
+
+function formatCurrencyAmount(val) {
+  if (val === undefined || val === null || val === '--' || val === '' || val === '—') return '--';
+  const num = parseFloat(String(val).replace(/,/g, ''));
+  if (isNaN(num)) return val;
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function initDecorators() {
@@ -3329,20 +3336,20 @@ function renderDashboardCards(slot, profileData) {
   const haveTotalNumber = feeTotalDue   !== "--" && feeTotalDue   !== "0.00" && parseFloat(feeTotalDue)   > 0;
 
   let semClass = 'is-muted';
-  let semDisplay = '—';
+  let semDisplay = '<span class="fee-status-badge is-success">Cleared</span>';
   let semCaption = 'Assessment pending';
   if (feeCurrentSemStatus === 'due') {
     semClass = 'is-warning';
-    semDisplay = '₹' + feeCurrentSem;
+    semDisplay = '₹' + formatCurrencyAmount(feeCurrentSem);
     semCaption = 'Amount outstanding this term';
   } else if (feeCurrentSemStatus === 'paid') {
     semClass = 'is-success';
-    semDisplay = '₹' + (feeCurrentSemPayable || feeCurrentSem || '0.00');
+    semDisplay = '<span class="fee-status-badge is-success">Cleared</span>';
     semCaption = 'Cleared in full' + (feeBalanceWords ? ' · ' + feeBalanceWords : '');
   }
-  // Fall through: 'pending' → muted em-dash + pending caption.
+  // Fall through: 'pending' → green "Cleared" badge + pending caption.
 
-  const totalDisplay  = (haveTotalNumber ? '₹' + feeTotalDue : '—');
+  const totalDisplay  = (haveTotalNumber ? '₹' + formatCurrencyAmount(feeTotalDue) : '<span class="fee-status-badge is-success">Cleared</span>');
   const totalCaption  = haveTotalNumber
     ? 'Across all assessed terms'
     : 'All accounts settled';
@@ -3394,11 +3401,11 @@ function renderDashboardCards(slot, profileData) {
       </div>
       <div class="fee-row-caption">${totalCaption}</div>
 
-      <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="masthead-btn stat-cta" style="text-align: center; display: block; padding: 10px; width: 100%; margin-top: 4px;">Pay Online</a>
+      <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="fee-pay-pill">Pay Online</a>
     </div>
   `;
 
-  const payBtn = slot.querySelector('.stat-cta');
+  const payBtn = slot.querySelector('.fee-pay-pill');
   if (payBtn) {
     payBtn.addEventListener('click', () => {
       showIframe();
