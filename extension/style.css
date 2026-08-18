@@ -72,8 +72,7 @@ body.bodyStyle > form > center > div > table > tbody > tr > td {
   left: auto !important;
 }
 
-#imgstudent,
-.user-avatar {
+#imgstudent {
   width: 40px !important;
   height: 40px !important;
   max-width: 40px !important;
@@ -208,7 +207,7 @@ tr:has(span[style*="color: blue"]) {
   gap: 10px; 
 }
 
-.user-avatar {
+.user-avatar-placeholder {
   width: 40px; height: 40px; border-radius: 10px;
   background: var(--accent-soft);
   color: var(--accent-dark);
@@ -2401,12 +2400,15 @@ table.popupTable th a:hover {
   }
 
   #imgstudent,
-  .user-avatar {
+  .user-avatar-placeholder {
     width: 36px !important;
     height: 36px !important;
     max-width: 36px !important;
     max-height: 36px !important;
     border-radius: 9px !important;
+  }
+
+  #imgstudent {
     image-rendering: -webkit-optimize-contrast !important;
     image-rendering: smooth !important;
     transform: translateZ(0) !important;
