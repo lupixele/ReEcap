@@ -64,7 +64,7 @@ body.bodyStyle > form > center > div > table > tbody > tr > td {
   display: none !important;
 }
 
-#divimg { 
+#divimg {
   position: static !important;
   display: inline-block !important;
   margin-right: 12px !important;
@@ -72,13 +72,20 @@ body.bodyStyle > form > center > div > table > tbody > tr > td {
   left: auto !important;
 }
 
-#imgstudent {
+#imgstudent,
+.user-avatar {
   width: 40px !important;
   height: 40px !important;
-  border-radius: 50% !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
+  border-radius: 10px !important;
   border: 2px solid var(--accent-soft) !important;
   box-shadow: var(--card-shadow) !important;
-  object-fit: cover;
+  object-fit: cover !important;
+  object-position: center top !important;
+  aspect-ratio: 1 / 1 !important;
+  flex-shrink: 0 !important;
+  display: block !important;
 }
 
 /* Hide the redundant news ticker banner and the blue payment text rows */
@@ -2387,9 +2394,13 @@ table.popupTable th a:hover {
     display: none;
   }
 
+  #imgstudent,
   .user-avatar {
-    width: 36px;
-    height: 36px;
+    width: 36px !important;
+    height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    border-radius: 9px !important;
   }
 }
 
