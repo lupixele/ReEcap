@@ -71,6 +71,13 @@ function initDecorators() {
             const img = avatarDiv.querySelector('img');
             if (img) {
                img.className = 'user-avatar';
+               img.removeAttribute('width');
+               img.removeAttribute('height');
+               img.style.removeProperty('width');
+               img.style.removeProperty('height');
+               img.style.removeProperty('border-radius');
+               img.style.objectFit = 'cover';
+               img.style.objectPosition = 'center top';
                userCluster.appendChild(img);
             }
          }
