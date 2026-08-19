@@ -3040,9 +3040,19 @@ function showOverview() {
   const overview = document.getElementById('reecap-overview');
   const directory = document.getElementById('reecap-students-directory');
   const pageTitle = document.getElementById('reecap-page-title');
+  const profileContainer = document.querySelector('.student-profile-container');
   if (iframe) iframe.style.setProperty('display', 'block', 'important');
+  
+  // NOTE: If the inner frame is StudentProfile, hide it from overview entirely.
+  try {
+    if (iframe && iframe.contentWindow.location.pathname.toLowerCase().includes('studentprofile.aspx')) {
+      iframe.style.setProperty('display', 'none', 'important');
+    }
+  } catch(e) {}
+  
   if (directory) directory.style.setProperty('display', 'none', 'important');
   if (overview) overview.style.setProperty('display', 'flex', 'important');
+  if (profileContainer) profileContainer.style.setProperty('display', 'none', 'important');
   if (pageTitle) pageTitle.textContent = 'OVERVIEW';
 
   document.documentElement.setAttribute('data-overview-active', 'true');
@@ -3062,10 +3072,12 @@ function showStudentsDirectory() {
   const overview = document.getElementById('reecap-overview');
   let directory = document.getElementById('reecap-students-directory');
   const pageTitle = document.getElementById('reecap-page-title');
+  const profileContainer = document.querySelector('.student-profile-container');
   
   if (iframe) iframe.style.setProperty('display', 'none', 'important');
   if (overview) overview.style.setProperty('display', 'none', 'important');
   if (container) container.style.setProperty('display', 'none', 'important');
+  if (profileContainer) profileContainer.style.setProperty('display', 'none', 'important');
   
   if (!directory) {
     directory = document.createElement('div');
