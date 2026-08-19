@@ -4046,9 +4046,9 @@ function buildStudentsDirectory(container) {
   }, 100);
 
   function getPhotoUrl(roll) {
-    if (roll.startsWith('25B11') || roll.startsWith('24B11')) return \`https://info.aec.edu.in/aus/StudentPhotos_Original/\${roll}.jpg\`;
-    if (roll.includes('A91A') || roll.includes('P31A') || roll.includes('MH1A')) return \`https://info.aec.edu.in/aec/StudentPhotos/\${roll}.jpg\`;
-    return \`https://info.aec.edu.in/aus/StudentPhotos_Original/\${roll}.jpg\`;
+    if (roll.startsWith('25B11') || roll.startsWith('24B11')) return `https://info.aec.edu.in/aus/StudentPhotos_Original/${roll}.jpg`;
+    if (roll.includes('A91A') || roll.includes('P31A') || roll.includes('MH1A')) return `https://info.aec.edu.in/aec/StudentPhotos/${roll}.jpg`;
+    return `https://info.aec.edu.in/aus/StudentPhotos_Original/${roll}.jpg`;
   }
 
   function renderBatch() {
@@ -4057,15 +4057,15 @@ function buildStudentsDirectory(container) {
     
     slice.forEach(s => {
       const photoUrl = getPhotoUrl(s.roll);
-      html += \`
+      html += `
         <div class="student-card">
-          <img class="student-card-avatar" src="\${photoUrl}" alt="\${s.roll}" loading="lazy" onerror="this.src=''; this.style.display='none';" data-roll="\${s.roll}" data-name="\${escapeAttr(s.name)}" data-email="\${s.email}">
-          <div class="student-card-meta">\${s.branch}</div>
-          <h3 class="student-card-name" title="\${escapeAttr(s.name)}">\${escapeAttr(s.name)}</h3>
-          <div class="student-card-roll">\${s.roll}</div>
-          <a href="mailto:\${s.email}" class="student-mail-btn">Mail Student</a>
+          <img class="student-card-avatar" src="${photoUrl}" alt="${s.roll}" loading="lazy" onerror="this.src=''; this.style.display='none';" data-roll="${s.roll}" data-name="${escapeAttr(s.name)}" data-email="${s.email}">
+          <div class="student-card-meta">${s.branch}</div>
+          <h3 class="student-card-name" title="${escapeAttr(s.name)}">${escapeAttr(s.name)}</h3>
+          <div class="student-card-roll">${s.roll}</div>
+          <a href="mailto:${s.email}" class="student-mail-btn">Mail Student</a>
         </div>
-      \`;
+      `;
     });
 
     if (displayedCount === 0) {
