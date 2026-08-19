@@ -39,6 +39,14 @@ function injectStyle() {
   // Tokens must load before the portal component stylesheet.
   injectStylesheet(TOKENS_ID, 'shared/tokens.css');
   injectStylesheet(STYLE_ID, 'style.css');
+  
+  if (!document.getElementById('reecap-students-script')) {
+    const script = document.createElement('script');
+    script.id = 'reecap-students-script';
+    script.src = chrome.runtime.getURL('shared/students.js');
+    (document.head || document.documentElement).appendChild(script);
+  }
+  
   ensureSkipLink();
 }
 
@@ -184,3 +192,9 @@ function syncSidebarActiveState(iframePath) {
     link.classList.toggle('active', !!activeKey && linkKey === activeKey);
   });
 }
+
+// Injects students script loader dynamically pointing to the extension asset
+const script = document.createElement('script');
+script.src = chrome.runtime.getURL('shared/students.js');
+script.dataset.jsonUrl = chrome.runtime.getURL('shared/students.json');
+(document.head || document.documentElement).appendChild(script);
