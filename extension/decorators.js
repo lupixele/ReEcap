@@ -3033,14 +3033,14 @@ function buildSidebar() {
 
 function showOverview() {
   const dirCont = document.getElementById('reecap-students-directory');
-  if (dirCont) dirCont.style.display = 'none';
+  if (dirCont) dirCont.style.setProperty('display', 'none', 'important');
   const container = document.getElementById('reecap-default-content');
   if (container) container.style.display = 'block';
   const iframe = document.getElementById('capIframeId');
   const overview = document.getElementById('reecap-overview');
   const directory = document.getElementById('reecap-students-directory');
   const pageTitle = document.getElementById('reecap-page-title');
-  if (iframe) iframe.style.setProperty('display', 'none', 'important');
+  if (iframe) iframe.style.setProperty('display', 'block', 'important');
   if (directory) directory.style.setProperty('display', 'none', 'important');
   if (overview) overview.style.setProperty('display', 'flex', 'important');
   if (pageTitle) pageTitle.textContent = 'OVERVIEW';
@@ -3057,6 +3057,7 @@ function showOverview() {
 }
 
 function showStudentsDirectory() {
+  const container = document.getElementById('reecap-default-content');
   const iframe = document.getElementById('capIframeId');
   const overview = document.getElementById('reecap-overview');
   let directory = document.getElementById('reecap-students-directory');
@@ -3064,6 +3065,7 @@ function showStudentsDirectory() {
   
   if (iframe) iframe.style.setProperty('display', 'none', 'important');
   if (overview) overview.style.setProperty('display', 'none', 'important');
+  if (container) container.style.setProperty('display', 'none', 'important');
   
   if (!directory) {
     directory = document.createElement('div');
@@ -3076,7 +3078,7 @@ function showStudentsDirectory() {
     }
   }
   
-  directory.style.setProperty('display', 'flex', 'important');
+  directory.style.setProperty('display', 'block', 'important');
   if (pageTitle) pageTitle.textContent = 'STUDENT DIRECTORY';
 
   document.documentElement.setAttribute('data-overview-active', 'false');
@@ -3931,21 +3933,30 @@ function escapeAttr(str) {
 
 function showStudentsDirectory() {
   const container = document.getElementById('reecap-default-content');
-  const dirCont = document.getElementById('reecap-students-directory');
-  if (dirCont) {
-    dirCont.style.display = 'block';
-    if (container) container.style.display = 'none';
-  } else {
+  let directory = document.getElementById('reecap-students-directory');
+  const iframe = document.getElementById('capIframeId');
+  const overview = document.getElementById('reecap-overview');
+  const pageTitle = document.getElementById('reecap-page-title');
+
+  if (iframe) iframe.style.setProperty('display', 'none', 'important');
+  if (overview) overview.style.setProperty('display', 'none', 'important');
+  if (container) container.style.setProperty('display', 'none', 'important');
+  
+  if (!directory) {
     const parentContainer = document.getElementById('reecap-content-col');
     if (parentContainer) {
-      if (container) container.style.display = 'none';
-      const root = document.createElement('div');
-      root.id = 'reecap-students-directory';
-      root.className = 'reecap-students-directory';
-      parentContainer.appendChild(root);
-      buildStudentsDirectory(root);
+      directory = document.createElement('div');
+      directory.id = 'reecap-students-directory';
+      directory.className = 'reecap-students-directory';
+      parentContainer.appendChild(directory);
+      buildStudentsDirectory(directory);
     }
   }
+
+  if (directory) {
+    directory.style.setProperty('display', 'block', 'important');
+  }
+  if (pageTitle) pageTitle.textContent = 'STUDENT DIRECTORY';
 }
 
 function buildStudentsDirectory(container) {
