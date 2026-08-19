@@ -2879,7 +2879,9 @@ function buildSidebar() {
     overviewA.innerHTML = `<span class="reecap-sidebar-icon">${overviewIcon}</span><span class="reecap-sidebar-text">OVERVIEW</span>`;
     overviewA.addEventListener('click', (e) => {
       e.preventDefault();
-      if (typeof showOverview === 'function') showOverview();
+      document.querySelectorAll('.reecap-sidebar-link').forEach(link => link.classList.remove('active'));
+      overviewA.classList.add('active');
+      showOverview();
       if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
     });
     overviewLi.appendChild(overviewA);
@@ -3004,14 +3006,42 @@ function buildSidebar() {
       menu.appendChild(groupHeader);
       menu.appendChild(section);
     }
+    
+    // Add Directory at bottom
+    const directoryDivider = document.createElement('div');
+    directoryDivider.className = 'reecap-sidebar-overview-divider';
+    menu.appendChild(directoryDivider);
+
+    const usersLi = document.createElement('li');
+    const usersA = document.createElement('a');
+    usersA.className = 'reecap-sidebar-link reecap-sidebar-students';
+    usersA.href = 'javascript:void(0);';
+    const usersIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
+    usersA.title = 'Student Directory';
+    usersA.innerHTML = `<span class="reecap-sidebar-icon">${usersIcon}</span><span class="reecap-sidebar-text">STUDENTS</span>`;
+    usersA.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.reecap-sidebar-link').forEach(link => link.classList.remove('active'));
+      usersA.classList.add('active');
+      if (typeof showStudentsDirectory === 'function') showStudentsDirectory();
+      if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
+    });
+    usersLi.appendChild(usersA);
+    menu.appendChild(usersLi);
   });
 }
 
 function showOverview() {
+  const dirCont = document.getElementById('reecap-students-directory');
+  if (dirCont) dirCont.style.display = 'none';
+  const container = document.getElementById('reecap-default-content');
+  if (container) container.style.display = 'block';
   const iframe = document.getElementById('capIframeId');
   const overview = document.getElementById('reecap-overview');
+  const directory = document.getElementById('reecap-students-directory');
   const pageTitle = document.getElementById('reecap-page-title');
   if (iframe) iframe.style.setProperty('display', 'none', 'important');
+  if (directory) directory.style.setProperty('display', 'none', 'important');
   if (overview) overview.style.setProperty('display', 'flex', 'important');
   if (pageTitle) pageTitle.textContent = 'OVERVIEW';
 
@@ -3026,16 +3056,54 @@ function showOverview() {
   });
 }
 
+function showStudentsDirectory() {
+  const iframe = document.getElementById('capIframeId');
+  const overview = document.getElementById('reecap-overview');
+  let directory = document.getElementById('reecap-students-directory');
+  const pageTitle = document.getElementById('reecap-page-title');
+  
+  if (iframe) iframe.style.setProperty('display', 'none', 'important');
+  if (overview) overview.style.setProperty('display', 'none', 'important');
+  
+  if (!directory) {
+    directory = document.createElement('div');
+    directory.id = 'reecap-students-directory';
+    directory.className = 'reecap-students-directory';
+    const contentCol = document.getElementById('reecap-content-col');
+    if (contentCol) {
+      contentCol.appendChild(directory);
+      buildStudentsDirectory(directory);
+    }
+  }
+  
+  directory.style.setProperty('display', 'flex', 'important');
+  if (pageTitle) pageTitle.textContent = 'STUDENT DIRECTORY';
+
+  document.documentElement.setAttribute('data-overview-active', 'false');
+
+  document.querySelectorAll('a.reecap-sidebar-link').forEach(link => {
+    if (link.classList.contains('reecap-sidebar-students')) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+
 function showIframe() {
   const iframe = document.getElementById('capIframeId');
   const overview = document.getElementById('reecap-overview');
+  const directory = document.getElementById('reecap-students-directory');
   if (iframe) iframe.style.removeProperty('display');
   if (overview) overview.style.setProperty('display', 'none', 'important');
+  if (directory) directory.style.setProperty('display', 'none', 'important');
 
   document.documentElement.setAttribute('data-overview-active', 'false');
 
   const overviewLink = document.querySelector('.reecap-sidebar-overview');
   if (overviewLink) overviewLink.classList.remove('active');
+  const studentsLink = document.querySelector('.reecap-sidebar-students');
+  if (studentsLink) studentsLink.classList.remove('active');
 
   if (typeof syncSidebarActiveState === 'function' && iframe && iframe.contentWindow) {
     try {
@@ -3854,4 +3922,209 @@ function redesignAttendancePage() {
       setTimeout(cleanup, 20000); // 20s hard timeout
     }
   });
+}
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function showStudentsDirectory() {
+  const container = document.getElementById('reecap-default-content');
+  const dirCont = document.getElementById('reecap-students-directory');
+  if (dirCont) {
+    dirCont.style.display = 'block';
+    if (container) container.style.display = 'none';
+  } else {
+    const parentContainer = document.getElementById('reecap-content-col');
+    if (parentContainer) {
+      if (container) container.style.display = 'none';
+      const root = document.createElement('div');
+      root.id = 'reecap-students-directory';
+      root.className = 'reecap-students-directory';
+      parentContainer.appendChild(root);
+      buildStudentsDirectory(root);
+    }
+  }
+}
+
+function buildStudentsDirectory(container) {
+  container.innerHTML = `
+    <div class="directory-controls">
+      <select id="dir-year" class="directory-filter">
+        <option value="">All Batches</option>
+        <option value="25B11">2nd Year (25B11)</option>
+        <option value="24B11">3rd Year (24B11)</option>
+        <option value="23A91A,23B11,23P31A,23MH1A">4th Year (23 Batch)</option>
+        <option value="22A91A,22P31A,22MH1A">Alumni (22 Batch)</option>
+      </select>
+      <select id="dir-branch" class="directory-filter">
+        <option value="">All Branches</option>
+        <option value="CS">CSE</option>
+        <option value="AI">AIML</option>
+        <option value="DS">Data Science</option>
+        <option value="EC">ECE</option>
+        <option value="EE">EEE</option>
+        <option value="IT">IT</option>
+        <option value="ME">Mech</option>
+        <option value="CE">Civil</option>
+        <option value="AE">AgE</option>
+        <option value="MN">Mining</option>
+        <option value="PT">Petroleum</option>
+      </select>
+      <input type="text" id="dir-search" class="directory-search-input" placeholder="Search by name or roll number..." spellcheck="false" autocomplete="off">
+    </div>
+    <div id="dir-grid" class="student-card-grid">
+      <div class="directory-loader">Loading student database...</div>
+    </div>
+  `;
+
+  if (!document.getElementById('reecap-photo-modal')) {
+    const modal = document.createElement('div');
+    modal.id = 'reecap-photo-modal';
+    modal.className = 'reecap-photo-modal';
+    modal.innerHTML = `
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <button class="modal-close"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+        <img id="modal-img" class="modal-image" src="" alt="Student Photo">
+        <div style="text-align:center;">
+          <h2 id="modal-name" class="bio-name" style="margin-bottom:8px;">Student</h2>
+          <div id="modal-roll" class="student-card-roll" style="display:inline-block;">25B11CS001</div>
+        </div>
+        <div class="modal-actions">
+          <button id="modal-copy-roll" class="modal-btn-copy">Copy Roll</button>
+          <a id="modal-mail-btn" href="#" class="modal-btn-primary">Email Student</a>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('.modal-backdrop').addEventListener('click', () => modal.classList.remove('is-open'));
+    modal.querySelector('.modal-close').addEventListener('click', () => modal.classList.remove('is-open'));
+    
+    document.getElementById('modal-copy-roll').addEventListener('click', function() {
+      const roll = document.getElementById('modal-roll').textContent;
+      navigator.clipboard.writeText(roll);
+      const original = this.textContent;
+      this.textContent = 'Copied!';
+      setTimeout(() => this.textContent = original, 2000);
+    });
+  }
+
+  const grid = document.getElementById('dir-grid');
+  const yearSelect = document.getElementById('dir-year');
+  const branchSelect = document.getElementById('dir-branch');
+  const searchInput = document.getElementById('dir-search');
+
+  let allStudents = [];
+  let displayedCount = 0;
+  const BATCH_SIZE = 40;
+  let filteredStudents = [];
+  
+  const checkLoaded = setInterval(() => {
+    if (window.REECAP_STUDENTS_LOADED && window.REECAP_STUDENTS) {
+      clearInterval(checkLoaded);
+      allStudents = window.REECAP_STUDENTS;
+      const brMap = {'CS':'CSE','AI':'AIML','DS':'Data Sci','EC':'ECE','EE':'EEE','IT':'IT','ME':'Mech','CE':'Civil','AE':'AgE','MN':'Mining','PT':'Petrol'};
+      
+      allStudents = allStudents.map(s => {
+        const roll = s[0].toUpperCase();
+        let branch = 'Unknown';
+        if (roll.includes('B11')) {
+           const br = roll.substring(5, 7);
+           branch = brMap[br] || br;
+        } else if (roll.includes('A91A') || roll.includes('P31A') || roll.includes('MH1A')) {
+           const brCode = roll.substring(6, 8);
+           const mapping = {'05':'CSE','42':'AIML','44':'Data Sci','04':'ECE','02':'EEE','12':'IT','03':'Mech','01':'Civil'};
+           branch = mapping[brCode] || brCode;
+        }
+        return { roll, name: s[1], email: s[2], branch };
+      });
+      applyFilters();
+    }
+  }, 100);
+
+  function getPhotoUrl(roll) {
+    if (roll.startsWith('25B11') || roll.startsWith('24B11')) return \`https://info.aec.edu.in/aus/StudentPhotos_Original/\${roll}.jpg\`;
+    if (roll.includes('A91A') || roll.includes('P31A') || roll.includes('MH1A')) return \`https://info.aec.edu.in/aec/StudentPhotos/\${roll}.jpg\`;
+    return \`https://info.aec.edu.in/aus/StudentPhotos_Original/\${roll}.jpg\`;
+  }
+
+  function renderBatch() {
+    let html = '';
+    const slice = filteredStudents.slice(displayedCount, displayedCount + BATCH_SIZE);
+    
+    slice.forEach(s => {
+      const photoUrl = getPhotoUrl(s.roll);
+      html += \`
+        <div class="student-card">
+          <img class="student-card-avatar" src="\${photoUrl}" alt="\${s.roll}" loading="lazy" onerror="this.src=''; this.style.display='none';" data-roll="\${s.roll}" data-name="\${escapeAttr(s.name)}" data-email="\${s.email}">
+          <div class="student-card-meta">\${s.branch}</div>
+          <h3 class="student-card-name" title="\${escapeAttr(s.name)}">\${escapeAttr(s.name)}</h3>
+          <div class="student-card-roll">\${s.roll}</div>
+          <a href="mailto:\${s.email}" class="student-mail-btn">Mail Student</a>
+        </div>
+      \`;
+    });
+
+    if (displayedCount === 0) {
+      grid.innerHTML = html;
+      if (filteredStudents.length === 0) grid.innerHTML = '<div class="directory-loader">No students found matching your criteria.</div>';
+    } else {
+      grid.insertAdjacentHTML('beforeend', html);
+    }
+    
+    displayedCount += slice.length;
+    
+    grid.querySelectorAll('.student-card-avatar:not(.bound)').forEach(img => {
+      img.classList.add('bound');
+      img.addEventListener('click', function() {
+        const modal = document.getElementById('reecap-photo-modal');
+        document.getElementById('modal-img').src = this.src;
+        document.getElementById('modal-name').textContent = this.dataset.name;
+        document.getElementById('modal-roll').textContent = this.dataset.roll;
+        document.getElementById('modal-mail-btn').href = 'mailto:' + this.dataset.email;
+        modal.classList.add('is-open');
+      });
+    });
+  }
+
+  function applyFilters() {
+    const yearVal = yearSelect.value;
+    const branchVal = branchSelect.value;
+    const searchVal = searchInput.value.trim().toUpperCase();
+
+    filteredStudents = allStudents.filter(s => {
+      if (yearVal) {
+        const prefixes = yearVal.split(',');
+        if (!prefixes.some(p => s.roll.startsWith(p))) return false;
+      }
+      if (branchVal && !s.roll.includes(branchVal)) return false;
+      if (searchVal && !s.roll.includes(searchVal) && !s.name.toUpperCase().includes(searchVal)) return false;
+      return true;
+    });
+
+    displayedCount = 0;
+    grid.innerHTML = '';
+    renderBatch();
+  }
+
+  let debounceTimeout;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(applyFilters, 150);
+  });
+  
+  yearSelect.addEventListener('change', applyFilters);
+  branchSelect.addEventListener('change', applyFilters);
+
+  const contentCol = document.getElementById('reecap-content-col');
+  if (contentCol) {
+    contentCol.addEventListener('scroll', () => {
+      if (contentCol.scrollHeight - contentCol.scrollTop <= contentCol.clientHeight + 400) {
+        if (displayedCount < filteredStudents.length) renderBatch();
+      }
+    }, { passive: true });
+  }
 }
