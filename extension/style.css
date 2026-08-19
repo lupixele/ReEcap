@@ -3656,3 +3656,541 @@ table.popupTable th a:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   Student Directory (Virtual Grid & Squircle Modal)
+   ========================================================================== */
+
+.reecap-students-directory {
+  display: flex !important;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.directory-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px;
+  background: var(--surface-card);
+  border: var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  align-items: center;
+}
+
+.directory-search-input {
+  flex: 1;
+  min-width: 250px;
+  padding: 10px 16px;
+  border-radius: 100px;
+  border: 1px solid var(--border-light);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.directory-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.directory-filter {
+  padding: 10px 16px;
+  border-radius: 100px;
+  border: 1px solid var(--border-light);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-family: var(--font-sans), system-ui;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.directory-filter:hover, .directory-filter:focus {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.student-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  min-height: 400px; /* Space for initial spinner */
+}
+
+.student-card {
+  background: var(--surface-card);
+  border: var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.student-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow), var(--ambient-glow);
+}
+
+.student-card-avatar {
+  width: 100px;
+  height: 100px;
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 20px;
+  object-fit: cover;
+  object-position: center top;
+  border: 3px solid var(--surface-sunken);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  cursor: zoom-in;
+  /* High quality rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: smooth;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  transition: transform 0.2s ease;
+}
+
+.student-card-avatar:hover {
+  transform: scale(1.03) translateZ(0);
+}
+
+.student-card-name {
+  font-family: var(--font-sans), system-ui;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0;
+  /* Max 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.student-card-roll {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1px solid var(--border-light);
+}
+
+.student-card-meta {
+  font-family: var(--font-sans), system-ui;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+.student-mail-btn {
+  margin-top: auto;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 100px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-family: var(--font-sans), system-ui;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.student-mail-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* Modal */
+.reecap-photo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: none !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.reecap-photo-modal.is-open {
+  display: flex !important;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: modalFadeIn 0.2s ease;
+}
+
+.modal-content {
+  position: relative;
+  z-index: 1;
+  background: var(--surface-card);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg);
+  padding: 32px 32px 24px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 320px;
+  max-width: 90vw;
+  animation: modalZoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 32px;
+  object-fit: cover;
+  object-position: center top;
+  border: 4px solid var(--surface-elevated);
+  box-shadow: var(--ambient-glow);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: smooth;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.modal-actions a, .modal-actions button {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 100px;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  transition: all 0.2s;
+}
+
+.modal-btn-copy {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+.modal-btn-copy:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+
+.modal-btn-primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.modal-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.directory-loader {
+  font-family: var(--font-mono), monospace;
+  color: var(--text-faint);
+  text-align: center;
+  grid-column: 1 / -1;
+  padding: 40px;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalZoomIn {
+  from { transform: scale(0.95) translateY(10px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* STUDENTS DIRECTORY */
+.reecap-students-directory {
+  display: none;
+  animation: slideFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.directory-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.directory-filter,
+.directory-search-input {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.directory-filter:focus,
+.directory-search-input:focus {
+  border-color: var(--accent-subtle);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+}
+
+.directory-search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.student-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  padding-bottom: 40px;
+}
+
+.student-card {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.student-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  border-color: var(--accent-subtle);
+}
+
+.student-card-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 14px; /* squircle approx */
+  object-fit: cover;
+  margin: 0 auto 12px;
+  background: #1e1e1e;
+  border: 1px solid var(--border-color);
+  image-rendering: smooth;
+  cursor: zoom-in;
+  transition: transform 0.2s, rotate 0.2s;
+}
+
+.student-card:hover .student-card-avatar {
+  transform: scale(1.05) rotate(-2deg);
+}
+
+.student-card-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.student-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.student-card-roll {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.student-mail-btn {
+  display: inline-block;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.student-card:hover .student-mail-btn {
+  background: var(--text-primary);
+  color: #000;
+  border-color: var(--text-primary);
+}
+
+/* Modal */
+.reecap-photo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.reecap-photo-modal.is-open {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.reecap-photo-modal .modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+}
+
+.reecap-photo-modal .modal-content {
+  position: relative;
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+}
+
+.reecap-photo-modal.is-open .modal-content {
+  transform: translateY(0) scale(1);
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.modal-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  image-rendering: smooth;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.modal-btn-copy, .modal-btn-primary {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.modal-btn-copy {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.modal-btn-copy:hover {
+  border-color: var(--text-primary);
+}
+
+.modal-btn-primary {
+  background: var(--text-primary);
+  color: #000;
+  border: none;
+}
+.modal-btn-primary:hover {
+  background: #fff;
+  box-shadow: 0 0 12px rgba(255,255,255,0.3);
+}
