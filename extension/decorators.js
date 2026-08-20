@@ -17,24 +17,21 @@ function formatCurrencyAmount(val) {
 }
 
 // Role-based authentication check for injected tools
+let CURRENT_ROLE = 'rbtStudent'; // Default assumption, overridden by storage
+
 function isStudentRole() {
   const path = window.location.pathname.toLowerCase();
   
   if (!path.includes('studentmaster.aspx')) return false;
   if (path.includes('employeemaster.aspx') || path.includes('parentmaster.aspx') || path.includes('facultymaster.aspx')) return false;
 
-  const lblUser = document.getElementById('lblUser');
-  if (lblUser && lblUser.textContent) {
-    const userText = lblUser.textContent.toUpperCase();
-    const hasStudentRoll = /\b\d{2}[A-Z0-9]{3,8}\b/.test(userText);
-    if (!hasStudentRoll) return false;
-  }
-  
-  return true;
+  return CURRENT_ROLE === 'rbtStudent';
 }
 
 function initDecorators() {
-  chrome.storage.sync.get({ enabled: true }, (data) => {
+  // Prime the cached role before booting the UI
+  chrome.storage.sync.get(['enabled', 'reecapLoginRole'], (data) => {
+    if (data.reecapLoginRole) CURRENT_ROLE = data.reecapLoginRole;
     if (!data.enabled) return;
     
     // 0. Iframe Resize Listener
