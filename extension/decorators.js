@@ -3041,14 +3041,9 @@ function showOverview() {
   const directory = document.getElementById('reecap-students-directory');
   const pageTitle = document.getElementById('reecap-page-title');
   const profileContainer = document.querySelector('.student-profile-container');
-  if (iframe) iframe.style.setProperty('display', 'block', 'important');
   
-  // NOTE: If the inner frame is StudentProfile, hide it from overview entirely.
-  try {
-    if (iframe && iframe.contentWindow.location.pathname.toLowerCase().includes('studentprofile.aspx')) {
-      iframe.style.setProperty('display', 'none', 'important');
-    }
-  } catch(e) {}
+  // UNCONDITIONALLY hide iframe so legacy views NEVER bleed into custom Overview
+  if (iframe) iframe.style.setProperty('display', 'none', 'important');
   
   if (directory) directory.style.setProperty('display', 'none', 'important');
   if (overview) overview.style.setProperty('display', 'flex', 'important');
