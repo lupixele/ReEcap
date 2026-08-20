@@ -16,6 +16,23 @@ function formatCurrencyAmount(val) {
   return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Role-based authentication check for injected tools
+function isStudentRole() {
+  const path = window.location.pathname.toLowerCase();
+  
+  if (!path.includes('studentmaster.aspx')) return false;
+  if (path.includes('employeemaster.aspx') || path.includes('parentmaster.aspx') || path.includes('facultymaster.aspx')) return false;
+
+  const lblUser = document.getElementById('lblUser');
+  if (lblUser && lblUser.textContent) {
+    const userText = lblUser.textContent.toUpperCase();
+    const hasStudentRoll = /\b\d{2}[A-Z0-9]{3,8}\b/.test(userText);
+    if (!hasStudentRoll) return false;
+  }
+  
+  return true;
+}
+
 function initDecorators() {
   chrome.storage.sync.get({ enabled: true }, (data) => {
     if (!data.enabled) return;
@@ -248,6 +265,28 @@ function redesignLoginPage() {
     roleLabel.className = 'reecap-role-label';
     roleLabel.textContent = 'Continue as';
     radioGroup.parentNode.insertBefore(roleLabel, radioGroup);
+    
+    // Remember login role choice logic
+    const radios = radioGroup.querySelectorAll('input[type="radio"]');
+    chrome.storage.sync.get(['reecapLoginRole'], (data) => {
+      if (data.reecapLoginRole) {
+        radios.forEach(r => {
+          if (r.id === data.reecapLoginRole) r.checked = true;
+        });
+      } else {
+        // Fallback ECAP default is Parent, force Student by default if unconfigured
+        const stRadio = radioGroup.querySelector('#rbtStudent');
+        if (stRadio) stRadio.checked = true;
+      }
+    });
+
+    radios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          chrome.storage.sync.set({ reecapLoginRole: radio.id });
+        }
+      });
+    });
   }
 
   // Annotate error / result labels so screen readers pick up changes.
@@ -2869,23 +2908,25 @@ function buildSidebar() {
     `;
     menu.appendChild(navigationHeading);
 
-    // Add OVERVIEW item at top
-    const overviewLi = document.createElement('li');
-    const overviewA = document.createElement('a');
-    overviewA.className = 'reecap-sidebar-link reecap-sidebar-overview';
-    overviewA.href = 'javascript:void(0);';
-    const overviewIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>';
-    overviewA.title = 'Overview';
-    overviewA.innerHTML = `<span class="reecap-sidebar-icon">${overviewIcon}</span><span class="reecap-sidebar-text">OVERVIEW</span>`;
-    overviewA.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.querySelectorAll('.reecap-sidebar-link').forEach(link => link.classList.remove('active'));
-      overviewA.classList.add('active');
-      showOverview();
-      if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
-    });
-    overviewLi.appendChild(overviewA);
-    menu.appendChild(overviewLi);
+    // Add OVERVIEW item at top (Only for Students)
+    if (isStudentRole()) {
+      const overviewLi = document.createElement('li');
+      const overviewA = document.createElement('a');
+      overviewA.className = 'reecap-sidebar-link reecap-sidebar-overview';
+      overviewA.href = 'javascript:void(0);';
+      const overviewIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>';
+      overviewA.title = 'Overview';
+      overviewA.innerHTML = `<span class="reecap-sidebar-icon">${overviewIcon}</span><span class="reecap-sidebar-text">OVERVIEW</span>`;
+      overviewA.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.reecap-sidebar-link').forEach(link => link.classList.remove('active'));
+        overviewA.classList.add('active');
+        showOverview();
+        if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
+      });
+      overviewLi.appendChild(overviewA);
+      menu.appendChild(overviewLi);
+    }
 
     if (profileItem) {
       const profileLink = profileItem.link;
@@ -3007,31 +3048,38 @@ function buildSidebar() {
       menu.appendChild(section);
     }
     
-    // Add Directory at bottom
-    const directoryDivider = document.createElement('div');
-    directoryDivider.className = 'reecap-sidebar-overview-divider';
-    menu.appendChild(directoryDivider);
+    // Add Directory at bottom (Only for Students)
+    if (isStudentRole()) {
+      const directoryDivider = document.createElement('div');
+      directoryDivider.className = 'reecap-sidebar-overview-divider';
+      menu.appendChild(directoryDivider);
 
-    const usersLi = document.createElement('li');
-    const usersA = document.createElement('a');
-    usersA.className = 'reecap-sidebar-link reecap-sidebar-students';
-    usersA.href = 'javascript:void(0);';
-    const usersIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
-    usersA.title = 'Student Directory';
-    usersA.innerHTML = `<span class="reecap-sidebar-icon">${usersIcon}</span><span class="reecap-sidebar-text">STUDENTS</span>`;
-    usersA.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.querySelectorAll('.reecap-sidebar-link').forEach(link => link.classList.remove('active'));
-      usersA.classList.add('active');
-      if (typeof showStudentsDirectory === 'function') showStudentsDirectory();
-      if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
-    });
-    usersLi.appendChild(usersA);
-    menu.appendChild(usersLi);
+      const usersLi = document.createElement('li');
+      const usersA = document.createElement('a');
+      usersA.className = 'reecap-sidebar-link reecap-sidebar-students';
+      usersA.href = 'javascript:void(0);';
+      const usersIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
+      usersA.title = 'Student Directory';
+      usersA.innerHTML = `<span class="reecap-sidebar-icon">${usersIcon}</span><span class="reecap-sidebar-text">STUDENTS</span>`;
+      usersA.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.reecap-sidebar-link').forEach(link => link.classList.remove('active'));
+        usersA.classList.add('active');
+        if (typeof showStudentsDirectory === 'function') showStudentsDirectory();
+        if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
+      });
+      usersLi.appendChild(usersA);
+      menu.appendChild(usersLi);
+    }
   });
 }
 
 function showOverview() {
+  if (!isStudentRole()) {
+    console.warn('ReEcap: Access denied to Overview — student login required.');
+    return;
+  }
+
   const dirCont = document.getElementById('reecap-students-directory');
   if (dirCont) dirCont.style.setProperty('display', 'none', 'important');
   const container = document.getElementById('reecap-default-content');
@@ -3066,6 +3114,15 @@ function showOverview() {
 
 function showStudentsDirectory() {
   const container = document.getElementById('reecap-default-content');
+  
+  if (!isStudentRole()) {
+    if (container) {
+      container.innerHTML = '<div class="overview-grid" style="padding: 40px; text-align: center; color: var(--text-secondary);">Access Restricted. Please log in as a student to view the Directory.</div>';
+      container.style.display = 'block';
+    }
+    return;
+  }
+
   const iframe = document.getElementById('capIframeId');
   const overview = document.getElementById('reecap-overview');
   let directory = document.getElementById('reecap-students-directory');
@@ -4049,6 +4106,12 @@ function buildStudentsDirectory(container) {
   // Load students directly since decorators.js runs in extension isolated world
   // and cannot access window.REECAP_STUDENTS from page context.
   async function loadStudentsData() {
+    if (!isStudentRole()) {
+      console.warn('ReEcap Security: Blocked student database fetch. Active user is not a student.');
+      grid.innerHTML = '<div class="directory-loader">Access Restricted. Only logged-in students can view the Student Directory.</div>';
+      return;
+    }
+
     try {
       const jsonUrl = chrome.runtime.getURL('shared/students.json');
       const response = await fetch(jsonUrl);

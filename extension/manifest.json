@@ -46,6 +46,8 @@
                                      {
                                          "resources":  [
                                                            "shared/theme.js",
+                                                           "shared/students.js",
+                                                           "shared/students.json",
                                                            "shared/tokens.css",
                                                            "style.css"
                                                        ],
