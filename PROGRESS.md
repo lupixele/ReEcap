@@ -1,16 +1,17 @@
 ## Current State
-Successfully built and manually loaded `v1.0.0` zip into Chrome. Implemented Fee Balance format/badge correctly. Resolved the avatar `#imgstudent` anti-aliasing issues. Built the Student Directory grid component, search filters, zoom modal layout styling and toggle logic (`decorators.js` and `style.css`), injecting `students.json` successfully.
+Successfully engineered the core framework for the Student Directory and Multi-Role Access Control via decorators. Fixed critical DOM UI-bleeding bugs separating the legacy ASP profiles from the custom `divProfile`-firewalled overview dashboard. Migrated dataset loading natively into `decorators.js` eliminating broken cross-scope page injection calls. Successfully expanded the internal photo registry to 6,900+ active students sweeping roll formats across all 11 departments and legacy batches (22/23/24). Packaged as `v1.2.1`.
 
 ## Recent Decisions
-- Avoided `bash` node string script injection and replaced directly via precise exact match edit tool text manipulation due to unicode corruption.
-- Implemented `image-rendering: smooth` explicitly in `.student-card-avatar` and modal to guarantee high res 200px and squircle downscaling cleanly overriding ECAP reset defaults.
+- Refused user password upload for auto-scraping; implemented a fallback UI rendering logic to securely handle legacy students lacking full names but possessing valid Roll and Email mappings. 
+- Integrated persistent localStorage caching on `default.aspx` so users selecting `Student` as their role radio do not have to flip it from `Parent` off the ECAP defaults each session.
+- Implemented `isStudentRole()` check intercepting UI renders: explicitly hiding OVERVIEW, STUDENTS tab, and blocking network JSON extraction on `EmployeeMaster.aspx`, `FacultyMaster.aspx`, and `ParentMaster.aspx`.
 
 ## Next Steps
-1. Package the final `ReEcap-v1.1.0.zip` ready for chrome load.
-2. Verify behavior logic.
+1. Client verification of final directory routing stability.
+2. Develop invisible auto-scraper iframe task (Phase 3) referencing `.student-card` clicks if student names need full backfilling.
 
 ## Open Questions / Blockers
-- None.
+- None. 
 
 ## Last Updated
 2026-08-19
