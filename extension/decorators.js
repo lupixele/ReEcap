@@ -19,19 +19,32 @@ function formatCurrencyAmount(val) {
 // Role-based authentication check for injected tools
 let CURRENT_ROLE = 'rbtStudent'; // Default assumption, overridden by storage
 
+// In isolated contexts during page initialization, storage returns asynchronously.
+// If storage has not yet returned, CURRENT_ROLE remains 'rbtStudent'.
 function isStudentRole() {
   const path = window.location.pathname.toLowerCase();
   
   if (!path.includes('studentmaster.aspx')) return false;
   if (path.includes('employeemaster.aspx') || path.includes('parentmaster.aspx') || path.includes('facultymaster.aspx')) return false;
 
+  const lblUser = document.getElementById('lblUser');
+  if (lblUser && lblUser.textContent) {
+    const userText = lblUser.textContent.toUpperCase();
+    const hasStudentRoll = /\b\d{2}[A-Z0-9]{3,8}\b/.test(userText);
+    if (!hasStudentRoll) {
+      console.warn('ReEcap: Blocked by regex check.');
+      return false; // User has logged into studentmaster but missing roll number
+    }
+  }
+
   return CURRENT_ROLE === 'rbtStudent';
 }
 
 function initDecorators() {
   // Prime the cached role before booting the UI
-  chrome.storage.sync.get(['enabled', 'reecapLoginRole'], (data) => {
-    if (data.reecapLoginRole) CURRENT_ROLE = data.reecapLoginRole;
+  chrome.storage.sync.get({ enabled: true, reecapLoginRole: 'rbtStudent' }, (data) => {
+    CURRENT_ROLE = data.reecapLoginRole;
+    console.log('ReEcap: Booting extension. Active role cached as:', CURRENT_ROLE);
     if (!data.enabled) return;
     
     // 0. Iframe Resize Listener
