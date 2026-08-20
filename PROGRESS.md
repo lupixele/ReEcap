@@ -1,10 +1,10 @@
 ## Current State
-Successfully engineered the core framework for the Student Directory and Multi-Role Access Control via decorators. Fixed critical DOM UI-bleeding bugs separating the legacy ASP profiles from the custom `divProfile`-firewalled overview dashboard. Migrated dataset loading natively into `decorators.js` eliminating broken cross-scope page injection calls. Successfully expanded the internal photo registry to 6,900+ active students sweeping roll formats across all 11 departments and legacy batches (22/23/24). Packaged `v1.2.6`.
+Successfully engineered the core framework for the Student Directory and Multi-Role Access Control via decorators. Fixed critical DOM UI-bleeding bugs separating the legacy ASP profiles from the custom `divProfile`-firewalled overview dashboard. Migrated dataset loading natively into `decorators.js` eliminating broken cross-scope page injection calls. Successfully expanded the internal photo registry to 6,900+ active students sweeping roll formats across all 11 departments and legacy batches (22/23/24). Packaged `v1.2.7`.
 
 ## Recent Decisions
 - Refused user password upload for auto-scraping; implemented a fallback UI rendering logic to securely handle legacy students lacking full names but possessing valid Roll and Email mappings. 
 - Implemented Dynamic Query card generation. If a user queries a valid 10-digit roll number that does not natively exist inside `students.json`, the extension automatically builds a matching fallback construct predicting the AEC server photo path parsing the department string, allowing live dynamic querying for missing students on the server directly.
-- Implemented deep styling overriding native Chromium select options using `appearance: none`, injecting font-weights directly into the `<option>` and bounding `<optgroups>` with explicit uppercase muted styling to make the generic HTML dropdowns match the modern directory layout.
+- Scrapped `<select>` completely for directory filtering. Built a custom full-stack JS/CSS dropdown rendering engine out of `div` tags to enforce exact padding, hover animations, hover-backgrounds, shadow dropping, nested option groups, and chevron-flipping outside the rigid constraints of generic MacOS/Windows browser combobox dropdown styling.
 
 ## Next Steps
 1. Client verification of final directory routing stability.
