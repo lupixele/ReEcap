@@ -3052,7 +3052,10 @@ function showOverview() {
   
   if (directory) directory.style.setProperty('display', 'none', 'important');
   if (overview) overview.style.setProperty('display', 'flex', 'important');
+  // Attempt to aggressively hide nested legacy profile wrappers
   if (profileContainer) profileContainer.style.setProperty('display', 'none', 'important');
+  const legacyProfileDiv = document.getElementById('divProfile');
+  if (legacyProfileDiv) legacyProfileDiv.style.setProperty('display', 'none', 'important');
   if (pageTitle) pageTitle.textContent = 'OVERVIEW';
 
   document.documentElement.setAttribute('data-overview-active', 'true');
@@ -3077,7 +3080,10 @@ function showStudentsDirectory() {
   if (iframe) iframe.style.setProperty('display', 'none', 'important');
   if (overview) overview.style.setProperty('display', 'none', 'important');
   if (container) container.style.setProperty('display', 'none', 'important');
+  // Attempt to aggressively hide nested legacy profile wrappers
   if (profileContainer) profileContainer.style.setProperty('display', 'none', 'important');
+  const legacyProfileDiv = document.getElementById('divProfile');
+  if (legacyProfileDiv) legacyProfileDiv.style.setProperty('display', 'none', 'important');
   
   if (!directory) {
     directory = document.createElement('div');
@@ -4045,13 +4051,16 @@ function buildStudentsDirectory(container) {
   const BATCH_SIZE = 40;
   let filteredStudents = [];
   
-  const checkLoaded = setInterval(() => {
-    if (window.REECAP_STUDENTS_LOADED && window.REECAP_STUDENTS) {
-      clearInterval(checkLoaded);
-      allStudents = window.REECAP_STUDENTS;
+  // Load students directly since decorators.js runs in extension isolated world
+  // and cannot access window.REECAP_STUDENTS from page context.
+  async function loadStudentsData() {
+    try {
+      const jsonUrl = chrome.runtime.getURL('shared/students.json');
+      const response = await fetch(jsonUrl);
+      const data = await response.json();
       const brMap = {'CS':'CSE','AI':'AIML','DS':'Data Sci','EC':'ECE','EE':'EEE','IT':'IT','ME':'Mech','CE':'Civil','AE':'AgE','MN':'Mining','PT':'Petrol'};
       
-      allStudents = allStudents.map(s => {
+      allStudents = data.map(s => {
         const roll = s[0].toUpperCase();
         let branch = 'Unknown';
         if (roll.includes('B11')) {
@@ -4065,8 +4074,12 @@ function buildStudentsDirectory(container) {
         return { roll, name: s[1], email: s[2], branch };
       });
       applyFilters();
+    } catch (e) {
+      console.error('Failed to load students.json in decorators.js:', e);
     }
-  }, 100);
+  }
+  
+  loadStudentsData();
 
   function getPhotoUrl(roll) {
     if (roll.startsWith('25B11') || roll.startsWith('24B11')) return `https://info.aec.edu.in/aus/StudentPhotos_Original/${roll}.jpg`;
