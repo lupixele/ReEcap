@@ -1,16 +1,16 @@
 # Graph Report - ReEcap  (2026-08-24)
 
 ## Corpus Check
-- 13 files · ~34,525 words
+- 13 files · ~34,585 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 139 nodes · 208 edges · 25 communities (15 shown, 10 thin omitted)
+- 139 nodes · 208 edges · 26 communities (16 shown, 10 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 3 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9c1b7407`
+- Built from commit: `126c3598`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -36,9 +36,10 @@
 - Icon SVG
 - Popup Markup
 - buildSidebar
+- initDecorators
 - buildOverviewPage
 - buildTimetableDashboard
-- rebuildMainLayout
+- renderDashboardCards
 
 ## God Nodes (most connected - your core abstractions)
 1. `initDecorators()` - 10 edges
@@ -61,7 +62,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (25 total, 10 thin omitted)
+## Communities (26 total, 10 thin omitted)
 
 ### Community 0 - "Chrome Extension Manifest"
 Cohesion: 0.11
@@ -76,8 +77,8 @@ Cohesion: 0.29
 Nodes (10): applyStoredTheme(), checkIframeUrl(), ensureSkipLink(), injectStyle(), injectStylesheet(), migrateThemeStorage(), removeStyle(), script (+2 more)
 
 ### Community 3 - "decorators.js"
-Cohesion: 0.26
-Nodes (12): buildMarksPageUI(), buildOnlinePaymentUI(), initDecorators(), observeProfileDashboard(), redesignAttendancePage(), redesignLoginPage(), redesignMarksPage(), redesignOnlinePaymentPage() (+4 more)
+Cohesion: 0.33
+Nodes (8): buildMarksPageUI(), buildOnlinePaymentUI(), redesignMarksPage(), redesignOnlinePaymentPage(), renderAttendanceBlock(), renderInternalBlock(), renderTranscriptBlock(), renderYearPanel()
 
 ### Community 4 - "Overview & Status Strip"
 Cohesion: 0.33
@@ -107,6 +108,10 @@ Nodes (4): Ambient Glow Stage, Design Rules, Theme System, ReEcap
 Cohesion: 0.53
 Nodes (6): buildSidebar(), buildStudentsDirectory(), closeResponsiveNavigation(), isStudentRole(), showOverview(), showStudentsDirectory()
 
+### Community 21 - "initDecorators"
+Cohesion: 0.33
+Nodes (6): initDecorators(), initResponsiveNavigation(), observeProfileDashboard(), rebuildMainLayout(), redesignAttendancePage(), redesignLoginPage()
+
 ### Community 22 - "buildOverviewPage"
 Cohesion: 0.40
 Nodes (6): buildOverviewPage(), initStatusStrip(), parseTimeRange(), prefetchTimetableData(), renderScheduleCard(), updateStatusStrip()
@@ -115,9 +120,9 @@ Nodes (6): buildOverviewPage(), initStatusStrip(), parseTimeRange(), prefetchTim
 Cohesion: 0.67
 Nodes (4): buildTimetableDashboard(), escapeAttr(), observeTimetable(), renderTimetableLegend()
 
-### Community 24 - "rebuildMainLayout"
-Cohesion: 0.29
-Nodes (7): formatCurrencyAmount(), initResponsiveNavigation(), rebuildMainLayout(), renderDashboardCards(), renderQuickLinksCard(), showIframe(), updateOverviewCards()
+### Community 24 - "renderDashboardCards"
+Cohesion: 0.40
+Nodes (5): formatCurrencyAmount(), renderDashboardCards(), renderQuickLinksCard(), showIframe(), updateOverviewCards()
 
 ## Knowledge Gaps
 - **43 isolated node(s):** `THEME_STORAGE_DEFAULTS`, `script`, `manifest_version`, `name`, `version` (+38 more)

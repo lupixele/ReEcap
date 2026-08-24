@@ -3979,11 +3979,13 @@ function redesignAttendancePage() {
             targetStatusStr = `<div class="bunkable-tag warning">Can skip <b>0</b></div>`;
          }
       } else {
+         // If they are between 65% and 75%, it's just a warning. Below 65% is critical red.
+         const pillTone = s.percent >= 65 ? 'warning' : 'critical';
          if (neededClasses > 0) {
-            targetStatusStr = `<div class="bunkable-tag critical">Attend next <b>${neededClasses}</b></div>`;
+            targetStatusStr = `<div class="bunkable-tag ${pillTone}">Attend next <b>${neededClasses}</b></div>`;
          } else {
             // Technically impossible string if percent < 75, but safeguard.
-            targetStatusStr = `<div class="bunkable-tag critical">Attend next <b>0</b></div>`; 
+            targetStatusStr = `<div class="bunkable-tag ${pillTone}">Attend next <b>0</b></div>`; 
          }
       }
 
