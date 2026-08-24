@@ -2206,6 +2206,7 @@ table[width="100%"]:has(iframe#capIframeId) {
   border-radius: var(--radius-sm);
   background: var(--success-soft);
   color: var(--success);
+  border: 1px solid rgba(63, 122, 86, 0.25);
   font-size: 11.5px;
   font-family: inherit;
 }
@@ -2216,10 +2217,12 @@ table[width="100%"]:has(iframe#capIframeId) {
 .bunkable-tag.warning {
   background: var(--warning-soft);
   color: var(--warning-dark);
+  border: 1px solid rgba(224, 168, 0, 0.25);
 }
 .bunkable-tag.critical {
   background: var(--accent-light);
   color: var(--error);
+  border: 1px solid rgba(193, 67, 46, 0.25);
 }
 
 .reecap-status-pill {
