@@ -4,6 +4,21 @@ A modern UI reskin for the AEC student portal — cleaner interface, same functi
 
 ReEcap is a Chrome Extension that overlays a polished design system on top of the legacy ASP.NET student portal at `info.aec.edu.in`. It doesn't touch forms, postbacks, or server logic — it purely enhances the visual experience.
 
+## Installation 
+
+You can install ReEcap directly into Google Chrome, Microsoft Edge, Brave, or any Chromium-based browser right from the latest GitHub Release!
+
+1. Go to the [ReEcap Releases section](https://github.com/lupixele/ReEcap/releases/).
+2. Download the latest `.zip` file from the **Assets** section at the bottom of the release notes (e.g., `ReEcap-v1.3.3.zip`).
+3. Extract (unzip) the file into a folder on your computer. 
+4. Open Chrome and go to `chrome://extensions/` (or `edge://extensions/` if using Edge).
+5. Turn on **Developer mode** using the toggle switch in the top right corner.
+6. Click the **Load unpacked** button.
+7. Select the folder where you extracted the `.zip` file.
+8. That's it! Log into `info.aec.edu.in` and watch the redesign snap into place.
+
+> *Note: Since this is an unpacked developer extension, Chrome might occasionally ask if you want to disable developer mode extensions upon boot. Just click "Cancel" or the "X" if prompted.*
+
 ## Features
 
 - **Overview Page (Default Landing)** — Standalone modern landing page summarizing the student's day at a glance: Status Strip, Attendance Ring, Active Backlogs, Fee Balance, Today's Schedule timeline, and 1-click Quick Links.
