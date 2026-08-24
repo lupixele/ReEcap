@@ -3975,13 +3975,15 @@ function redesignAttendancePage() {
          if (skippableClasses > 0) {
             targetStatusStr = `<div class="bunkable-tag">Can skip next <b>${skippableClasses}</b></div>`;
          } else {
+            // They are at exactly 75%. Falling below it is bad, so this is a warning.
             targetStatusStr = `<div class="bunkable-tag warning">Can skip <b>0</b></div>`;
          }
       } else {
          if (neededClasses > 0) {
             targetStatusStr = `<div class="bunkable-tag critical">Attend next <b>${neededClasses}</b></div>`;
          } else {
-            targetStatusStr = `<div class="bunkable-tag critical">Attend next <b>0</b></div>`; // edge case
+            // Technically impossible string if percent < 75, but safeguard.
+            targetStatusStr = `<div class="bunkable-tag critical">Attend next <b>0</b></div>`; 
          }
       }
 

@@ -2220,7 +2220,8 @@ table[width="100%"]:has(iframe#capIframeId) {
   border: 1px solid rgba(224, 168, 0, 0.25);
 }
 .bunkable-tag.critical {
-  background: var(--accent-light);
+  background: var(--accent-light, #fee2e2); /* fallback red if light accent missing */
+  background: var(--accent-soft); 
   color: var(--error);
   border: 1px solid rgba(193, 67, 46, 0.25);
 }
