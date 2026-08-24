@@ -19,24 +19,24 @@ function formatCurrencyAmount(val) {
 // Role-based authentication check for injected tools
 let CURRENT_ROLE = 'rbtStudent'; // Default assumption, overridden by storage
 
-// In isolated contexts during page initialization, storage returns asynchronously.
-// If storage has not yet returned, CURRENT_ROLE remains 'rbtStudent'.
 function isStudentRole() {
   const path = window.location.pathname.toLowerCase();
   
   if (!path.includes('studentmaster.aspx')) return false;
-  if (path.includes('employeemaster.aspx') || path.includes('parentmaster.aspx') || path.includes('facultymaster.aspx')) return false;
 
   const lblUser = document.getElementById('lblUser');
   if (lblUser && lblUser.textContent) {
     const userText = lblUser.textContent.toUpperCase();
     const hasStudentRoll = /\b\d{2}[A-Z0-9]{3,8}\b/.test(userText);
-    if (!hasStudentRoll) {
-      console.warn('ReEcap: Blocked by regex check.');
-      return false; // User has logged into studentmaster but missing roll number
+    
+    // Explicitly allow regex checks to pass regardless of the storage check
+    // since storage initialization race conditions can cause valid students to fail check
+    if (hasStudentRoll) {
+       return true;
     }
   }
 
+  // Fallback to storage checking if regex fails
   return CURRENT_ROLE === 'rbtStudent';
 }
 
@@ -3109,6 +3109,18 @@ function showOverview() {
   if (profileContainer) profileContainer.style.setProperty('display', 'none', 'important');
   const legacyProfileDiv = document.getElementById('divProfile');
   if (legacyProfileDiv) legacyProfileDiv.style.setProperty('display', 'none', 'important');
+  
+  // Nuke generic ASP panel wrappers that ECAP uses to render tables outside iframes
+  const userProfileInfoContainer = document.querySelectorAll('.card, .card-body');
+  userProfileInfoContainer.forEach(c => {
+     if (c.id !== 'reecap-default-content' && !c.closest('#reecap-default-content')) {
+       // Only hide it if it looks like the legacy profile container (usually has .userData table)
+       if (c.querySelector('.userData') || c.querySelector('#divProfile')) {
+         c.style.setProperty('display', 'none', 'important');
+       }
+     }
+  });
+
   if (pageTitle) pageTitle.textContent = 'OVERVIEW';
 
   document.documentElement.setAttribute('data-overview-active', 'true');
@@ -3917,21 +3929,22 @@ function redesignAttendancePage() {
         </div>
       </div>
 
-      <!-- Subject Attendance Record Table -->
+    <!-- Subject Attendance Record Table -->
       <div class="overview-card" style="margin-bottom: 24px;">
         <div class="overview-card-header">
           <span class="overview-card-title">Subject Attendance Record</span>
           <span class="overview-card-subtitle">${lastUpdated ? 'Last synced: ' + new Date(lastUpdated).toLocaleString() : 'Current Term'}</span>
         </div>
         <div class="reecap-table-wrap">
-          <table class="reecap-data-table">
+          <table class="reecap-data-table reecap-attendance-table">
             <thead>
               <tr>
                 <th>Subject Name</th>
                 <th style="text-align: right;">Held</th>
                 <th style="text-align: right;">Attended</th>
                 <th style="text-align: right;">Percentage</th>
-                <th style="width: 150px; text-align: left;">Progress</th>
+                <th style="text-align: center; width: 140px;">75% Target Status</th>
+                <th style="width: 140px; text-align: left;">Progress</th>
               </tr>
             </thead>
             <tbody>
@@ -3939,6 +3952,39 @@ function redesignAttendancePage() {
 
     attendanceSubjects.forEach(s => {
       const sColor = s.percent >= 75 ? "var(--success)" : (s.percent >= 65 ? "var(--warning)" : (s.held === 0 ? "var(--text-faint)" : "var(--error)"));
+      
+      // Calculate bunk/attend limits for 75% target
+      let targetStatusStr = '<span class="status-neutral">N/A</span>';
+      
+      // We want: (attended + attend_more) / (held + attend_more) >= 0.75
+      // To find attend_more: attended + A = 0.75*(held + A) 
+      // => attended + A = 0.75*held + 0.75*A 
+      // => 0.25*A = 0.75*held - attended
+      // => A = 3*held - 4*attended
+      const neededClasses = (3 * s.held) - (4 * s.attend);
+      
+      // We want: attended / (held + skip_more) >= 0.75
+      // => attended = 0.75*held + 0.75*skip_more
+      // => 0.75*skip_more = attended - 0.75*held
+      // => skip_more = (4/3)*attended - held
+      const skippableClasses = Math.floor((4/3) * s.attend - s.held);
+
+      if (s.held === 0) {
+         targetStatusStr = '<span class="status-neutral" style="color: var(--text-faint); font-size: 12px;">Classes pending</span>';
+      } else if (s.percent >= 75) {
+         if (skippableClasses > 0) {
+            targetStatusStr = `<div class="bunkable-tag">Can skip next <b>${skippableClasses}</b></div>`;
+         } else {
+            targetStatusStr = `<div class="bunkable-tag warning">Can skip <b>0</b></div>`;
+         }
+      } else {
+         if (neededClasses > 0) {
+            targetStatusStr = `<div class="bunkable-tag critical">Attend next <b>${neededClasses}</b></div>`;
+         } else {
+            targetStatusStr = `<div class="bunkable-tag critical">Attend next <b>0</b></div>`; // edge case
+         }
+      }
+
       html += `
         <tr>
           <td>
@@ -3948,6 +3994,7 @@ function redesignAttendancePage() {
           <td class="mono" style="text-align: right;">${s.held}</td>
           <td class="mono" style="text-align: right; font-weight: 600;">${s.attend}</td>
           <td class="mono" style="text-align: right; font-weight: 700; color: ${sColor};">${s.percent}%</td>
+          <td style="text-align: center;">${targetStatusStr}</td>
           <td>
             <div class="progress-track" style="margin-top: 2px;">
               <div class="progress-bar" style="width: ${Math.min(100, s.percent)}%; background: ${sColor};"></div>
@@ -4042,28 +4089,73 @@ function showStudentsDirectory() {
 function buildStudentsDirectory(container) {
   container.innerHTML = `
     <div class="directory-controls">
-      <select id="dir-year" class="directory-filter">
-        <option value="">All Batches</option>
-        <option value="25B11">2nd Year (25B11)</option>
-        <option value="24B11">3rd Year (24B11)</option>
-        <option value="23A91A,23B11,23P31A,23MH1A">4th Year (23 Batch)</option>
-        <option value="22A91A,22P31A,22MH1A">Alumni (22 Batch)</option>
-      </select>
-      <select id="dir-branch" class="directory-filter">
-        <option value="">All Branches</option>
-        <option value="CS">CSE</option>
-        <option value="AI">AIML</option>
-        <option value="DS">Data Science</option>
-        <option value="EC">ECE</option>
-        <option value="EE">EEE</option>
-        <option value="IT">IT</option>
-        <option value="ME">Mech</option>
-        <option value="CE">Civil</option>
-        <option value="AE">AgE</option>
-        <option value="MN">Mining</option>
-        <option value="PT">Petroleum</option>
-      </select>
-      <input type="text" id="dir-search" class="directory-search-input" placeholder="Search by name or roll number..." spellcheck="false" autocomplete="off">
+      <!-- Custom Select: Batch -->
+      <div class="custom-select-wrapper" id="dir-year-wrapper">
+        <div class="custom-select-trigger">
+          <span class="custom-select-label">Campus All Batches</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="directory-filter-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div class="custom-select-options">
+          <div class="custom-select-option selected" data-value="">Campus All Batches</div>
+          <div class="custom-select-group">Undergraduate</div>
+          <div class="custom-select-option" data-value="25B11">2nd Year (2025)</div>
+          <div class="custom-select-option" data-value="24B11">3rd Year (2024)</div>
+          <div class="custom-select-option" data-value="23A91A,23B11,23P31A,23MH1A">4th Year (2023)</div>
+          <div class="custom-select-group">Alumni Shell</div>
+          <div class="custom-select-option" data-value="22A91A,22P31A,22MH1A">2022 Passouts</div>
+        </div>
+        <select id="dir-year" style="display: none;">
+          <option value="">Campus All Batches</option>
+          <option value="25B11">2nd Year (2025)</option>
+          <option value="24B11">3rd Year (2024)</option>
+          <option value="23A91A,23B11,23P31A,23MH1A">4th Year (2023)</option>
+          <option value="22A91A,22P31A,22MH1A">2022 Passouts</option>
+        </select>
+      </div>
+      
+      <!-- Custom Select: Branch -->
+      <div class="custom-select-wrapper" id="dir-branch-wrapper">
+        <div class="custom-select-trigger">
+          <span class="custom-select-label">All Branches</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="directory-filter-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div class="custom-select-options">
+          <div class="custom-select-option selected" data-value="">All Branches</div>
+          <div class="custom-select-group">Engineering Core</div>
+          <div class="custom-select-option" data-value="CS">Computer Science (CSE)</div>
+          <div class="custom-select-option" data-value="AI">AI & Machine Learning</div>
+          <div class="custom-select-option" data-value="DS">Data Science (DS)</div>
+          <div class="custom-select-option" data-value="IT">Information Technology</div>
+          <div class="custom-select-group">Electronics & Mechanics</div>
+          <div class="custom-select-option" data-value="EC">Electronics & Comm (ECE)</div>
+          <div class="custom-select-option" data-value="EE">Electrical & Elect (EEE)</div>
+          <div class="custom-select-option" data-value="ME">Mechanical</div>
+          <div class="custom-select-option" data-value="CE">Civil</div>
+          <div class="custom-select-group">Specialized</div>
+          <div class="custom-select-option" data-value="AE">Agricultural</div>
+          <div class="custom-select-option" data-value="MN">Mining</div>
+          <div class="custom-select-option" data-value="PT">Petroleum</div>
+        </div>
+        <select id="dir-branch" style="display: none;">
+          <option value="">All Branches</option>
+          <option value="CS">Computer Science (CSE)</option>
+          <option value="AI">AI & Machine Learning (AIML)</option>
+          <option value="DS">Data Science (DS)</option>
+          <option value="IT">Information Technology (IT)</option>
+          <option value="EC">Electronics & Comm (ECE)</option>
+          <option value="EE">Electrical & Elect (EEE)</option>
+          <option value="ME">Mechanical</option>
+          <option value="CE">Civil</option>
+          <option value="AE">Agricultural</option>
+          <option value="MN">Mining</option>
+          <option value="PT">Petroleum</option>
+        </select>
+      </div>
+      
+      <div class="directory-search-wrapper" style="flex: 1; position: relative;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="directory-search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="dir-search" class="directory-search-input" placeholder="Search by name or type exact roll number..." spellcheck="false" autocomplete="off">
+      </div>
     </div>
     <div id="dir-grid" class="student-card-grid">
       <div class="directory-loader">Loading student database...</div>
@@ -4195,8 +4287,10 @@ function buildStudentsDirectory(container) {
   }
 
   function applyFilters() {
-    const yearVal = yearSelect.value;
-    const branchVal = branchSelect.value;
+    const yearSelectNode = document.getElementById('dir-year');
+    const branchSelectNode = document.getElementById('dir-branch');
+    const yearVal = yearSelectNode ? yearSelectNode.value : '';
+    const branchVal = branchSelectNode ? branchSelectNode.value : '';
     const searchVal = searchInput.value.trim().toUpperCase();
 
     filteredStudents = allStudents.filter(s => {
@@ -4209,6 +4303,35 @@ function buildStudentsDirectory(container) {
       return true;
     });
 
+    // Dynamic generation of cards for Valid Roll Numbers that are completely missing from JSON database
+    // So someone actively querying their own exact roll number can still generate the card from the AEC server
+    if (searchVal.length >= 10 && filteredStudents.length === 0) {
+      if (/^\d{2}[A-Z0-9]{8}$/.test(searchVal) || /^\d{2}[A-Z0-9]{3,8}$/.test(searchVal)) {
+         
+         const brMap = {'CS':'CSE','AI':'AIML','DS':'Data Sci','EC':'ECE','EE':'EEE','IT':'IT','ME':'Mech','CE':'Civil','AE':'AgE','MN':'Mining','PT':'Petrol'};
+         let branch = 'Unknown';
+         if (searchVal.includes('B11')) {
+           const br = searchVal.substring(5, 7);
+           branch = brMap[br] || br;
+         } else if (searchVal.includes('A91A') || searchVal.includes('P31A') || searchVal.includes('MH1A')) {
+           const brCode = searchVal.substring(6, 8);
+           const mapping = {'05':'CSE','42':'AIML','44':'Data Sci','04':'ECE','02':'EEE','12':'IT','03':'Mech','01':'Civil'};
+           branch = mapping[brCode] || brCode;
+         }
+
+         let constructedEmail = '';
+         if (searchVal.startsWith('24B11')) constructedEmail = `${searchVal.toLowerCase()}@aec.edu.in`;
+         if (searchVal.startsWith('25B11')) constructedEmail = `${searchVal.toLowerCase()}@aec.edu.in`;
+
+         filteredStudents.push({
+           roll: searchVal,
+           name: searchVal, // Fallback if name is totally missing
+           email: constructedEmail,
+           branch: branch
+         });
+      }
+    }
+
     displayedCount = 0;
     grid.innerHTML = '';
     renderBatch();
@@ -4220,8 +4343,43 @@ function buildStudentsDirectory(container) {
     debounceTimeout = setTimeout(applyFilters, 150);
   });
   
-  yearSelect.addEventListener('change', applyFilters);
-  branchSelect.addEventListener('change', applyFilters);
+  // Custom Select Dropdown Logic
+  document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+    const trigger = wrapper.querySelector('.custom-select-trigger');
+    const optionsPanel = wrapper.querySelector('.custom-select-options');
+    const label = wrapper.querySelector('.custom-select-label');
+    const hiddenSelect = wrapper.querySelector('select');
+    
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.custom-select-wrapper.is-open').forEach(w => {
+         if (w !== wrapper) w.classList.remove('is-open');
+      });
+      wrapper.classList.toggle('is-open');
+    });
+    
+    wrapper.querySelectorAll('.custom-select-option').forEach(option => {
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        // Update styling
+        wrapper.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+        
+        // Update text + value
+        label.textContent = option.textContent;
+        hiddenSelect.value = option.dataset.value;
+        
+        wrapper.classList.remove('is-open');
+        applyFilters();
+      });
+    });
+  });
+
+  // Close dropdowns on outside click
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-select-wrapper.is-open').forEach(w => w.classList.remove('is-open'));
+  });
 
   const contentCol = document.getElementById('reecap-content-col');
   if (contentCol) {
