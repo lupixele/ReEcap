@@ -164,7 +164,7 @@
       "_origin": "ast",
       "id": "extension_decorators_formatcurrencyamount",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "formatcurrencyamount()"
     },
     {
@@ -187,8 +187,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_initdecorators",
-      "community": 3,
-      "community_name": "decorators.js",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "initdecorators()"
     },
     {
@@ -199,8 +199,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_redesignloginpage",
-      "community": 3,
-      "community_name": "decorators.js",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "redesignloginpage()"
     },
     {
@@ -343,8 +343,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_observeprofiledashboard",
-      "community": 3,
-      "community_name": "decorators.js",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "observeprofiledashboard()"
     },
     {
@@ -608,7 +608,7 @@
       "_origin": "ast",
       "id": "extension_decorators_showiframe",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "showiframe()"
     },
     {
@@ -619,8 +619,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_initresponsivenavigation",
-      "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "initresponsivenavigation()"
     },
     {
@@ -643,8 +643,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_rebuildmainlayout",
-      "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "rebuildmainlayout()"
     },
     {
@@ -692,7 +692,7 @@
       "_origin": "ast",
       "id": "extension_decorators_updateoverviewcards",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "updateoverviewcards()"
     },
     {
@@ -704,7 +704,7 @@
       "_origin": "ast",
       "id": "extension_decorators_renderdashboardcards",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "renderdashboardcards()"
     },
     {
@@ -728,7 +728,7 @@
       "_origin": "ast",
       "id": "extension_decorators_renderquicklinkscard",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "renderquicklinkscard()"
     },
     {
@@ -775,15 +775,15 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_redesignattendancepage",
-      "community": 3,
-      "community_name": "decorators.js",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "redesignattendancepage()"
     },
     {
       "label": "buildStudentsDirectory()",
       "file_type": "code",
       "source_file": "extension/decorators.js",
-      "source_location": "L4054",
+      "source_location": "L4089",
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_buildstudentsdirectory",
@@ -1936,7 +1936,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4054",
+      "source_location": "L4089",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators",
@@ -1969,7 +1969,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4021",
+      "source_location": "L4056",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators",
@@ -2410,7 +2410,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4026",
+      "source_location": "L4061",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators",
@@ -2444,7 +2444,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4223",
+      "source_location": "L4258",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators_buildstudentsdirectory",
@@ -2504,7 +2504,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4176",
+      "source_location": "L4211",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators_buildstudentsdirectory",
@@ -4044,5 +4044,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "2859b274ab33b753af873dd8effbf23a023cc1be"
+  "built_at_commit": "9a582f7521a16ae2f316d833c50cd6d126b4c32b"
 }
