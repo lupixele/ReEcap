@@ -164,7 +164,7 @@
       "_origin": "ast",
       "id": "extension_decorators_formatcurrencyamount",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "formatcurrencyamount()"
     },
     {
@@ -187,8 +187,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_initdecorators",
-      "community": 3,
-      "community_name": "decorators.js",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "initdecorators()"
     },
     {
@@ -199,8 +199,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_redesignloginpage",
-      "community": 3,
-      "community_name": "decorators.js",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "redesignloginpage()"
     },
     {
@@ -343,8 +343,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_observeprofiledashboard",
-      "community": 3,
-      "community_name": "decorators.js",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "observeprofiledashboard()"
     },
     {
@@ -608,7 +608,7 @@
       "_origin": "ast",
       "id": "extension_decorators_showiframe",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "showiframe()"
     },
     {
@@ -619,8 +619,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_initresponsivenavigation",
-      "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "initresponsivenavigation()"
     },
     {
@@ -643,8 +643,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_rebuildmainlayout",
-      "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "rebuildmainlayout()"
     },
     {
@@ -692,7 +692,7 @@
       "_origin": "ast",
       "id": "extension_decorators_updateoverviewcards",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "updateoverviewcards()"
     },
     {
@@ -704,7 +704,7 @@
       "_origin": "ast",
       "id": "extension_decorators_renderdashboardcards",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "renderdashboardcards()"
     },
     {
@@ -728,7 +728,7 @@
       "_origin": "ast",
       "id": "extension_decorators_renderquicklinkscard",
       "community": 24,
-      "community_name": "rebuildMainLayout",
+      "community_name": "renderDashboardCards",
       "norm_label": "renderquicklinkscard()"
     },
     {
@@ -775,15 +775,15 @@
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_redesignattendancepage",
-      "community": 3,
-      "community_name": "decorators.js",
+      "community": 21,
+      "community_name": "initDecorators",
       "norm_label": "redesignattendancepage()"
     },
     {
       "label": "buildStudentsDirectory()",
       "file_type": "code",
       "source_file": "extension/decorators.js",
-      "source_location": "L4091",
+      "source_location": "L4093",
       "_callable": true,
       "_origin": "ast",
       "id": "extension_decorators_buildstudentsdirectory",
@@ -1383,7 +1383,7 @@
       "label": "Next Steps",
       "file_type": "document",
       "source_file": "PROGRESS.md",
-      "source_location": "L11",
+      "source_location": "L12",
       "_origin": "ast",
       "id": "progress_next_steps",
       "community": 7,
@@ -1394,7 +1394,7 @@
       "label": "Open Questions / Blockers",
       "file_type": "document",
       "source_file": "PROGRESS.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "_origin": "ast",
       "id": "progress_open_questions_blockers",
       "community": 7,
@@ -1405,7 +1405,7 @@
       "label": "Last Updated",
       "file_type": "document",
       "source_file": "PROGRESS.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "_origin": "ast",
       "id": "progress_last_updated",
       "community": 7,
@@ -1936,7 +1936,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4091",
+      "source_location": "L4093",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators",
@@ -1969,7 +1969,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4058",
+      "source_location": "L4060",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators",
@@ -2410,7 +2410,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4063",
+      "source_location": "L4065",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators",
@@ -2444,7 +2444,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4260",
+      "source_location": "L4262",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators_buildstudentsdirectory",
@@ -2504,7 +2504,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "extension/decorators.js",
-      "source_location": "L4213",
+      "source_location": "L4215",
       "weight": 1.0,
       "_origin": "ast",
       "source": "extension_decorators_buildstudentsdirectory",
@@ -3914,7 +3914,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "PROGRESS.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "_origin": "ast",
       "source": "progress",
@@ -3925,7 +3925,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "PROGRESS.md",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
       "source": "progress",
@@ -3936,7 +3936,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "PROGRESS.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
       "source": "progress",
@@ -4044,5 +4044,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "9c1b7407c7a89eafda2cadeacd2f749cf12a169e"
+  "built_at_commit": "126c3598e49a434d238cfdcfd6c8e0d87d1eb811"
 }

@@ -20,9 +20,8 @@
   "18": "Icon SVG",
   "19": "Popup Markup",
   "20": "buildSidebar",
-  "21": "initDecorators",
   "22": "buildOverviewPage",
   "23": "buildTimetableDashboard",
-  "24": "renderDashboardCards",
+  "24": "rebuildMainLayout",
   "25": "students.js"
 }
