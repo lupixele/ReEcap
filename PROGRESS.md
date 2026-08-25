@@ -1,5 +1,5 @@
 ## Current State
-Successfully engineered the core framework for the Student Directory and Multi-Role Access Control via decorators. Fixed critical DOM UI-bleeding bugs separating the legacy ASP profiles from the custom `divProfile`-firewalled overview dashboard. Migrated dataset loading natively into `decorators.js` eliminating broken cross-scope page injection calls. Successfully expanded the internal photo registry to 6,900+ active students sweeping roll formats across all 11 departments and legacy batches (22/23/24). Packaged as the final `v1.4.0` release.
+Successfully engineered the core framework for the Student Directory and Multi-Role Access Control via decorators. Fixed critical DOM UI-bleeding bugs separating the legacy ASP profiles from the custom `divProfile`-firewalled overview dashboard. Migrated dataset loading natively into `decorators.js` eliminating broken cross-scope page injection calls. Successfully expanded the internal photo registry to 6,900+ active students sweeping roll formats across all 11 departments and legacy batches (22/23/24). Packaged `v1.4.1`.
 
 ## Recent Decisions
 - Refused user password upload for auto-scraping; implemented a fallback UI rendering logic to securely handle legacy students lacking full names but possessing valid Roll and Email mappings. 
@@ -9,6 +9,7 @@ Successfully engineered the core framework for the Student Directory and Multi-R
 - Integrated a real-time mathematics engine dynamically injecting structural `75% Target Status` indicators onto the Attendance page overview. Directly surfaces exactly how many future classes users can deliberately skip without failing the threshold, and warns explicitly how many consecutive future classes users must attend to regain compliance. Added bordered pill stylings matching the internal visual token guidelines to those generated labels. Fixed bug where critical (red) pill background was completely missing by switching `.bunkable-tag.critical` assignment to utilize valid global `var(--accent-soft)`.
 - Aligned attendance color grading with indicator pill styling, automatically casting `yellow` (warning) pills when students hover dynamically between 65% and 75% attendance rather than casting bright red immediately after dropping below 75%.
 - Implemented the Native DOM Theme Toolbar, injecting a floating configuration pill directly into the content container bypassing the necessity for the Chrome Extension UI popout on every theme state switch. Added sync listeners that bind the injected DOM directly back into the core extension's local caching pipeline.
+- Re-routed all `chrome.storage.sync` calls powering the Theme switch bindings to wrap into silent `try/catch` and explicitly bail evaluation upon reading runtime `lastError` intercepting `Extension Context Invalidated` trace errors caused when chromium forces background script termination while the DOM listener is clicking. 
 
 ## Next Steps
 1. Client verification of final directory routing stability.
@@ -18,4 +19,4 @@ Successfully engineered the core framework for the Student Directory and Multi-R
 - None. 
 
 ## Last Updated
-2026-08-24
+2026-08-25

@@ -267,18 +267,26 @@ function injectThemeToolbar() {
   const wrapper = document.getElementById('reecap-theme-toolbar');
   
   // Storage Fetch and active marking
-  chrome.storage.sync.get(['themeFamily', 'themeMode'], (data) => {
-    let mode = data.themeMode || 'system';
-    let fam = data.themeFamily || 'original';
-    if (fam === 'amoled') mode = 'dark';
-    
-    wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => {
-      if(b.dataset.mode === mode) b.classList.add('active');
-    });
-    wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => {
-      if(b.dataset.family === fam) b.classList.add('active');
-    });
-  });
+  try {
+    if (chrome && chrome.storage && chrome.storage.sync) {
+       chrome.storage.sync.get(['themeFamily', 'themeMode'], (data) => {
+         // Silently ignore if context was invalidated midway through the request
+         if (chrome.runtime.lastError) return;
+         let mode = data.themeMode || 'system';
+         let fam = data.themeFamily || 'original';
+         if (fam === 'amoled') mode = 'dark';
+         
+         wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => {
+           if(b.dataset.mode === mode) b.classList.add('active');
+         });
+         wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => {
+           if(b.dataset.family === fam) b.classList.add('active');
+         });
+       });
+    }
+  } catch (e) {
+     // Usually means extension was instantly reloaded (context invalidated)
+  }
 
   // Wiring Clicks to Background script message bus (avoids duplicating logic)
   const menuBtn = wrapper.querySelector('.reecap-toolbar-trigger');
@@ -297,14 +305,18 @@ function injectThemeToolbar() {
   wrapper.querySelectorAll('.toolbar-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
        const m = btn.dataset.mode;
-       chrome.storage.sync.get(['themeFamily'], (d) => {
-         // AMOLED ignores light updates
-         if (d.themeFamily === 'amoled' && m === 'light') return; 
-         chrome.storage.sync.set({ themeMode: m }, () => {
-           // Let content script react via background update
-           chrome.runtime.sendMessage({ action: 'themeSyncRequested' });
+       try {
+         chrome.storage.sync.get(['themeFamily'], (d) => {
+           if (chrome.runtime.lastError) return;
+           // AMOLED ignores light updates
+           if (d.themeFamily === 'amoled' && m === 'light') return; 
+           chrome.storage.sync.set({ themeMode: m }, () => {
+             if (chrome.runtime.lastError) return;
+             // Let content script react via background update
+             chrome.runtime.sendMessage({ action: 'themeSyncRequested' });
+           });
          });
-       });
+       } catch (e) {}
        wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => b.classList.remove('active'));
        btn.classList.add('active');
     });
@@ -317,9 +329,12 @@ function injectThemeToolbar() {
        let pack = { themeFamily: f };
        if (f === 'amoled') pack.themeMode = 'dark'; // Force dark explicitly
        
-       chrome.storage.sync.set(pack, () => {
-         chrome.runtime.sendMessage({ action: 'themeSyncRequested' });
-       });
+       try {
+         chrome.storage.sync.set(pack, () => {
+           if (chrome.runtime.lastError) return;
+           chrome.runtime.sendMessage({ action: 'themeSyncRequested' });
+         });
+       } catch (e) {}
        
        wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => b.classList.remove('active'));
        btn.classList.add('active');
