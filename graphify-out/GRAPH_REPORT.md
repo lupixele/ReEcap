@@ -1,16 +1,16 @@
-# Graph Report - ReEcap  (2026-08-24)
+# Graph Report - ReEcap  (2026-08-25)
 
 ## Corpus Check
-- 13 files · ~34,585 words
+- 13 files · ~35,371 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 139 nodes · 208 edges · 26 communities (16 shown, 10 thin omitted)
+- 140 nodes · 210 edges · 25 communities (15 shown, 10 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 3 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `126c3598`
+- Built from commit: `a0843ad2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -36,13 +36,12 @@
 - Icon SVG
 - Popup Markup
 - buildSidebar
-- initDecorators
 - buildOverviewPage
 - buildTimetableDashboard
-- renderDashboardCards
+- rebuildMainLayout
 
 ## God Nodes (most connected - your core abstractions)
-1. `initDecorators()` - 10 edges
+1. `initDecorators()` - 11 edges
 2. `buildProfilePanesRedesign()` - 9 edges
 3. `hideLegacyChildren()` - 8 edges
 4. `buildProfileDashboard()` - 7 edges
@@ -62,7 +61,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (26 total, 10 thin omitted)
+## Communities (25 total, 10 thin omitted)
 
 ### Community 0 - "Chrome Extension Manifest"
 Cohesion: 0.11
@@ -77,8 +76,8 @@ Cohesion: 0.29
 Nodes (10): applyStoredTheme(), checkIframeUrl(), ensureSkipLink(), injectStyle(), injectStylesheet(), migrateThemeStorage(), removeStyle(), script (+2 more)
 
 ### Community 3 - "decorators.js"
-Cohesion: 0.33
-Nodes (8): buildMarksPageUI(), buildOnlinePaymentUI(), redesignMarksPage(), redesignOnlinePaymentPage(), renderAttendanceBlock(), renderInternalBlock(), renderTranscriptBlock(), renderYearPanel()
+Cohesion: 0.25
+Nodes (13): buildMarksPageUI(), buildOnlinePaymentUI(), initDecorators(), injectThemeToolbar(), observeProfileDashboard(), redesignAttendancePage(), redesignLoginPage(), redesignMarksPage() (+5 more)
 
 ### Community 4 - "Overview & Status Strip"
 Cohesion: 0.33
@@ -108,10 +107,6 @@ Nodes (4): Ambient Glow Stage, Design Rules, Theme System, ReEcap
 Cohesion: 0.53
 Nodes (6): buildSidebar(), buildStudentsDirectory(), closeResponsiveNavigation(), isStudentRole(), showOverview(), showStudentsDirectory()
 
-### Community 21 - "initDecorators"
-Cohesion: 0.33
-Nodes (6): initDecorators(), initResponsiveNavigation(), observeProfileDashboard(), rebuildMainLayout(), redesignAttendancePage(), redesignLoginPage()
-
 ### Community 22 - "buildOverviewPage"
 Cohesion: 0.40
 Nodes (6): buildOverviewPage(), initStatusStrip(), parseTimeRange(), prefetchTimetableData(), renderScheduleCard(), updateStatusStrip()
@@ -120,9 +115,9 @@ Nodes (6): buildOverviewPage(), initStatusStrip(), parseTimeRange(), prefetchTim
 Cohesion: 0.67
 Nodes (4): buildTimetableDashboard(), escapeAttr(), observeTimetable(), renderTimetableLegend()
 
-### Community 24 - "renderDashboardCards"
-Cohesion: 0.40
-Nodes (5): formatCurrencyAmount(), renderDashboardCards(), renderQuickLinksCard(), showIframe(), updateOverviewCards()
+### Community 24 - "rebuildMainLayout"
+Cohesion: 0.29
+Nodes (7): formatCurrencyAmount(), initResponsiveNavigation(), rebuildMainLayout(), renderDashboardCards(), renderQuickLinksCard(), showIframe(), updateOverviewCards()
 
 ## Knowledge Gaps
 - **43 isolated node(s):** `THEME_STORAGE_DEFAULTS`, `script`, `manifest_version`, `name`, `version` (+38 more)
@@ -133,7 +128,7 @@ Nodes (5): formatCurrencyAmount(), renderDashboardCards(), renderQuickLinksCard(
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `action` connect `Popup Configuration` to `Chrome Extension Manifest`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **What connects `THEME_STORAGE_DEFAULTS`, `script`, `manifest_version` to the rest of the system?**
   _43 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Chrome Extension Manifest` be split into smaller, more focused modules?**
