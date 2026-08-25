@@ -204,6 +204,132 @@ function initDecorators() {
     if (window.location.pathname.toLowerCase().includes('studentmarksreport.aspx')) {
       redesignMarksPage();
     }
+    
+    // 7. Inject DOM-integrated Theme Toolbar Sidebar
+    if (!window.location.pathname.toLowerCase().includes('default.aspx')) {
+      injectThemeToolbar();
+    }
+  });
+}
+
+function injectThemeToolbar() {
+  if (document.getElementById('reecap-theme-toolbar')) return;
+
+  const toolbar = document.createElement('div');
+  toolbar.id = 'reecap-theme-toolbar';
+  toolbar.className = 'reecap-theme-toolbar';
+  
+  const iconPalette = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.02 0 1.93-.72 2.15-1.72.07-.32-.01-.65-.24-.89l-2.02-2.02c-.22-.22-.31-.55-.24-.87.16-.76.84-1.31 1.63-1.31h1.36c3.55 0 6.4-2.85 6.4-6.4 0-4.08-4.07-7.79-9.04-7.79z"/></svg>`;
+  const iconLight = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+  const iconDark = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+  const iconMoonPhase = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 1 0 11 4v16z"/></svg>`;
+
+  toolbar.innerHTML = `
+    <button class="reecap-toolbar-trigger" aria-label="Theme Settings">
+       ${iconPalette}
+    </button>
+    <div class="reecap-toolbar-menu">
+       <!-- Mode Toggles -->
+       <div class="toolbar-mode-toggles">
+         <button class="toolbar-mode-btn" data-mode="light" title="Light Mode">${iconLight}</button>
+         <button class="toolbar-mode-btn" data-mode="dark" title="Dark Mode">${iconDark}</button>
+         <button class="toolbar-mode-btn" data-mode="system" title="System Match">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+         </button>
+       </div>
+       
+       <!-- Theme Families -->
+       <div class="toolbar-family-list">
+         <button class="toolbar-theme-btn" data-family="original">
+            <span class="theme-swatch" style="background:var(--accent);"></span> Original Red
+         </button>
+         <button class="toolbar-theme-btn" data-family="cappuccino">
+            <span class="theme-swatch" style="background:#B67E51;"></span> Cappuccino
+         </button>
+         <button class="toolbar-theme-btn" data-family="evergreen">
+            <span class="theme-swatch" style="background:#2C6656;"></span> Evergreen
+         </button>
+         <button class="toolbar-theme-btn" data-family="midnight">
+            <span class="theme-swatch" style="background:#555CD2;"></span> Midnight
+         </button>
+         <button class="toolbar-theme-btn" data-family="rosewood">
+            <span class="theme-swatch" style="background:#9B385D;"></span> Rosewood
+         </button>
+         <div class="toolbar-divider"></div>
+         <button class="toolbar-theme-btn amoled-btn" data-family="amoled">
+            <span class="theme-swatch" style="background:#000; border: 1px solid #333;"></span> True AMOLED
+         </button>
+       </div>
+    </div>
+  `;
+  document.body.appendChild(toolbar);
+
+  const wrapper = document.getElementById('reecap-theme-toolbar');
+  
+  // Storage Fetch and active marking
+  chrome.storage.sync.get(['themeFamily', 'themeMode'], (data) => {
+    let mode = data.themeMode || 'system';
+    let fam = data.themeFamily || 'original';
+    if (fam === 'amoled') mode = 'dark';
+    
+    wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => {
+      if(b.dataset.mode === mode) b.classList.add('active');
+    });
+    wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => {
+      if(b.dataset.family === fam) b.classList.add('active');
+    });
+  });
+
+  // Wiring Clicks to Background script message bus (avoids duplicating logic)
+  const menuBtn = wrapper.querySelector('.reecap-toolbar-trigger');
+  
+  // Toggle Open/Close
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    wrapper.classList.toggle('is-open');
+  });
+  
+  document.addEventListener('click', (e) => {
+    if(!wrapper.contains(e.target)) wrapper.classList.remove('is-open');
+  });
+
+  // Handle Mode setting (light/dark/system)
+  wrapper.querySelectorAll('.toolbar-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+       const m = btn.dataset.mode;
+       chrome.storage.sync.get(['themeFamily'], (d) => {
+         // AMOLED ignores light updates
+         if (d.themeFamily === 'amoled' && m === 'light') return; 
+         chrome.storage.sync.set({ themeMode: m }, () => {
+           // Let content script react via background update
+           chrome.runtime.sendMessage({ action: 'themeSyncRequested' });
+         });
+       });
+       wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => b.classList.remove('active'));
+       btn.classList.add('active');
+    });
+  });
+
+  // Handle Family setting (cappuccino, original, etc)
+  wrapper.querySelectorAll('.toolbar-theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+       const f = btn.dataset.family;
+       let pack = { themeFamily: f };
+       if (f === 'amoled') pack.themeMode = 'dark'; // Force dark explicitly
+       
+       chrome.storage.sync.set(pack, () => {
+         chrome.runtime.sendMessage({ action: 'themeSyncRequested' });
+       });
+       
+       wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => b.classList.remove('active'));
+       btn.classList.add('active');
+       
+       if (f === 'amoled') {
+         wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => b.classList.remove('active'));
+         const dbBtn = wrapper.querySelector('.toolbar-mode-btn[data-mode="dark"]');
+         if(dbBtn) dbBtn.classList.add('active');
+       }
+    });
   });
 }
 
