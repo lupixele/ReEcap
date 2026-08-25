@@ -1,8 +1,164 @@
 /* Theme tokens live in shared/tokens.css; this file owns portal component styles. */
 
 /* ==========================================================================
-   Global Resets & Typography
+   Injectable Theme Toolbar (DOM Float)
    ========================================================================== */
+.reecap-theme-toolbar {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  user-select: none;
+}
+
+.reecap-toolbar-trigger {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  outline: none;
+}
+
+.reecap-toolbar-trigger:hover {
+  transform: translateY(-2px) scale(1.05);
+  color: var(--text-primary);
+  border-color: var(--border);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.reecap-theme-toolbar.is-open .reecap-toolbar-trigger {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  transform: rotate(45deg);
+}
+
+.reecap-toolbar-menu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  width: 220px;
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.1));
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transform-origin: bottom right;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.reecap-theme-toolbar.is-open .reecap-toolbar-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.toolbar-mode-toggles {
+  display: flex;
+  background: var(--bg, var(--surface-sunken));
+  padding: 4px;
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.toolbar-mode-btn {
+  flex: 1;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-mode-btn:hover {
+  color: var(--text-primary);
+}
+
+.toolbar-mode-btn.active {
+  background: var(--surface-card);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.toolbar-family-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toolbar-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-theme-btn:hover {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.toolbar-theme-btn.active {
+  background: var(--accent-light, var(--surface-sunken));
+  color: var(--accent-dark, var(--text-primary));
+  font-weight: 600;
+}
+
+.theme-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.toolbar-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border-light);
+  margin: 4px 0;
+}
+
+.toolbar-theme-btn.amoled-btn.active {
+  background: #111;
+  color: #fff;
+}
+
+/* ==========================================================================
+   End DOM Toolbar
+   ========================================================================== */
+
+/* Typography */
 * { box-sizing: border-box; }
 
 body.bodyStyle,
