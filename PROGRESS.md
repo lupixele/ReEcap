@@ -1,7 +1,8 @@
 ## Current State
-Successfully engineered the core framework for the Student Directory and Multi-Role Access Control via decorators. Fixed critical DOM UI-bleeding bugs separating the legacy ASP profiles from the custom `divProfile`-firewalled overview dashboard. Migrated dataset loading natively into `decorators.js` eliminating broken cross-scope page injection calls. Successfully expanded the internal photo registry to 6,900+ active students sweeping roll formats across all 11 departments and legacy batches (22/23/24). Packaged `v1.4.1`.
+Successfully engineered the core framework for the Student Directory and Multi-Role Access Control via decorators. Timetable parsing now reads each portal cell’s authoritative AM/PM time range and preserves merged-session end times. The timetable now combines restrained digital-material surfaces with a compact, no-horizontal-scroll weekly grid on desktop and a complete vertical day-by-day schedule on mobile; all source information remains visible on mobile. These verified changes are not yet packaged.
 
 ## Recent Decisions
+
 - Implemented Dynamic Query card generation. If a user queries a valid 10-digit roll number that does not natively exist inside `students.json`, the extension automatically builds a matching fallback construct predicting the AEC server photo path parsing the department string, allowing live dynamic querying for missing students on the server directly.
 - Scrapped `<select>` completely for directory filtering. Built a custom full-stack JS/CSS dropdown rendering engine out of `div` tags to enforce exact padding, hover animations, hover-backgrounds, shadow dropping, nested option groups, and chevron-flipping outside the rigid constraints of generic MacOS/Windows browser combobox dropdown styling.
 - Softened dropdown UX. Applied `radius-pill` fully-rounded bounds to the trigger, `radius-xl` container bounds for the dropdown modal, added gap margins between items, and implemented distinct padding radiuses across inner `<option>` wrappers to eliminate "boxy" sharp edges.
@@ -11,11 +12,12 @@ Successfully engineered the core framework for the Student Directory and Multi-R
 - Re-routed all `chrome.storage.sync` calls powering the Theme switch bindings to wrap into silent `try/catch` and explicitly bail evaluation upon reading runtime `lastError` intercepting `Extension Context Invalidated` trace errors caused when chromium forces background script termination while the DOM listener is clicking. 
 
 ## Next Steps
-1. Client verification of final directory routing stability.
-2. Develop invisible auto-scraper iframe task (Phase 3) referencing `.student-card` clicks if student names need full backfilling.
+1. Reload the unpacked extension and visually verify the redesigned timetable against a live student schedule.
+2. Package a new release after client acceptance of the timetable update.
+3. Client verification of final directory routing stability.
 
 ## Open Questions / Blockers
 - None. 
 
 ## Last Updated
-2026-08-25
+2026-08-27

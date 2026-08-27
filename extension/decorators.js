@@ -3,10 +3,11 @@
 
 function escapeAttr(s) {
   return String(s == null ? '' : s)
-    .replace(/&/g, '&')
-    .replace(/"/g, '"')
-    .replace(/</g, '<')
-    .replace(/>/g, '>');
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function formatCurrencyAmount(val) {
@@ -1158,30 +1159,51 @@ function renderYearPanel(panel, container) {
 
 function observeTimetable() {
   const targetNode = document.getElementById('divdetails') || document.body;
-  
-  const observer = new MutationObserver((mutations, obs) => {
+
+  const buildWhenReady = () => {
     const tbl = document.getElementById('tbldetails');
-    // Check if table has been populated with rows (more than just a header)
-    if (tbl && tbl.rows.length > 5 && !document.getElementById('reecap-timetable')) {
-      // The AJAX script first clears then appends. We wait a tiny bit to ensure it's fully populated.
-      setTimeout(() => {
-        if (!document.getElementById('reecap-timetable')) {
-          buildTimetableDashboard(tbl);
-        }
-      }, 100);
-    }
-  });
-  
+    if (!tbl || tbl.rows.length <= 5 || document.getElementById('reecap-timetable')) return;
+
+    // The AJAX script first clears then appends. Wait briefly so the final row
+    // and legend are available, but also support a table already on the page.
+    setTimeout(() => {
+      if (!document.getElementById('reecap-timetable') && tbl.rows.length > 5) {
+        buildTimetableDashboard(tbl);
+      }
+    }, 100);
+  };
+
+  buildWhenReady();
+  const observer = new MutationObserver(buildWhenReady);
   observer.observe(targetNode, { childList: true, subtree: true });
+}
+
+function combineTimetableTimeRange(startRange, endRange) {
+  if (!startRange || !endRange) return startRange || endRange || '';
+
+  const startMatch = startRange.match(/^\s*(.*?)\s*[–-]\s*(.*?)\s*$/);
+  const endMatch = endRange.match(/^\s*(.*?)\s*[–-]\s*(.*?)\s*$/);
+  if (!startMatch || !endMatch) return startRange;
+
+  return `${startMatch[1].trim()} – ${endMatch[2].trim()}`;
 }
 
 function buildTimetableDashboard(tbl) {
   const rows = Array.from(tbl.querySelectorAll('tr'));
   if (rows.length < 2) return;
 
-  // --- A. Scrape Header (Periods) ---
-  const headerCells = rows[0].querySelectorAll('td');
-  const periodCount = headerCells.length - 1; 
+  // The supported StudentTimetableOption table carries a period number in the
+  // header and the authoritative time range inside every occupied day cell.
+  // Keep the header strictly as a period label; never substitute it for a
+  // missing time, which previously created convincing but inaccurate timings.
+  const headerCells = rows[0].querySelectorAll('th, td');
+  const periodCount = Math.max(0, headerCells.length - 1);
+  const headerLabels = Array.from(headerCells)
+    .slice(1)
+    .map((cell, index) => {
+      const label = (cell.textContent || '').replace(/\s+/g, ' ').trim();
+      return label || `Period ${index + 1}`;
+    });
 
   // --- B. Scrape Days (1 to 6/7) ---
   const schedule = {};
@@ -1193,27 +1215,39 @@ function buildTimetableDashboard(tbl) {
     const cells = row.querySelectorAll('td');
     
     const firstCellText = cells[0]?.textContent.trim() || "";
-    if (cells.length > 1 && dayNames.some(d => firstCellText.includes(d))) {
-      const day = firstCellText;
+    const day = dayNames.find(candidate => new RegExp(`^${candidate}(?:day)?$`, 'i').test(firstCellText));
+    if (cells.length > 1 && day) {
       schedule[day] = [];
       
       for (let j = 1; j < cells.length; j++) {
-        const cellHtml = cells[j].innerHTML;
-        const divMatch = cellHtml.match(/<div>(.*?)<br\/?>([\s\S]*?)<\/div>/i);
-        let timeRange = "";
-        let subjectStr = "";
-        
-        if (divMatch) {
-          timeRange = divMatch[1].trim();
-          subjectStr = divMatch[2].replace(/<br\/?>/gi, ", ").trim();
-        } else {
-          const text = cells[j].innerText || cells[j].textContent;
-          const parts = text.split('\n');
-          if (parts.length >= 2) {
-             timeRange = parts[0].trim();
-             subjectStr = parts.slice(1).join(', ').trim();
-          }
-        }
+        const cell = cells[j];
+        const timeNode = cell.querySelector('div, p');
+        const sourceHtml = timeNode ? timeNode.innerHTML : cell.innerHTML;
+        const sourceText = sourceHtml
+          .replace(/<br\s*\/?\s*>/gi, '\n')
+          .replace(/<\/p\s*>/gi, '\n')
+          .replace(/<[^>]+>/g, ' ');
+        const textDecoder = document.createElement('textarea');
+        textDecoder.innerHTML = sourceText;
+        const lines = textDecoder.value
+          .split(/\r?\n/)
+          .map(line => line.replace(/\s+/g, ' ').trim())
+          .filter(Boolean);
+
+        // The time belongs to the cell, not the column. Preserve it verbatim
+        // after normalising separator spacing; this supports AM/PM and ranges
+        // such as "09:30 AM-10:19 AM" from the live portal.
+        const timeIndex = lines.findIndex(line => /\d{1,2}:\d{2}\s*(?:AM|PM)?\s*(?:-|–|to)\s*\d{1,2}:\d{2}\s*(?:AM|PM)?/i.test(line));
+        const timeRange = timeIndex >= 0
+          ? lines[timeIndex]
+              .replace(/\s*(?:-|–|to)\s*/i, ' – ')
+              .replace(/\s+/g, ' ')
+              .trim()
+          : '';
+        const subjectStr = lines
+          .filter((_, index) => index !== timeIndex)
+          .join(', ');
+
         schedule[day].push({ timeRange, subjectCode: subjectStr });
       }
     } else {
@@ -1278,37 +1312,45 @@ function buildTimetableDashboard(tbl) {
     };
   })();
 
-  // Build the slot plan row-by-row.
+  // Build the slot plan row-by-row. Sunday is included when the portal
+  // supplies it, rather than silently dropping source timetable data.
   const layoutByDay = {};
-  for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
+  const sortedDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  for (const day of sortedDays) {
     if (!schedule[day]) continue;
     const slots = [];
     let i = 0;
     while (i < schedule[day].length) {
       const period = schedule[day][i];
       if (!period.subjectCode) {
-        slots.push({ type: 'empty' });
+        slots.push({ type: 'empty', periodStart: i + 1 });
         i++;
         continue;
       }
       const codes = period.subjectCode.split(',').map(c => c.trim());
       const primaryCode = codes[0];
       const details = legendMap[primaryCode] || { name: period.subjectCode, faculty: '', room: '' };
-      // Merge run: same primary code on consecutive indices.
+      // Merge only identical adjacent class entries. Matching only the first
+      // course code could conceal a distinct secondary component in the next
+      // cell, so the complete portal-provided value must match before merging.
       let span = 1;
+      let endTimeRange = period.timeRange;
       while (i + span < schedule[day].length) {
         const next = schedule[day][i + span];
-        if (!next.subjectCode) break;
-        const nextCodes = next.subjectCode.split(',').map(c => c.trim());
-        if (nextCodes[0] !== primaryCode) break;
+        if (!next.subjectCode || next.subjectCode !== period.subjectCode) break;
+        endTimeRange = next.timeRange || endTimeRange;
         span++;
       }
+      const displayTimeRange = span > 1
+        ? combineTimetableTimeRange(period.timeRange, endTimeRange)
+        : period.timeRange;
       slots.push({
         type: 'class',
         code: primaryCode,
         allCodes: period.subjectCode,
         details,
-        timeRange: period.timeRange,
+        timeRange: displayTimeRange,
+        periodStart: i + 1,
         span,
         palette: paletteFor(primaryCode),
         faculty: details.faculty,
@@ -1326,63 +1368,115 @@ function buildTimetableDashboard(tbl) {
   dashboard.id = 'reecap-timetable';
   dashboard.className = 'reecap-timetable';
 
+  // The legacy report pane enables horizontal scrolling globally. Mark only
+  // this timetable's host so the full single-view layout can opt out safely.
+  const timetablePane = tbl.closest('#tblReport > div');
+  if (timetablePane) timetablePane.classList.add('reecap-timetable-pane');
+
   const currentDayIndex = new Date().getDay();
   const jsDayToName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const todayName = jsDayToName[currentDayIndex];
-
-  // Pull the actual time-range labels from the portal's header row so
-  // users see "08:00 – 09:00" instead of the generic "Period 1".
-  const portalHeaderCells = rows[0].querySelectorAll('td');
-  const headerLabels = [];
-  for (let i = 1; i < portalHeaderCells.length; i++) {
-    const cellText = (portalHeaderCells[i].innerText || portalHeaderCells[i].textContent || '').trim();
-    const match = cellText.match(/\d{1,2}:\d{2}\s*[-to]+\s*\d{1,2}:\d{2}/i);
-    headerLabels.push(match ? match[0].replace(/-/i, '–') : `Period ${i + 1}`);
-  }
-  while (headerLabels.length < periodCount) headerLabels.push(`Period ${headerLabels.length + 1}`);
 
   // Build the marks/legend strip below the grid.
   let html = `<div class="tt-grid" style="--cols: ${periodCount}" role="grid" aria-label="Weekly timetable">`;
 
   html += `<div class="tt-cell tt-header" role="columnheader">Day</div>`;
   headerLabels.forEach((label) => {
-    html += `<div class="tt-cell tt-header" role="columnheader">${label}</div>`;
+    html += `<div class="tt-cell tt-header" role="columnheader">${escapeAttr(label)}</div>`;
   });
 
-  const sortedDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   for (const day of sortedDays) {
     const slots = layoutByDay[day];
     if (!slots) continue;
     const isToday = (day === todayName) ? 'is-today' : '';
 
-    html += `<div class="tt-cell tt-day ${isToday}">${day}</div>`;
+    html += `<div class="tt-cell tt-day ${isToday}">${escapeAttr(day)}</div>`;
 
-    for (const slot of slots) {
+    // Tooltip placement follows the first/last actual class of the day—not
+    // period 1/last period—so leading or trailing empty cells cannot make an
+    // edge detail panel spill outside the no-scroll timetable.
+    const classSlotIndexes = slots
+      .map((slot, index) => slot.type === 'class' ? index : -1)
+      .filter(index => index >= 0);
+    const firstClassIndex = classSlotIndexes[0];
+    const lastClassIndex = classSlotIndexes[classSlotIndexes.length - 1];
+
+    for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
+      const slot = slots[slotIndex];
       if (slot.type === 'empty') {
-        html += `<div class="tt-cell tt-empty ${isToday}"></div>`;
+        html += `<div class="tt-cell tt-empty ${isToday}"><span class="tt-period-label">P${slot.periodStart}</span></div>`;
         continue;
       }
       const spanStyle = slot.span > 1 ? `--span: ${slot.span};` : '';
-      const ttAriaLabel = `${slot.timeRange} — ${slot.details.name}${slot.faculty ? ', taught by ' + slot.faculty : ''}${slot.room ? ', in ' + slot.room : ''}${slot.span > 1 ? ' (' + slot.span + ' periods)' : ''}`;
+      const periodLabel = slot.span > 1
+        ? `P${slot.periodStart}–P${slot.periodStart + slot.span - 1}`
+        : `P${slot.periodStart}`;
+      const tooltipEdge = slotIndex === firstClassIndex && slotIndex === lastClassIndex
+        ? (slot.periodStart + slot.span - 1 > periodCount / 2 ? ' tt-tooltip-end' : ' tt-tooltip-start')
+        : slotIndex === firstClassIndex
+          ? ' tt-tooltip-start'
+          : slotIndex === lastClassIndex
+            ? ' tt-tooltip-end'
+            : '';
+      const ttAriaLabel = `${periodLabel}, ${slot.timeRange} — ${slot.allCodes}${slot.details.name ? ', ' + slot.details.name : ''}${slot.faculty ? ', taught by ' + slot.faculty : ''}${slot.room ? ', in ' + slot.room : ''}`;
 
       html += `
-        <div class="tt-cell tt-class ${isToday}${slot.span > 1 ? ' tt-merged' : ''}" style="${spanStyle} --palette: ${slot.palette};" tabindex="0" role="gridcell" aria-label="${escapeAttr(ttAriaLabel)}">
-          <div class="tt-time">${slot.span > 1 ? slot.timeRange + ' · ' + slot.span + ' periods' : slot.timeRange}</div>
-          <div class="tt-subject">${slot.code}</div>
-          ${slot.details.name && slot.details.name !== slot.code
-            ? `<div class="tt-subject-name">${slot.details.name}</div>`
+        <div class="tt-cell tt-class ${isToday}${slot.span > 1 ? ' tt-merged' : ''}${tooltipEdge}" style="${spanStyle} --palette: ${slot.palette};" tabindex="0" role="gridcell" aria-label="${escapeAttr(ttAriaLabel)}">
+          <div class="tt-period-label">${escapeAttr(periodLabel)}</div>
+          ${slot.timeRange ? `<div class="tt-time">${escapeAttr(slot.timeRange)}</div>` : ''}
+          <div class="tt-subject">${escapeAttr(slot.allCodes)}</div>
+          ${slot.details.name && slot.details.name !== slot.allCodes
+            ? `<div class="tt-subject-name">${escapeAttr(slot.details.name)}</div>`
             : ''}
 
           <div class="tt-tooltip">
-            <div class="tt-tt-name">${slot.details.name}</div>
-            ${slot.faculty ? `<div class="tt-tt-meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>${slot.faculty}</div>` : ''}
-            ${slot.room ? `<div class="tt-tt-meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>${slot.room}</div>` : ''}
+            <div class="tt-tt-name">${escapeAttr(slot.details.name)}</div>
+            ${slot.faculty ? `<div class="tt-tt-meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>${escapeAttr(slot.faculty)}</div>` : ''}
+            ${slot.room ? `<div class="tt-tt-meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>${escapeAttr(slot.room)}</div>` : ''}
           </div>
         </div>
       `;
     }
   }
 
+  html += `</div>`;
+
+  // Phone layout trades the compressed matrix for complete, vertically flowing
+  // day sections. This keeps every source field visible without horizontal
+  // scrolling or tooltip-only information on touch devices.
+  html += `<div class="tt-mobile-schedule" aria-label="Weekly timetable, day-by-day">`;
+  for (const day of sortedDays) {
+    const slots = layoutByDay[day];
+    if (!slots) continue;
+    const isToday = day === todayName ? ' is-today' : '';
+    const classes = slots.filter(slot => slot.type === 'class');
+    html += `<section class="tt-mobile-day${isToday}"><h3>${escapeAttr(day)}</h3>`;
+    if (!classes.length) {
+      html += `<p class="tt-mobile-empty">No classes scheduled.</p>`;
+    } else {
+      html += `<div class="tt-mobile-list">`;
+      classes.forEach(slot => {
+        const periodLabel = slot.span > 1
+          ? `Period ${slot.periodStart}–${slot.periodStart + slot.span - 1}`
+          : `Period ${slot.periodStart}`;
+        html += `
+          <article class="tt-mobile-class" style="--palette: ${slot.palette};">
+            <div class="tt-mobile-period">${escapeAttr(periodLabel)}</div>
+            <div class="tt-mobile-main">
+              ${slot.timeRange ? `<div class="tt-mobile-time">${escapeAttr(slot.timeRange)}</div>` : ''}
+              <div class="tt-mobile-subject">${escapeAttr(slot.allCodes)}</div>
+              ${slot.details.name && slot.details.name !== slot.allCodes
+                ? `<div class="tt-mobile-name">${escapeAttr(slot.details.name)}</div>`
+                : ''}
+              ${slot.faculty ? `<div class="tt-mobile-meta">Faculty: ${escapeAttr(slot.faculty)}</div>` : ''}
+              ${slot.room ? `<div class="tt-mobile-meta">Room: ${escapeAttr(slot.room)}</div>` : ''}
+            </div>
+          </article>`;
+      });
+      html += `</div>`;
+    }
+    html += `</section>`;
+  }
   html += `</div>`;
   html += renderTimetableLegend(schedule, legendMap);
   dashboard.innerHTML = html;
@@ -1409,7 +1503,7 @@ function renderTimetableLegend(schedule, legendMap) {
     let hash = 5381;
     for (let i = 0; i < code.length; i++) hash = ((hash << 5) + hash + code.charCodeAt(i)) | 0;
     const palette = Math.abs(hash) % PALETTE_SIZE;
-    legendHtml += `<span class="tt-legend-chip" style="--palette: ${palette};" title="${escapeAttr(details.name)}"><span class="tt-legend-dot"></span><span class="tt-legend-code">${code}</span><span class="tt-legend-name">${escapeAttr(details.name || code)}</span></span>`;
+    legendHtml += `<span class="tt-legend-chip" style="--palette: ${palette};" title="${escapeAttr(details.name)}"><span class="tt-legend-dot"></span><span class="tt-legend-code">${escapeAttr(code)}</span><span class="tt-legend-name">${escapeAttr(details.name || code)}</span></span>`;
   });
   legendHtml += '</div>';
   return legendHtml;
@@ -4198,10 +4292,8 @@ function redesignAttendancePage() {
   });
 }
 
-function escapeAttr(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+// escapeAttr is defined at the module top so all DOM renderers share the
+// same complete escaping behavior for portal-provided values.
 
 function showStudentsDirectory() {
   const container = document.getElementById('reecap-default-content');
