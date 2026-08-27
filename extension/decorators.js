@@ -4389,7 +4389,7 @@ function buildStudentsDirectory(container) {
         </select>
       </div>
       
-      <div class="directory-search-wrapper" style="flex: 1; position: relative;">
+      <div class="directory-search-wrapper">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="directory-search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <input type="text" id="dir-search" class="directory-search-input" placeholder="Search by name or type exact roll number..." spellcheck="false" autocomplete="off">
       </div>
