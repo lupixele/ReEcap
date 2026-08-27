@@ -1577,198 +1577,221 @@ td[style*="1000px"] {
      width is `--span` × the standard period column (set via inline style).
    • A legend strip below the grid chips each subject in matching colours.
    ========================================================================== */
-.reecap-timetable {
-  background: var(--surface-elevated);
-  border: var(--card-border);
-  border-radius: var(--radius);
-  padding: 24px;
-  box-shadow: var(--card-shadow);
-  margin-top: 16px;
-  margin-bottom: 24px;
-  overflow-x: auto;
+#tblReport > div.reecap-timetable-pane {
+  /* Override both inherited axes: `visible` on x would otherwise compute to
+     `auto` while the legacy pane retains `overflow-y: hidden`. */
+  overflow: visible !important;
 }
 
+.reecap-timetable {
+  box-sizing: border-box;
+  max-width: 100%;
+  background:
+    linear-gradient(155deg, color-mix(in srgb, var(--surface-elevated) 94%, #ffffff) 0%, var(--surface-elevated) 48%);
+  border: 1px solid color-mix(in srgb, var(--border-light) 82%, #ffffff);
+  border-radius: 16px;
+  padding: clamp(10px, 1.5vw, 18px);
+  box-shadow: 0 16px 34px rgba(18, 24, 40, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  margin-top: 16px;
+  margin-bottom: 24px;
+  overflow: visible;
+}
+
+/* Digital-material schedule: a complete weekly matrix without a horizontal rail. */
 .reecap-timetable .tt-grid {
   display: grid;
-  grid-template-columns: 90px repeat(var(--cols), minmax(132px, 1fr));
-  gap: 10px;
+  grid-template-columns: 58px repeat(var(--cols), minmax(0, 1fr));
+  inline-size: 100%;
+  min-inline-size: 0;
+  gap: 4px;
 }
 
 .tt-cell {
-  padding: 14px 12px;
-  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: clamp(6px, 0.9vw, 11px);
+  border-radius: 10px;
   font-size: 13px;
   position: relative;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-  min-height: 78px;
+  min-height: 82px;
 }
 
 .tt-header {
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 12px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-primary);
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
   text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-light);
-  min-height: 40px;
+  background: color-mix(in srgb, var(--surface-sunken) 84%, var(--surface-elevated));
+  border: 1px solid color-mix(in srgb, var(--border-light) 78%, transparent);
+  min-height: 36px;
+  padding-block: 6px;
 }
 
 .tt-day {
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  font-weight: 600;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-light);
+  background: color-mix(in srgb, var(--surface-sunken) 84%, var(--surface-elevated));
+  border: 1px solid color-mix(in srgb, var(--border-light) 78%, transparent);
+  padding-inline: 4px;
 }
 
 .tt-empty {
-  background: var(--surface-sunken);
-  border: 1px dashed var(--border-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-faint);
-  font-weight: 500;
-  opacity: 0.6;
+  background: color-mix(in srgb, var(--surface-sunken) 38%, var(--surface-elevated));
+  border: 1px solid color-mix(in srgb, var(--border-light) 62%, transparent);
+  min-height: 82px;
 }
 
 .tt-empty::before {
-  content: "—";
-  color: var(--text-faint);
+  content: "";
 }
 
-/* Per-subject palette. Twelve hues sit at 30° increments around the wheel,
-   tuned for AA contrast on both light and dark surfaces. */
+/* A restrained palette tint gives each subject a tactile digital-material
+   surface without turning the timetable into a rainbow of jelly cards. */
 .tt-class {
   --palette-hue: calc(var(--palette, 0) * 30);
-  --palette-color:        hsl(var(--palette-hue), 70%, 50%);
-  --palette-color-soft:   hsl(var(--palette-hue), 65%, 92%);
-  --palette-color-fg:     hsl(var(--palette-hue), 70%, 22%);
-  --palette-color-border: hsl(var(--palette-hue), 50%, 75%);
+  --palette-color: hsl(var(--palette-hue), 58%, 47%);
+  --palette-soft: hsl(var(--palette-hue), 56%, 96%);
+  --palette-border: hsl(var(--palette-hue), 42%, 81%);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
+  gap: 2px;
   text-align: left;
-  padding: 12px 14px;
-  background: var(--palette-color-soft);
-  color: var(--palette-color-fg);
-  border: 1px solid var(--palette-color-border);
-  border-left: 3px solid var(--palette-color);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--card-shadow);
-  position: relative;
-  overflow: hidden;
-  min-height: 78px;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-}
-.tt-class::before {
-  content: "";
-  position: absolute;
-  inset: 0;
   background:
-    linear-gradient(135deg,
-      color-mix(in srgb, var(--palette-color) 12%, transparent) 0%,
-      transparent 60%);
-  pointer-events: none;
+    linear-gradient(145deg,
+      color-mix(in srgb, var(--palette-soft) 86%, #ffffff) 0%,
+      var(--palette-soft) 100%);
+  color: var(--text-primary);
+  border: 1px solid var(--palette-border);
+  border-left: 3px solid var(--palette-color);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--palette-color) 8%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  overflow: visible;
+  min-height: 82px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, filter 0.16s ease;
 }
+
 .tt-class > * { position: relative; z-index: 1; }
 
-/* Dark themes: invert the soft surface into a dark tinted block. */
 html[data-theme="dark"] .tt-class,
 html[data-theme="amoled"] .tt-class,
 html[data-theme="cappuccino-dark"] .tt-class,
 html[data-theme="evergreen-dark"] .tt-class,
 html[data-theme="midnight-dark"] .tt-class,
-html[data-theme="rosewood-dark"] .tt-class {
-  --palette-color-soft: color-mix(in srgb, var(--palette-color) 22%, var(--surface-elevated));
-  --palette-color-fg: color-mix(in srgb, var(--palette-color) 78%, #FFFFFF);
-  --palette-color-border: color-mix(in srgb, var(--palette-color) 50%, transparent);
+html[data-theme="rosewood-dark"] .tt-class,
+html[data-theme="dark"] .tt-mobile-class,
+html[data-theme="amoled"] .tt-mobile-class,
+html[data-theme="cappuccino-dark"] .tt-mobile-class,
+html[data-theme="evergreen-dark"] .tt-mobile-class,
+html[data-theme="midnight-dark"] .tt-mobile-class,
+html[data-theme="rosewood-dark"] .tt-mobile-class {
+  --palette-color: hsl(var(--palette-hue), 58%, 66%);
+  --palette-soft: color-mix(in srgb, hsl(var(--palette-hue), 58%, 45%) 22%, var(--surface-elevated));
+  --palette-border: color-mix(in srgb, hsl(var(--palette-hue), 58%, 62%) 38%, var(--border-light));
+  background:
+    linear-gradient(145deg,
+      color-mix(in srgb, var(--palette-soft) 90%, rgba(255,255,255,0.04)) 0%,
+      var(--palette-soft) 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Merged block — covers multiple periods with grid-column: span(--span). */
+/* Merged blocks keep the real duration, with only a gentle tonal extension. */
 .tt-class.tt-merged {
   grid-column: span var(--span, 1);
+  border-left-width: 3px;
   background:
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--palette-color) 8%, var(--palette-color-soft)),
-      var(--palette-color-soft) 50%,
-      color-mix(in srgb, var(--palette-color) 8%, var(--palette-color-soft)));
-  border-left-width: 4px;
-}
-.tt-class.tt-merged .tt-time {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.tt-class.tt-merged .tt-time::before {
-  content: "";
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  background:
-    repeating-linear-gradient(45deg,
-      var(--palette-color) 0 2px,
-      transparent 2px 4px);
-  opacity: 0.65;
-  flex-shrink: 0;
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--palette-color) 9%, var(--palette-soft)) 0%,
+      var(--palette-soft) 54%,
+      color-mix(in srgb, var(--palette-color) 4%, var(--palette-soft)) 100%);
 }
 
-/* Hover state: lift and brighten. */
-.tt-class:hover {
+.tt-class:hover,
+.tt-class:focus-within {
   transform: translateY(-1px);
-  filter: brightness(1.04);
-  box-shadow: var(--card-shadow), 0 0 0 2px color-mix(in srgb, var(--palette-color) 30%, transparent);
+  border-color: color-mix(in srgb, var(--palette-color) 62%, var(--palette-border));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--palette-color) 16%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  filter: saturate(1.04);
 }
 
-.is-today .tt-day {
+.tt-day.is-today {
   color: var(--accent-dark);
   font-weight: 700;
-  border-left: 3px solid var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--border-light));
+  box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .tt-class.is-today {
-  box-shadow: var(--card-shadow), inset 0 0 0 2px var(--palette-color);
+  box-shadow: 0 4px 11px color-mix(in srgb, var(--palette-color) 12%, transparent),
+              inset 0 0 0 1px color-mix(in srgb, var(--palette-color) 64%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
 .tt-tooltip {
   position: absolute;
   bottom: 115%;
   left: 50%;
-  transform: translateX(-50%) scale(0.95);
+  transform: translateX(-50%) translateY(3px) scale(0.98);
   opacity: 0;
   pointer-events: none;
-  background: var(--surface-card);
+  background:
+    linear-gradient(150deg, color-mix(in srgb, var(--surface-card) 92%, #ffffff) 0%, var(--surface-card) 100%);
   color: var(--text-primary);
-  padding: 16px;
-  border-radius: var(--radius);
-  border: var(--card-border);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-light) 78%, #ffffff);
   width: 260px;
   z-index: 1000;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: var(--card-shadow), var(--ambient-glow);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  box-shadow: 0 14px 28px rgba(18, 24, 40, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.72);
   text-align: left;
 }
 
 .tt-class:hover .tt-tooltip,
 .tt-class:focus-within .tt-tooltip {
   opacity: 1;
-  transform: translateX(-50%) scale(1);
+  transform: translateX(-50%) translateY(0) scale(1);
   pointer-events: auto;
+}
+
+/* Keep edge-cell detail panels inside the timetable’s visual bounds. */
+.tt-class.tt-tooltip-start .tt-tooltip {
+  left: 0;
+  transform: translateX(0) translateY(3px) scale(0.98);
+}
+.tt-class.tt-tooltip-end .tt-tooltip {
+  left: auto;
+  right: 0;
+  transform: translateX(0) translateY(3px) scale(0.98);
+}
+.tt-class.tt-tooltip-start:hover .tt-tooltip,
+.tt-class.tt-tooltip-start:focus-within .tt-tooltip,
+.tt-class.tt-tooltip-end:hover .tt-tooltip,
+.tt-class.tt-tooltip-end:focus-within .tt-tooltip {
+  transform: translateX(0) translateY(0) scale(1);
+}
+.tt-class.tt-tooltip-start .tt-tooltip::after {
+  left: 18px;
+}
+.tt-class.tt-tooltip-end .tt-tooltip::after {
+  left: auto;
+  right: 18px;
+  transform: none;
 }
 
 .tt-class:focus-visible {
@@ -1787,76 +1810,79 @@ html[data-theme="rosewood-dark"] .tt-class {
   border-color: var(--border) transparent transparent transparent;
 }
 
+.tt-period-label {
+  display: none;
+}
+
 .tt-time {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--palette-color-fg);
-  opacity: 0.85;
-  margin-bottom: 6px;
-  letter-spacing: 0.02em;
+  font-size: clamp(8px, 0.72vw, 10.5px);
+  font-weight: 650;
+  color: color-mix(in srgb, var(--text-secondary) 88%, var(--palette-color));
+  margin-bottom: 3px;
+  letter-spacing: 0;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 
 .tt-subject {
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--palette-color-fg);
-  line-height: 1.25;
-  word-break: break-word;
+  font-size: clamp(10px, 0.9vw, 13px);
+  font-weight: 750;
+  color: var(--text-primary);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .tt-subject-name {
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--palette-color-fg);
-  opacity: 0.7;
-  line-height: 1.3;
-  margin-top: 4px;
-  word-break: break-word;
+  font-size: clamp(8.5px, 0.72vw, 11px);
+  font-weight: 550;
+  color: var(--text-secondary);
+  line-height: 1.25;
+  margin-top: 1px;
+  overflow-wrap: anywhere;
 }
 
-/* Legend strip below the grid. Each chip uses the same palette hue as the
-   corresponding timetable cell, giving the user a single visual mapping. */
+/* Plain legend: it documents the source mapping without competing with it. */
 .tt-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 20px;
-  padding-top: 16px;
+  gap: 8px 16px;
+  margin-top: 16px;
+  padding-top: 14px;
   border-top: 1px solid var(--border-light);
 }
 .tt-legend-chip {
   --palette-hue: calc(var(--palette, 0) * 30);
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 8px;
-  font-size: 11.5px;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0;
+  font-size: 11px;
   font-family: var(--font-sans), system-ui, sans-serif;
   color: var(--text-secondary);
-  background: hsl(var(--palette-hue), 70%, 96%);
-  border: 1px solid hsl(var(--palette-hue), 50%, 80%);
-  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   white-space: nowrap;
   max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .tt-legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: hsl(var(--palette-hue), 70%, 50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 0;
+  background: hsl(var(--palette-hue), 62%, 46%);
   flex-shrink: 0;
-  box-shadow: 0 0 0 2px hsl(var(--palette-hue), 70%, 90%);
 }
 .tt-legend-code {
   font-family: var(--font-mono), monospace;
   font-weight: 700;
-  color: hsl(var(--palette-hue), 70%, 28%);
-  font-size: 11px;
+  color: var(--text-primary);
+  font-size: 10.5px;
 }
 .tt-legend-name {
   opacity: 0.85;
@@ -1869,9 +1895,9 @@ html[data-theme="cappuccino-dark"] .tt-legend-chip,
 html[data-theme="evergreen-dark"] .tt-legend-chip,
 html[data-theme="midnight-dark"] .tt-legend-chip,
 html[data-theme="rosewood-dark"] .tt-legend-chip {
-  background: color-mix(in srgb, hsl(var(--palette-hue), 70%, 50%) 16%, var(--surface-elevated));
-  border-color: color-mix(in srgb, hsl(var(--palette-hue), 70%, 50%) 35%, transparent);
-  color: var(--text-primary);
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
 }
 html[data-theme="dark"] .tt-legend-code,
 html[data-theme="amoled"] .tt-legend-code,
@@ -1879,7 +1905,7 @@ html[data-theme="cappuccino-dark"] .tt-legend-code,
 html[data-theme="evergreen-dark"] .tt-legend-code,
 html[data-theme="midnight-dark"] .tt-legend-code,
 html[data-theme="rosewood-dark"] .tt-legend-code {
-  color: hsl(var(--palette-hue), 70%, 70%);
+  color: var(--text-primary);
 }
 
 /* The default tooltip text colour was inherited from .tt-class which now
@@ -1926,9 +1952,141 @@ html[data-theme="rosewood-dark"] .tt-legend-code {
   flex-shrink: 0;
 }
 
+.tt-mobile-schedule {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .reecap-timetable {
-    padding: 16px;
+    padding: 12px;
+  }
+
+  /* Replace the impractically narrow matrix with complete day sections.
+     The page may flow vertically, but no information is hidden or sideways. */
+  .reecap-timetable .tt-grid {
+    display: none;
+  }
+
+  .tt-mobile-schedule {
+    display: grid;
+    gap: 16px;
+  }
+
+  .tt-mobile-day {
+    border-top: 1px solid var(--border-light);
+    padding-top: 12px;
+  }
+
+  .tt-mobile-day:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .tt-mobile-day h3 {
+    margin: 0 0 8px;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .tt-mobile-day.is-today h3 {
+    color: var(--accent-dark);
+  }
+
+  .tt-mobile-list {
+    display: grid;
+    gap: 6px;
+  }
+
+  .tt-mobile-class {
+    --palette-hue: calc(var(--palette, 0) * 30);
+    --palette-color: hsl(var(--palette-hue), 58%, 47%);
+    --palette-soft: hsl(var(--palette-hue), 56%, 96%);
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 10px;
+    padding: 11px 10px;
+    border: 1px solid color-mix(in srgb, var(--palette-color) 26%, var(--border-light));
+    border-left: 3px solid var(--palette-color);
+    border-radius: 10px;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--palette-soft) 88%, #ffffff), var(--palette-soft));
+    box-shadow: 0 3px 8px color-mix(in srgb, var(--palette-color) 8%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  html[data-theme="dark"] .tt-mobile-class,
+  html[data-theme="amoled"] .tt-mobile-class,
+  html[data-theme="cappuccino-dark"] .tt-mobile-class,
+  html[data-theme="evergreen-dark"] .tt-mobile-class,
+  html[data-theme="midnight-dark"] .tt-mobile-class,
+  html[data-theme="rosewood-dark"] .tt-mobile-class {
+    --palette-color: hsl(var(--palette-hue), 58%, 66%);
+    --palette-soft: color-mix(in srgb, hsl(var(--palette-hue), 58%, 45%) 22%, var(--surface-elevated));
+    background: linear-gradient(145deg, color-mix(in srgb, var(--palette-soft) 90%, rgba(255,255,255,0.04)), var(--palette-soft));
+  }
+
+  .tt-mobile-period {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--text-secondary) 86%, var(--palette-color));
+    line-height: 1.3;
+  }
+
+  .tt-mobile-main {
+    min-width: 0;
+  }
+
+  .tt-mobile-time {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tt-mobile-subject {
+    margin-top: 2px;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+  }
+
+  .tt-mobile-name,
+  .tt-mobile-meta {
+    margin-top: 2px;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  .tt-mobile-empty {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-faint);
+  }
+
+  .tt-legend {
+    gap: 6px 10px;
+    margin-top: 16px;
+    padding-top: 12px;
+  }
+}
+
+@media (max-width: 430px) {
+  .reecap-timetable {
+    padding: 10px;
+  }
+
+  .tt-mobile-class {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 8px;
   }
 }
 
