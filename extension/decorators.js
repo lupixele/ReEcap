@@ -205,6 +205,13 @@ function initDecorators() {
     if (window.location.pathname.toLowerCase().includes('studentmarksreport.aspx')) {
       redesignMarksPage();
     }
+
+    // 7. Exam Script Viewer (2026-08-29) — ExamScriptViewer.aspx.
+    //    Adds a "Save as PDF" button that stitches rendered canvas pages into
+    //    a downloadable PDF using jsPDF.
+    if (window.location.pathname.toLowerCase().includes('examscriptviewer.aspx')) {
+      observeExamViewer();
+    }
     
     // 7. Inject DOM-integrated Theme Toolbar Sidebar
     if (!window.location.pathname.toLowerCase().includes('default.aspx')) {
@@ -3085,7 +3092,7 @@ function buildSidebar() {
   submenus.forEach(s => s.remove());
   
   const groups = {
-    'Academics': ['ATTENDANCE', 'TIME TABLE', 'CHOOSE TIMETABLE', 'COURSE REGISTRATION', 'MARKS', 'LESSON PLAN', 'EXAMS DETAILS', 'HALLTICKET', 'VIEW ANSWER SHEET', 'BACKLOGS'],
+    'Academics': ['ATTENDANCE', 'TIME TABLE', 'CHOOSE TIMETABLE', 'COURSE REGISTRATION', 'MARKS', 'LESSON PLAN', 'EXAMS DETAILS', 'HALLTICKET', 'VIEW ANSWER SHEET', 'VIEW EXAM PAPER', 'BACKLOGS'],
     'Finance': ['FEE DETAILS', 'ONLINE PAYMENT', 'COLLEGE FEE', 'EXAM FEE', 'RE-VALUATION', 'ONLINE TRANSACTIONS', 'RECEIPTS'],
     'Account': ['PROFILE', 'HOSTEL ROOM BOOKING', 'LIBRARY BOOKS', 'BOOK SEARCH']
   };
@@ -3100,6 +3107,7 @@ function buildSidebar() {
     'EXAMS DETAILS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
     'HALLTICKET': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
     'VIEW ANSWER SHEET': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>',
+    'VIEW EXAM PAPER': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
     'BACKLOGS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
     'FEE DETAILS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>',
     'ONLINE PAYMENT': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>',
@@ -3641,32 +3649,8 @@ function prefetchTimetableData() {
     chrome.storage.local.get(['reecapTimetable'], (data) => {
       if (chrome.runtime && chrome.runtime.lastError) return;
       if (data && data.reecapTimetable) return;
-
-      const prefetch = document.createElement('iframe');
-      prefetch.id = 'reecap-timetable-prefetch';
-      prefetch.className = 'reecap-timetable-prefetch';
-      prefetch.src = 'Academics/studenttimetableoption.aspx';
-      prefetch.title = '';
-      prefetch.tabIndex = -1;
-      prefetch.setAttribute('aria-hidden', 'true');
-      prefetch.setAttribute('inert', '');
-      document.body.appendChild(prefetch);
-
-      let cleaned = false;
-      const cleanup = () => {
-        if (cleaned) return;
-        cleaned = true;
-        try { prefetch.remove(); } catch (e) {}
-        try { chrome.storage.onChanged.removeListener(onStorageChange); } catch (e) {}
-      };
-      const onStorageChange = (changes, areaName) => {
-        if (areaName === 'local' && changes.reecapTimetable) cleanup();
-      };
-
-      chrome.storage.onChanged.addListener(onStorageChange);
-      // Hard cap: the helper never stays resident if the legacy page refuses
-      // to render its table or the session is no longer valid.
-      setTimeout(cleanup, 20000);
+      // Intentionally NOT prefetching timetable data in the background.
+      // Concurrent requests crash the ASP.NET session state causing a 401 loop.
     });
   } catch (e) {
     // A reload can invalidate the extension context between overview render
@@ -4259,36 +4243,9 @@ function redesignAttendancePage() {
     let prof = data ? data.reecapProfileData : null;
     renderView(prof);
 
-    // If it's missing or subjects aren't populated, we need to spin up the hidden iframe to profile page
-    if (!prof || !prof.attendanceSubjects || !prof.attendanceSubjects.length) {
-      const prefetch = document.createElement('iframe');
-      prefetch.id = 'reecap-profile-prefetch';
-      prefetch.style.cssText = 'position:fixed !important; width:1px !important; height:1px !important; inset:-10000px auto auto -10000px !important; border:0 !important; opacity:0 !important; pointer-events:none !important; visibility:hidden !important;';
-      prefetch.src = '/aus/Academics/StudentProfile.aspx?scrid=17';
-      prefetch.title = '';
-      prefetch.tabIndex = -1;
-      prefetch.setAttribute('aria-hidden', 'true');
-      prefetch.setAttribute('inert', '');
-      document.body.appendChild(prefetch);
-
-      let cleaned = false;
-      const cleanup = () => {
-        if (cleaned) return;
-        cleaned = true;
-        try { prefetch.remove(); } catch (e) {}
-        try { chrome.storage.onChanged.removeListener(onStorageChange); } catch (e) {}
-      };
-
-      const onStorageChange = (changes, areaName) => {
-        if (areaName === 'local' && changes.reecapProfileData) {
-          renderView(changes.reecapProfileData.newValue);
-          cleanup();
-        }
-      };
-
-      chrome.storage.onChanged.addListener(onStorageChange);
-      setTimeout(cleanup, 20000); // 20s hard timeout
-    }
+    // If it's missing or subjects aren't populated, we cannot prefetch it safely
+    // because background iframe fetching corrupts the ASP.NET scrid session and
+    // causes 401 Unauthorized logout loops.
   });
 }
 
@@ -4626,4 +4583,133 @@ function buildStudentsDirectory(container) {
       }
     }, { passive: true });
   }
+}
+
+// ────────────────────────────────────────────────────────────────
+// Exam Script Viewer — "Save as PDF" (2026-08-29)
+// ────────────────────────────────────────────────────────────────
+// Injects a download button into the ExamScriptViewer page that
+// stitches all rendered <canvas> pages from #pdf_viewer into a
+// multi-page PDF using jsPDF.
+// ────────────────────────────────────────────────────────────────
+
+function observeExamViewer() {
+  // Wait for the button container to exist in the DOM
+  const waitForContainer = () => {
+    const container = document.querySelector('.button-container');
+    if (container) {
+      injectSavePdfButton(container);
+      observePdfViewerChanges();
+    } else {
+      // The page might still be loading — retry
+      setTimeout(waitForContainer, 500);
+    }
+  };
+  waitForContainer();
+}
+
+/**
+ * Injects the "Save as PDF" button into the .button-container
+ */
+function injectSavePdfButton(container) {
+  if (container.querySelector('#reecap-save-pdf')) return;
+
+  const btn = document.createElement('a');
+  btn.id = 'reecap-save-pdf';
+  btn.className = 'btn btn-save-pdf';
+  btn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         style="vertical-align: -2px; margin-right: 4px;">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>Save as PDF`;
+  btn.style.cursor = 'pointer';
+  btn.addEventListener('click', saveExamAsPdf);
+  container.appendChild(btn);
+
+  // Disable initially until canvases are present
+  updateSavePdfState();
+}
+
+/**
+ * Watches #pdf_viewer for canvas additions/removals so we can
+ * enable/disable the Save button appropriately.
+ */
+function observePdfViewerChanges() {
+  const viewer = document.getElementById('pdf_viewer');
+  if (!viewer) return;
+
+  const observer = new MutationObserver(() => {
+    updateSavePdfState();
+  });
+
+  observer.observe(viewer, { childList: true, subtree: true });
+}
+
+/**
+ * Enable the button only when there are rendered canvases.
+ */
+function updateSavePdfState() {
+  const btn = document.getElementById('reecap-save-pdf');
+  if (!btn) return;
+
+  const canvases = document.querySelectorAll('#pdf_viewer canvas');
+  const hasContent = canvases.length > 0 &&
+    Array.from(canvases).some(c => c.width > 0 && c.height > 0);
+
+  if (hasContent) {
+    btn.classList.remove('disabled');
+    btn.style.pointerEvents = 'auto';
+    btn.style.opacity = '1';
+  } else {
+    btn.classList.add('disabled');
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.5';
+  }
+}
+
+function saveExamAsPdf() {
+  const btn = document.getElementById('reecap-save-pdf');
+  if (btn) {
+    btn.dataset.originalText = btn.innerHTML;
+    btn.innerHTML = 'Loading PDF engine...';
+    btn.style.pointerEvents = 'none';
+  }
+
+  // Inject jsPDF into the Main World safely (hiding AMD define to force window.jspdf creation)
+  if (!document.getElementById('reecap-jspdf-lib')) {
+    const hideAmd = document.createElement('script');
+    hideAmd.textContent = 'window.__temp_define = window.define; window.define = undefined;';
+    document.head.appendChild(hideAmd);
+
+    const script = document.createElement('script');
+    script.id = 'reecap-jspdf-lib';
+    script.src = chrome.runtime.getURL('lib/jspdf.umd.min.js');
+    script.onload = () => {
+      const restoreAmd = document.createElement('script');
+      restoreAmd.textContent = 'window.define = window.__temp_define;';
+      document.head.appendChild(restoreAmd);
+      injectPdfGenerator();
+    };
+    script.onerror = () => {
+      alert('Failed to load PDF engine.');
+      if (btn) {
+        btn.innerHTML = btn.dataset.originalText || 'Save as PDF';
+        btn.style.pointerEvents = 'auto';
+      }
+    };
+    document.head.appendChild(script);
+  } else {
+    injectPdfGenerator();
+  }
+}
+
+function injectPdfGenerator() {
+  // Execute the generator script in the Main World so it has access to window.jspdf
+  const script = document.createElement('script');
+  script.src = chrome.runtime.getURL('pdf_generator.js');
+  script.onload = () => script.remove();
+  document.head.appendChild(script);
 }
