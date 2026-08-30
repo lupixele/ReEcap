@@ -185,7 +185,7 @@ body {
    Page Shell & Header (StudentMaster.aspx)
    ========================================================================== */
 body.bodyStyle > form > center > div {
-  max-width: 1240px !important;
+  max-width: 1536px !important;
   width: 96% !important;
   padding: 0 24px 24px 24px !important;
   margin: 0 auto;
@@ -4660,3 +4660,160 @@ table.popupTable th a:hover {
   background: #fff;
   box-shadow: 0 0 12px rgba(255,255,255,0.3);
 }
+
+/* ────────────────────────────────────────────────────────────────
+   Exam Script Viewer — Save as PDF button  (2026-08-29)
+   ──────────────────────────────────────────────────────────────── */
+
+.btn-save-pdf {
+  background-color: var(--accent) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 10px 18px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+  user-select: none !important;
+}
+
+.btn-save-pdf:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18) !important;
+}
+
+.btn-save-pdf:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10) !important;
+}
+
+.btn-save-pdf.disabled {
+  opacity: 0.45 !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+
+.btn-save-pdf svg {
+  flex-shrink: 0;
+}
+
+/* Theme-aware overrides for the portal's existing exam buttons */
+.button-container .btn-question,
+.button-container .btn-scheme,
+.button-container .btn-key {
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  transition: opacity 0.2s ease, transform 0.15s ease !important;
+}
+
+.button-container .btn-question:hover,
+.button-container .btn-scheme:hover,
+.button-container .btn-key:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Exam Script Viewer — Subjects Layout (2026-08-29)
+   ──────────────────────────────────────────────────────────────── */
+
+#div_scripts {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 16px !important;
+  background: var(--surface-card) !important;
+  border-radius: var(--radius) !important;
+  border: 1px solid var(--border-light) !important;
+  justify-content: flex-start !important;
+  margin-bottom: 24px !important;
+  align-items: center !important;
+  color: var(--text-faint) !important;
+}
+
+#div_scripts a.buttonAuto {
+  background: var(--surface-sunken) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+#div_scripts a.buttonAuto:hover {
+  background: var(--surface-hover) !important;
+  border-color: var(--border-active) !important;
+  transform: translateY(-1px) !important;
+}
+
+#div_scripts a.buttonAuto.active {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+}
+
+/* The label "Courses" above the strip */
+.panel-style > div:first-child {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  padding: 0 0 12px 0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.panel-style {
+  background: transparent !important;
+  border: none !important;
+}
+/* ==========================================================================
+   Exam Script Viewer Layout Fixes
+   ========================================================================== */
+.de-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 24px;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+.pdf-viewer {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.pdf-viewer canvas {
+    width: 100% !important;
+    max-width: 700px;
+    height: auto !important;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+}
+.exam-pattern, #div_exampattern {
+    flex: 0 0 320px;
+    background: var(--surface-card);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    position: sticky !important;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+}
+.exam-pattern table, #div_exampattern table {
+    width: 100% !important;
+}
+
