@@ -22,14 +22,14 @@ let CURRENT_ROLE = 'rbtStudent'; // Default assumption, overridden by storage
 
 function isStudentRole() {
   const path = window.location.pathname.toLowerCase();
-  
+
   if (!path.includes('studentmaster.aspx')) return false;
 
   const lblUser = document.getElementById('lblUser');
   if (lblUser && lblUser.textContent) {
     const userText = lblUser.textContent.toUpperCase();
     const hasStudentRoll = /\b\d{2}[A-Z0-9]{3,8}\b/.test(userText);
-    
+
     // Explicitly allow regex checks to pass regardless of the storage check
     // since storage initialization race conditions can cause valid students to fail check
     if (hasStudentRoll) {
@@ -41,6 +41,12 @@ function isStudentRole() {
   return CURRENT_ROLE === 'rbtStudent';
 }
 
+function isEmployeeRole() {
+  const path = window.location.pathname.toLowerCase();
+  if (!path.includes('main.aspx')) return false;
+  return CURRENT_ROLE === 'rbtEmployee' || true; // Currently assume anyone on main.aspx is teacher.
+}
+
 function initDecorators() {
   // Prime the cached role before booting the UI
   chrome.storage.sync.get({ enabled: true, reecapLoginRole: 'rbtStudent' }, (data) => {
@@ -49,7 +55,7 @@ function initDecorators() {
     if (!data.enabled) return;
     
     // 0. Iframe Resize Listener
-    if (window.location.pathname.toLowerCase().includes('studentmaster.aspx')) {
+    if (window.location.pathname.toLowerCase().includes('studentmaster.aspx') || window.location.pathname.toLowerCase().includes('main.aspx')) {
       window.addEventListener('message', (e) => {
         if (e.data && e.data.type === 'REECAP_RESIZE') {
           const iframe = document.getElementById('capIframeId');
@@ -77,7 +83,8 @@ function initDecorators() {
          // 3. Build Unified Header
          const header = document.createElement('header');
          header.className = 'masthead';
-         
+
+         const titleEyebrow = isEmployeeRole() ? 'Teacher Portal' : 'Student Portal';
          const brandBlock = document.createElement('div');
          brandBlock.className = 'brand-block';
          brandBlock.innerHTML = `
@@ -87,14 +94,14 @@ function initDecorators() {
              </svg>
            </button>
            <div class="brand-identity">
-             <div class="eyebrow">Student Portal</div>
+             <div class="eyebrow">${titleEyebrow}</div>
              <h1 class="brand-title">ReEcap</h1>
            </div>
          `;
-         
+
          const userCluster = document.createElement('div');
          userCluster.className = 'user-cluster';
-         
+
          if (avatarDiv) {
             const img = avatarDiv.querySelector('img');
             if (img) {
@@ -114,7 +121,7 @@ function initDecorators() {
                userCluster.appendChild(img);
             }
          }
-         
+
          if (lblUser) {
             // Prefer the first <b>/<strong> child because the legacy "Hi..." prefix
             // has been known to mutate to "Welcome," or other tokens across portal versions.
@@ -130,7 +137,7 @@ function initDecorators() {
             }
             userCluster.appendChild(lblUser);
          }
-         
+
          if (changePass) {
             changePass.className = 'pill-btn';
             userCluster.appendChild(changePass);
@@ -139,14 +146,40 @@ function initDecorators() {
             logout.className = 'pill-btn';
             userCluster.appendChild(logout);
          }
-         
+
          header.appendChild(brandBlock);
+
+         // Extract Teacher Top Nav
+         const tblModules = document.getElementById('tblModules');
+         const divMenuLinks = document.getElementById('divMenuLinks');
+         if (tblModules && divMenuLinks) {
+            divMenuLinks.closest('tr').style.setProperty('display', 'none', 'important');
+            const topTabsWrap = document.createElement('nav');
+            topTabsWrap.className = 'reecap-teacher-tabs';
+            topTabsWrap.appendChild(tblModules);
+            header.appendChild(topTabsWrap);
+         }
+
          header.appendChild(userCluster);
 
          // 4. Inject header into DOM before the main layout table
          topContainer.insertBefore(header, mainLayoutTable);
       }
-      
+
+      // Setup dynamic tracking for teacher's left menu
+      if (isEmployeeRole()) {
+         const divLeftMenu = document.getElementById('divLeftMenu');
+         if (divLeftMenu) {
+            const observer = new MutationObserver(() => {
+               const tblScreens = document.getElementById('tblScreens');
+               if (tblScreens && tblScreens.dataset.reecapAccordionReady !== 'true') {
+                 buildSidebar();
+               }
+            });
+            observer.observe(divLeftMenu, { childList: true, subtree: true });
+         }
+      }
+
       // Sidebar Redesign
       buildSidebar();
       rebuildMainLayout();
@@ -188,7 +221,7 @@ function initDecorators() {
     }
 
     // 4. Status Strip (Pass 3)
-    if (window.location.pathname.toLowerCase().includes('studentmaster.aspx')) {
+    if (window.location.pathname.toLowerCase().includes('studentmaster.aspx') && isStudentRole()) {
       initStatusStrip();
     }
 
@@ -3081,12 +3114,84 @@ if (window.self !== window.top) {
 }
 
 function buildSidebar() {
-  const menu = document.getElementById('menu');
+  const menu = document.getElementById('menu') || document.getElementById('tblScreens');
   if (!menu) return;
-  
+
+  const isEmployee = isEmployeeRole();
+
+  // If employee role, handle accordions differently
+  if (isEmployee) {
+    if (menu.dataset.reecapAccordionReady === 'true') return;
+    menu.dataset.reecapAccordionReady = 'true';
+
+    // Convert tblScreens directly into an accordion sidebar without flattening
+    const listItems = Array.from(menu.children);
+    listItems.forEach(li => {
+      const a = li.querySelector('a.menuLink') || li.querySelector('a[id^="MenuLink"]');
+      if (!a) return;
+
+      a.classList.add('reecap-sidebar-link');
+
+      if (li.classList.contains('has-submenu')) {
+        const submenu = li.querySelector('.submenu');
+        if (submenu) {
+          a.classList.add('reecap-accordion-toggle');
+          a.setAttribute('aria-expanded', 'false');
+          submenu.classList.add('reecap-submenu-container');
+
+          // Re-style submenu links
+          Array.from(submenu.querySelectorAll('a')).forEach(subA => {
+             subA.classList.add('reecap-submenu-link');
+          });
+
+          // Add chevron
+          const chevron = document.createElement('span');
+          chevron.className = 'reecap-accordion-chevron';
+          chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+          a.appendChild(chevron);
+
+          // Remove legacy arrow span if present
+          const legacyArrow = a.querySelector('.arrow');
+          if (legacyArrow) legacyArrow.remove();
+
+          // Toggle logic
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isExpanded = a.getAttribute('aria-expanded') === 'true';
+            a.setAttribute('aria-expanded', !isExpanded);
+            li.classList.toggle('is-expanded');
+          });
+        }
+      }
+    });
+
+    // Insert Navigation Header
+    const navigationHeading = document.createElement('div');
+    navigationHeading.className = 'reecap-nav-heading';
+    navigationHeading.innerHTML = `
+      <span class="reecap-nav-heading-label">Navigation</span>
+      <button type="button" class="reecap-nav-close" aria-label="Close navigation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+    `;
+    menu.insertBefore(navigationHeading, menu.firstChild);
+
+    // Dynamic Binding for mobile close button
+    const closeBtn = navigationHeading.querySelector('.reecap-nav-close');
+    if (closeBtn && typeof closeResponsiveNavigation === 'function') {
+      closeBtn.addEventListener('click', closeResponsiveNavigation);
+    }
+
+    return;
+  }
+
+  // ==== ORIGINAL STUDENT FLATTENING LOGIC (Below) ====
+
   const links = Array.from(menu.querySelectorAll('a.menuLink, a[id^="MenuLink"]'));
   if (links.length === 0) return;
-  
+
   // Clean up submenu structures if they exist
   const submenus = menu.querySelectorAll('.submenu');
   submenus.forEach(s => s.remove());
@@ -3516,7 +3621,7 @@ function closeResponsiveNavigation(options) {
 
 function rebuildMainLayout() {
   const iframe = document.getElementById('capIframeId');
-  const menu = document.getElementById('menu');
+  const menu = document.getElementById('menu') || document.getElementById('tblScreens');
   if (!iframe || !menu) return;
 
   // Find the top-level layout table that holds the sidebar and iframe
@@ -3541,7 +3646,14 @@ function rebuildMainLayout() {
   sidebarCol.id = 'reecap-sidebar';
   sidebarCol.className = 'reecap-sidebar-col';
   sidebarCol.setAttribute('aria-label', 'Portal navigation');
-  sidebarCol.appendChild(menu);
+
+  if (isEmployeeRole()) {
+    const leftMenu = document.getElementById('divLeftMenu');
+    if (leftMenu) sidebarCol.appendChild(leftMenu);
+    else sidebarCol.appendChild(menu);
+  } else {
+    sidebarCol.appendChild(menu);
+  }
 
   const contentCol = document.createElement('main');
   contentCol.id = 'reecap-content-col';

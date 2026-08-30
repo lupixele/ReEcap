@@ -288,6 +288,131 @@ tr:has(span[style*="color: blue"]) {
   background: var(--accent);
 }
 
+/* ==========================================================================
+   Teacher Accordion Menus
+   ========================================================================== */
+
+/* Teacher submenus are injected via DOM mutation observer mapping. */
+.reecap-accordion-toggle {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.reecap-accordion-toggle .reecap-sidebar-text {
+  flex-grow: 1;
+}
+
+.reecap-accordion-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  opacity: 0.6;
+  transition: transform var(--duration-default) var(--ease-standard);
+  margin-left: auto;
+}
+
+.reecap-accordion-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.reecap-accordion-toggle[aria-expanded="true"] .reecap-accordion-chevron {
+  transform: rotate(180deg);
+}
+
+.reecap-submenu-container {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-default) var(--ease-standard);
+  overflow: hidden;
+  margin-left: 20px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+li.is-expanded .reecap-submenu-container {
+  grid-template-rows: 1fr;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.reecap-submenu-container > div {
+  min-height: 0;
+}
+
+/* Because submenu HTML might just be a flat UL */
+.reecap-submenu-container li {
+  list-style: none !important;
+}
+
+.reecap-submenu-link {
+  display: block !important;
+  padding: 8px 12px 8px 16px !important;
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  border-radius: var(--radius-sm) !important;
+  transition: all var(--duration-fast) var(--ease-standard) !important;
+  background: transparent !important;
+}
+
+.reecap-submenu-link:hover, .reecap-submenu-link:focus-visible {
+  color: var(--text-primary) !important;
+  background: var(--surface-sunken) !important;
+  transform: translateX(2px);
+}
+
+/* ==========================================================================
+   Teacher Top Tabs (Masthead)
+   ========================================================================== */
+
+.reecap-teacher-tabs {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  justify-content: center;
+  margin: 0 24px;
+}
+
+.reecap-teacher-tabs #tblModules {
+  display: flex !important;
+  gap: 8px !important;
+  padding: 4px !important;
+  background: var(--surface-sunken) !important;
+  border-radius: var(--radius-pill) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.reecap-teacher-tabs .topMenuLink {
+  padding: 8px 16px !important;
+  border-radius: var(--radius-pill) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  text-decoration: none !important;
+  transition: all var(--duration-fast) var(--ease-standard) !important;
+  cursor: pointer;
+  background: transparent !important;
+  border: none !important;
+}
+
+.reecap-teacher-tabs .topMenuLink:hover, .reecap-teacher-tabs .topMenuLink:focus-visible {
+  color: var(--text-primary) !important;
+  background: var(--surface-raised) !important;
+}
+
+.reecap-teacher-tabs .topMenuLink.selected {
+  color: var(--accent-dark) !important;
+  background: var(--accent-soft) !important;
+  box-shadow: var(--shadow-sm);
+}
+
 .brand-block {
   display: flex;
   align-items: center;

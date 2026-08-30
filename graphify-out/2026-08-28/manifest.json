@@ -5,8 +5,8 @@
     "semantic_hash": ""
   },
   "extension/decorators.js": {
-    "mtime": 1787890488.9657514,
-    "ast_hash": "1940ec538ab9fc3b58e4237ec1e0c4e0",
+    "mtime": 1787653849.5371284,
+    "ast_hash": "c9e13d4f8fb09759b1169128b5a6adc2",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "PROGRESS.md": {
-    "mtime": 1787855673.5463538,
-    "ast_hash": "5ed385914eec4b2874b912351a17cf8c",
+    "mtime": 1787653905.5299482,
+    "ast_hash": "cf246126eb871c62be41828cc430decc",
     "semantic_hash": ""
   },
   "index.md": {

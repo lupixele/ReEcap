@@ -1,16 +1,16 @@
-# Graph Report - ReEcap  (2026-08-28)
+# Graph Report - ReEcap  (2026-08-25)
 
 ## Corpus Check
-- 13 files · ~36,174 words
+- 13 files · ~35,371 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 142 nodes · 217 edges · 26 communities (16 shown, 10 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 4 edges (avg confidence: 0.5)
+- 140 nodes · 210 edges · 25 communities (15 shown, 10 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 3 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `fd275312`
+- Built from commit: `a0843ad2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -36,22 +36,21 @@
 - Icon SVG
 - Popup Markup
 - buildSidebar
-- initDecorators
 - buildOverviewPage
 - buildTimetableDashboard
-- renderDashboardCards
+- rebuildMainLayout
 
 ## God Nodes (most connected - your core abstractions)
-1. `initDecorators()` - 13 edges
+1. `initDecorators()` - 11 edges
 2. `buildProfilePanesRedesign()` - 9 edges
 3. `hideLegacyChildren()` - 8 edges
-4. `buildSidebar()` - 8 edges
-5. `buildProfileDashboard()` - 7 edges
-6. `rebuildMainLayout()` - 7 edges
-7. `isStudentRole()` - 6 edges
-8. `rebuildPresentSemTab()` - 6 edges
-9. `rebuildFeeDetailsTab()` - 6 edges
-10. `buildOverviewPage()` - 6 edges
+4. `buildProfileDashboard()` - 7 edges
+5. `buildSidebar()` - 7 edges
+6. `rebuildPresentSemTab()` - 6 edges
+7. `rebuildFeeDetailsTab()` - 6 edges
+8. `rebuildMainLayout()` - 6 edges
+9. `buildOverviewPage()` - 6 edges
+10. `icons` - 6 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Ambient Glow Stage` --conceptually_related_to--> `ReEcap`  [EXTRACTED]
@@ -62,23 +61,23 @@
 ## Import Cycles
 - None detected.
 
-## Communities (26 total, 10 thin omitted)
+## Communities (25 total, 10 thin omitted)
 
 ### Community 0 - "Chrome Extension Manifest"
 Cohesion: 0.11
 Nodes (17): content_scripts, description, host_permissions, icons, 128, 16, 32, 48 (+9 more)
 
 ### Community 1 - "buildProfilePanesRedesign"
-Cohesion: 0.19
-Nodes (17): buildBioDataRedesign(), buildProfileDashboard(), buildProfilePanesRedesign(), buildProfileTabs(), extractActiveSemesterLabel(), extractAttendanceProfileData(), extractPresentTabSupplementalData(), hideLegacyChildren() (+9 more)
+Cohesion: 0.18
+Nodes (18): buildBioDataRedesign(), buildProfileDashboard(), buildProfilePanesRedesign(), buildProfileTabs(), extractActiveSemesterLabel(), extractAttendanceProfileData(), extractPresentTabSupplementalData(), getAttendanceColor() (+10 more)
 
 ### Community 2 - "content.js"
 Cohesion: 0.29
 Nodes (10): applyStoredTheme(), checkIframeUrl(), ensureSkipLink(), injectStyle(), injectStylesheet(), migrateThemeStorage(), removeStyle(), script (+2 more)
 
 ### Community 3 - "decorators.js"
-Cohesion: 0.27
-Nodes (10): buildMarksPageUI(), buildOnlinePaymentUI(), getAttendanceColor(), redesignMarksPage(), redesignOnlinePaymentPage(), renderAttendanceBlock(), renderAttendanceContent(), renderInternalBlock() (+2 more)
+Cohesion: 0.25
+Nodes (13): buildMarksPageUI(), buildOnlinePaymentUI(), initDecorators(), injectThemeToolbar(), observeProfileDashboard(), redesignAttendancePage(), redesignLoginPage(), redesignMarksPage() (+5 more)
 
 ### Community 4 - "Overview & Status Strip"
 Cohesion: 0.33
@@ -108,21 +107,17 @@ Nodes (4): Ambient Glow Stage, Design Rules, Theme System, ReEcap
 Cohesion: 0.53
 Nodes (6): buildSidebar(), buildStudentsDirectory(), closeResponsiveNavigation(), isStudentRole(), showOverview(), showStudentsDirectory()
 
-### Community 21 - "initDecorators"
-Cohesion: 0.33
-Nodes (7): initDecorators(), initResponsiveNavigation(), injectThemeToolbar(), isEmployeeRole(), rebuildMainLayout(), redesignAttendancePage(), redesignLoginPage()
-
 ### Community 22 - "buildOverviewPage"
 Cohesion: 0.40
 Nodes (6): buildOverviewPage(), initStatusStrip(), parseTimeRange(), prefetchTimetableData(), renderScheduleCard(), updateStatusStrip()
 
 ### Community 23 - "buildTimetableDashboard"
-Cohesion: 0.50
-Nodes (5): buildTimetableDashboard(), combineTimetableTimeRange(), escapeAttr(), observeTimetable(), renderTimetableLegend()
+Cohesion: 0.67
+Nodes (4): buildTimetableDashboard(), escapeAttr(), observeTimetable(), renderTimetableLegend()
 
-### Community 24 - "renderDashboardCards"
-Cohesion: 0.40
-Nodes (5): formatCurrencyAmount(), renderDashboardCards(), renderQuickLinksCard(), showIframe(), updateOverviewCards()
+### Community 24 - "rebuildMainLayout"
+Cohesion: 0.29
+Nodes (7): formatCurrencyAmount(), initResponsiveNavigation(), rebuildMainLayout(), renderDashboardCards(), renderQuickLinksCard(), showIframe(), updateOverviewCards()
 
 ## Knowledge Gaps
 - **43 isolated node(s):** `THEME_STORAGE_DEFAULTS`, `script`, `manifest_version`, `name`, `version` (+38 more)
