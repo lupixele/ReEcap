@@ -4833,112 +4833,487 @@ table.popupTable th a:hover {
 .button-container .btn-question,
 .button-container .btn-scheme,
 .button-container .btn-key {
-  border-radius: var(--radius-sm) !important;
+  background: var(--surface-sunken) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm, 8px) !important;
+  padding: 8px 16px !important;
+  font-family: var(--font-sans), sans-serif !important;
   font-weight: 600 !important;
-  font-size: 14px !important;
-  transition: opacity 0.2s ease, transform 0.15s ease !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: unset !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  user-select: none !important;
 }
 
 .button-container .btn-question:hover,
 .button-container .btn-scheme:hover,
 .button-container .btn-key:hover {
-  opacity: 0.9 !important;
+  background: var(--surface-card) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
   transform: translateY(-1px) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+}
+
+.button-container .btn-question:active,
+.button-container .btn-scheme:active,
+.button-container .btn-key:active {
+  transform: translateY(0) !important;
 }
 
 /* ────────────────────────────────────────────────────────────────
-   Exam Script Viewer — Subjects Layout (2026-08-29)
+   Exam Script Viewer — Full UI & Dark Mode Overhaul (2026-08-30)
    ──────────────────────────────────────────────────────────────── */
 
+/* Base container & background neutralization */
+body.reecap-exam-viewer-page,
+body:has(#pdf_viewer),
+body:has(#div_exampattern),
+body:has(#div_scripts) {
+  background: var(--surface-page) !important;
+  color: var(--text-primary) !important;
+  box-sizing: border-box !important;
+  padding: 16px !important;
+}
+
+/* Neutralize legacy nested table backgrounds, borders, and hardcoded inline styles */
+body.reecap-exam-viewer-page table,
+body.reecap-exam-viewer-page tr,
+body.reecap-exam-viewer-page td,
+body:has(#pdf_viewer) table,
+body:has(#pdf_viewer) tr,
+body:has(#pdf_viewer) td,
+body:has(#div_exampattern) table,
+body:has(#div_exampattern) tr,
+body:has(#div_exampattern) td {
+  background: transparent !important;
+  border-color: var(--border-light) !important;
+  color: var(--text-primary) !important;
+}
+
+body.reecap-exam-viewer-page td[bgcolor],
+body:has(#pdf_viewer) td[bgcolor],
+body:has(#div_exampattern) td[bgcolor],
+td[bgcolor="#F7F7F7"],
+td[bgcolor="#f7f7f7"],
+td[bgcolor="#F7F7F7"] table,
+td[bgcolor="#f7f7f7"] table {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Hide legacy empty rows and line breaks */
+body.reecap-exam-viewer-page td.MainHead + tr,
+body.reecap-exam-viewer-page .panel-style > br,
+body:has(#pdf_viewer) td.MainHead + tr,
+body:has(#pdf_viewer) .panel-style > br {
+  display: none !important;
+}
+
+/* Main Heading */
+body.reecap-exam-viewer-page .MainHead,
+body:has(#pdf_viewer) .MainHead {
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em !important;
+  padding: 0 0 16px 0 !important;
+  border: none !important;
+  text-transform: uppercase !important;
+}
+
+/* Panel Card Container */
+.panel-style {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg, 16px) !important;
+  padding: 20px !important;
+  box-shadow: var(--card-shadow) !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+/* Courses Section Title */
+.panel-style > div:first-child,
+div[style*="background-color: #ece7e7"],
+div[style*="background-color:#ece7e7"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--text-secondary) !important;
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  padding: 0 0 8px 0 !important;
+  margin: 0 0 10px 0 !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-light) !important;
+}
+
+.panel-style > div:first-child strong {
+  font-weight: 700 !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Course Buttons Container */
 #div_scripts {
+  background: var(--surface-sunken) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 8px 12px !important;
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 8px !important;
-  padding: 16px !important;
-  background: var(--surface-card) !important;
-  border-radius: var(--radius) !important;
-  border: 1px solid var(--border-light) !important;
-  justify-content: flex-start !important;
-  margin-bottom: 24px !important;
   align-items: center !important;
-  color: var(--text-faint) !important;
+  justify-content: flex-start !important;
+  min-height: 48px !important;
+  box-sizing: border-box !important;
+  margin-bottom: 16px !important;
 }
 
 #div_scripts a.buttonAuto {
-  background: var(--surface-sunken) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: var(--radius-sm) !important;
-  padding: 8px 16px !important;
+  background: var(--surface-card) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 7px 16px !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
-  font-size: 14px !important;
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   text-decoration: none !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  user-select: none !important;
 }
 
 #div_scripts a.buttonAuto:hover {
-  background: var(--surface-hover) !important;
-  border-color: var(--border-active) !important;
+  background: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--accent) !important;
   transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 15%, transparent) !important;
+}
+
+#div_scripts a.buttonAuto:active {
+  transform: translateY(0) !important;
 }
 
 #div_scripts a.buttonAuto.active {
   background: var(--accent) !important;
-  color: #fff !important;
+  color: var(--on-accent, #ffffff) !important;
   border-color: var(--accent) !important;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 35%, transparent) !important;
 }
 
-/* The label "Courses" above the strip */
-.panel-style > div:first-child {
+/* Action Buttons Container (Question Paper, Scheme, Key, Save as PDF) */
+.button-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin: 16px 0 20px 0 !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+}
+
+/* Layout columns for viewer and scorecard */
+body.reecap-exam-viewer-page table:has(#pdf_viewer),
+body:has(#pdf_viewer) table:has(#pdf_viewer) {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+body.reecap-exam-viewer-page td:has(#pdf_viewer),
+body:has(#pdf_viewer) td:has(#pdf_viewer),
+body.reecap-exam-viewer-page td:has(#div_exampattern),
+body:has(#pdf_viewer) td:has(#div_exampattern) {
+  padding: 0 !important;
+  vertical-align: top !important;
+}
+
+.de-container {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 300px !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  align-items: start !important;
+  margin: 16px 0 !important;
+  padding: 0 !important;
   background: transparent !important;
+}
+
+@media (max-width: 960px) {
+  .de-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* PDF Viewer Area */
+.pdf-viewer,
+.pdf-viewer-student,
+.pdf-viewer_rv,
+#pdf_viewer {
+  width: 100% !important;
+  min-width: 0 !important;
+  background-color: var(--surface-sunken) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.08), var(--card-shadow) !important;
+  padding: 16px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  max-height: 85vh !important;
+}
+
+#pdf_viewer canvas,
+.pdf-viewer canvas {
+  display: block !important;
+  margin: 0 auto 16px auto !important;
+  background: #ffffff !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+  max-width: 100% !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Exam Pattern Scorecard Container */
+.exam-pattern,
+#div_exampattern {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background-color: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  padding: 16px !important;
+  box-shadow: var(--card-shadow) !important;
+  overflow-y: auto !important;
+  max-height: 85vh !important;
+  position: sticky !important;
+  top: 16px !important;
+}
+
+/* Total Marks Banner */
+.tbltotal,
+#tblquestions_total {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  margin: 0 0 14px 0 !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden !important;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark, var(--accent)) 100%) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 25%, transparent) !important;
+}
+
+.tbltotal th,
+#tblquestions_total th {
+  background: transparent !important;
+  color: #ffffff !important;
+  padding: 12px 14px !important;
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  text-align: left !important;
+  border: none !important;
+  letter-spacing: 0.02em !important;
+}
+
+.tbltotal th:last-child,
+.tbltotal th[align="right"],
+#tblquestions_total th:last-child,
+#tblquestions_total th[align="right"] {
+  text-align: right !important;
+}
+
+.tbltotal input[type="text"],
+#tblquestions_total input[type="text"] {
+  background: rgba(0, 0, 0, 0.35) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: var(--radius-sm) !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  width: 48px !important;
+  padding: 5px 8px !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Question Breakdown Table */
+.exam-pattern table.tbl,
+#div_exampattern table.tbl,
+table#tblquestions {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: var(--radius-sm, 8px) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface-card) !important;
+  margin: 0 !important;
+}
+
+/* Table Header (Q.No, Max Marks, Marks) */
+.exam-pattern table.tbl th,
+#div_exampattern table.tbl th,
+table#tblquestions th {
+  background-color: var(--surface-sunken) !important;
+  color: var(--text-secondary) !important;
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  padding: 10px 8px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  text-align: center !important;
+}
+
+/* Main Question Section Group Header Row (e.g. Q1, Q2, Q3, Q4) */
+.exam-pattern table.tbl tr:not([name]):not(:first-child) td,
+#div_exampattern table.tbl tr:not([name]):not(:first-child) td,
+table#tblquestions tr:not([name]):not(:first-child) td,
+.exam-pattern table.tbl tr:has(b) td,
+#div_exampattern table.tbl tr:has(b) td,
+table#tblquestions tr:has(b) td {
+  background-color: color-mix(in srgb, var(--accent) 10%, var(--surface-sunken)) !important;
   color: var(--text-primary) !important;
   font-weight: 700 !important;
-  font-size: 16px !important;
-  padding: 0 0 12px 0 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-}
-
-.panel-style {
-  background: transparent !important;
+  padding: 8px 10px !important;
   border: none !important;
-}
-/* ==========================================================================
-   Exam Script Viewer Layout Fixes
-   ========================================================================== */
-.de-container {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 24px;
-    align-items: flex-start;
-    justify-content: space-between;
-}
-.pdf-viewer {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-.pdf-viewer canvas {
-    width: 100% !important;
-    max-width: 700px;
-    height: auto !important;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 12px;
-}
-.exam-pattern, #div_exampattern {
-    flex: 0 0 320px;
-    background: var(--surface-card);
-    border-radius: var(--radius);
-    padding: 16px;
-    box-shadow: var(--shadow-sm);
-    position: sticky !important;
-    top: 24px;
-    max-height: calc(100vh - 48px);
-    overflow-y: auto;
-}
-.exam-pattern table, #div_exampattern table {
-    width: 100% !important;
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border)) !important;
+  text-align: center !important;
 }
 
+.exam-pattern table.tbl tr:not([name]):not(:first-child) td:first-child,
+#div_exampattern table.tbl tr:not([name]):not(:first-child) td:first-child,
+table#tblquestions tr:not([name]):not(:first-child) td:first-child,
+.exam-pattern table.tbl tr:has(b) td:first-child,
+#div_exampattern table.tbl tr:has(b) td:first-child,
+table#tblquestions tr:has(b) td:first-child {
+  color: var(--accent) !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+.exam-pattern table.tbl tr:not([name]):not(:first-child) td:nth-child(2),
+#div_exampattern table.tbl tr:not([name]):not(:first-child) td:nth-child(2),
+table#tblquestions tr:not([name]):not(:first-child) td:nth-child(2),
+.exam-pattern table.tbl tr:has(b) td:nth-child(2),
+#div_exampattern table.tbl tr:has(b) td:nth-child(2),
+table#tblquestions tr:has(b) td:nth-child(2) {
+  font-family: var(--font-mono), monospace !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  color: var(--text-primary) !important;
+}
+
+/* Sub-question Rows (a, b, etc.) under each Question */
+.exam-pattern table.tbl tr[name] td,
+#div_exampattern table.tbl tr[name] td,
+table#tblquestions tr[name] td {
+  background-color: var(--surface-card) !important;
+  color: var(--text-primary) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  padding: 7px 8px !important;
+  text-align: center !important;
+  font-size: 13px !important;
+  vertical-align: middle !important;
+  transition: background-color 0.12s ease !important;
+}
+
+.exam-pattern table.tbl tr[name]:hover td,
+#div_exampattern table.tbl tr[name]:hover td,
+table#tblquestions tr[name]:hover td {
+  background-color: color-mix(in srgb, var(--accent) 4%, var(--surface-sunken)) !important;
+}
+
+/* Sub-question identifier (a, b) */
+.exam-pattern table.tbl tr[name] td:first-child,
+#div_exampattern table.tbl tr[name] td:first-child,
+table#tblquestions tr[name] td:first-child {
+  font-family: var(--font-mono), monospace !important;
+  font-weight: 700 !important;
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+}
+
+/* Sub-question Max Marks */
+.exam-pattern table.tbl tr[name] td:nth-child(2),
+#div_exampattern table.tbl tr[name] td:nth-child(2),
+table#tblquestions tr[name] td:nth-child(2) {
+  font-family: var(--font-mono), monospace !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+}
+
+/* Marks Input Styling */
+.exam-pattern table.tbl input[type="text"],
+#div_exampattern table.tbl input[type="text"],
+table#tblquestions input[type="text"] {
+  width: 44px !important;
+  padding: 4px 0 !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  border-radius: var(--radius-sm, 6px) !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease !important;
+}
+
+/* Scored Input (has a score, e.g. "3", "2") */
+.exam-pattern table.tbl input[type="text"]:not([value=""]),
+#div_exampattern table.tbl input[type="text"]:not([value=""]),
+table#tblquestions input[type="text"]:not([value=""]) {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-sunken)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent) !important;
+  color: var(--text-primary) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 15%, transparent) !important;
+}
+
+/* Unscored / Empty Input (clean dash/muted appearance, no hollow jarring box) */
+.exam-pattern table.tbl input[type="text"][value=""],
+#div_exampattern table.tbl input[type="text"][value=""],
+table#tblquestions input[type="text"][value=""],
+.exam-pattern table.tbl input[type="text"]:not([value]),
+#div_exampattern table.tbl input[type="text"]:not([value]),
+table#tblquestions input[type="text"]:not([value]) {
+  background: transparent !important;
+  border: 1px dashed var(--border-light) !important;
+  color: var(--text-faint) !important;
+  opacity: 0.3 !important;
+  box-shadow: none !important;
+}

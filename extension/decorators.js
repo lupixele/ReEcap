@@ -4706,6 +4706,8 @@ function buildStudentsDirectory(container) {
 // ────────────────────────────────────────────────────────────────
 
 function observeExamViewer() {
+  document.body.classList.add('reecap-exam-viewer-page');
+
   // Wait for the button container to exist in the DOM
   const waitForContainer = () => {
     const container = document.querySelector('.button-container');
