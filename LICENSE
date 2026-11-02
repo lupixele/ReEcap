@@ -1,21 +1,32 @@
-MIT License
+NON-COMMERCIAL RESEARCH & PERSONAL USE LICENSE WITH INSTITUTIONAL DISCLAIMER
 
-Copyright (c) 2026 lupixele
+Copyright (c) 2026 lupixele. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. SCOPE AND NATURE OF SOFTWARE
+The Software is an independent, client-side visual stylesheet and cosmetic interface
+developed strictly for the author's personal educational convenience. The Software
+and its author are NOT affiliated, endorsed, authorized, or connected in any manner
+with Aditya University, E-CAP, or any related educational institutions or subsidiaries.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. USE RESTRICTIONS
+Permission is granted to inspect and modify this source code for personal, non-commercial
+study and research only, subject to the following express conditions:
+  a. NO INSTITUTIONAL VIOLATIONS: The Software shall NOT be used, modified, deployed,
+     or distributed to bypass authentication, scrape unauthorized student/faculty data,
+     harvest credentials, conduct security scans or penetrations, or violate any
+     acceptable use policies or IT regulations of Aditya University or any institution.
+  b. STRICTLY LOCAL/CLIENT-SIDE: No user may repackage or distribute this Software with
+     embedded private datasets, institutional credentials, or backend automation scripts.
+  c. NO COMMERCIAL USE: The Software may not be sold, sublicensed, or integrated into
+     commercial products or services.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+3. INDEMNITY AND TERMINATION
+Any fork, distribution, or use of the Software in violation of institutional IT rules
+or applicable laws immediately revokes all rights granted under this license. The author
+disclaims all legal liability for unauthorized actions, credential misuse, policy
+infractions, or service disruptions caused by downstream users or third-party forks.
+
+4. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, DISCIPLINARY ACTIONS,
+OR LIABILITIES ARISING FROM THE USE OR MISUSE OF THIS SOFTWARE.

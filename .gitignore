@@ -6,3 +6,8 @@ Review/
 
 Raw/
 Review/
+extension/shared/students.*
+dist/*/shared/students.*
+*.xlsx
+*.xls
+.freebuff/
