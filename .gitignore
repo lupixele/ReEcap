@@ -11,3 +11,5 @@ dist/*/shared/students.*
 *.xlsx
 *.xls
 .freebuff/
+dist/
+.git.backup/
