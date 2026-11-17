@@ -87,9 +87,9 @@
         resolve({
           identity: { rollNo, name, course, branch, semester: sem },
           attendance: {
-            overallPercent: profile.percent || '--',
-            attended: profile.attended || '--',
-            held: profile.held || '--',
+            overallPercent: (profile.percent !== undefined && profile.percent !== null && profile.percent !== '') ? profile.percent : '--',
+            attended: (profile.attended !== undefined && profile.attended !== null && profile.attended !== '') ? profile.attended : '--',
+            held: (profile.held !== undefined && profile.held !== null && profile.held !== '') ? profile.held : '--',
             subjects: subjectsAttendance
           },
           academic: {
@@ -187,6 +187,9 @@
    * Pre-fetches student marks report if not already cached.
    */
   async function prefetchAcademicData() {
+    // Also trigger profile/attendance prefetch in parallel
+    prefetchProfileData();
+
     return new Promise((resolve) => {
       chrome.storage.local.get(['reecapAcademicData'], async (data) => {
         if (data.reecapAcademicData && data.reecapAcademicData.lastUpdated && (Date.now() - data.reecapAcademicData.lastUpdated < 1000 * 60 * 60 * 12)) {
@@ -234,6 +237,256 @@
         }
       });
     });
+  }
+
+  /**
+   * Pre-fetches student profile and attendance telemetry in the background.
+   */
+  async function prefetchProfileData() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['reecapProfileData', 'reecapIdentity'], async (data) => {
+        if (data.reecapProfileData && data.reecapProfileData.percent !== undefined && data.reecapProfileData.attendanceSubjects?.length) {
+          resolve(data.reecapProfileData);
+          return;
+        }
+
+        try {
+          if (!window.location.hostname.includes('info.aec.edu.in')) {
+            resolve(null);
+            return;
+          }
+
+          let resp = null;
+          try {
+            resp = await fetch('Academics/StudentProfile.aspx?scrid=17', { credentials: 'same-origin' });
+          } catch (e) {}
+
+          if (!resp || !resp.ok) {
+            try {
+              resp = await fetch('studentprofile.aspx', { credentials: 'same-origin' });
+            } catch (e) {}
+          }
+
+          if (!resp || !resp.ok) {
+            resolve(null);
+            return;
+          }
+
+          const pageHtml = await resp.text();
+          const tknMatch = pageHtml.match(/_tkn\s*=\s*['"]([a-zA-Z0-9-]+)['"]/);
+          const rollMatch = pageHtml.match(/id=['"][^'"]*txtRollNo['"][^>]*value=['"]([^'"]+)['"]/) ||
+                            pageHtml.match(/value=['"](\d{2}[A-Za-z0-9]{3,8})['"]/);
+
+          const rollNo = rollMatch ? rollMatch[1] : (data.reecapIdentity?.rollNo || data.reecapIdentity?.RollNo);
+          const token = tknMatch ? tknMatch[1] : '';
+
+          if (!rollNo) {
+            resolve(null);
+            return;
+          }
+
+          let profileHtml = '';
+          try {
+            const postResp = await fetch('Academics/studentprofile.aspx/ShowStudentProfileNew', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'X-Auth-Token': token
+              },
+              body: JSON.stringify({ RollNo: rollNo, isImageDisplay: false }),
+              credentials: 'same-origin'
+            });
+            if (postResp.ok) {
+              const json = await postResp.json();
+              profileHtml = json.d || json;
+            }
+          } catch (e) {}
+
+          if (!profileHtml) {
+            try {
+              const postResp2 = await fetch('studentprofile.aspx/ShowStudentProfileNew', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json; charset=utf-8',
+                  'X-Auth-Token': token
+                },
+                body: JSON.stringify({ RollNo: rollNo, isImageDisplay: false }),
+                credentials: 'same-origin'
+              });
+              if (postResp2.ok) {
+                const json2 = await postResp2.json();
+                profileHtml = json2.d || json2;
+              }
+            } catch (e2) {}
+          }
+
+          if (!profileHtml || typeof profileHtml !== 'string') {
+            resolve(null);
+            return;
+          }
+
+          const doc = new DOMParser().parseFromString(profileHtml, 'text/html');
+          const att = parseAttendanceFromDoc(doc);
+          const acad = parseAcademicFromDoc(doc);
+          const backlogsText = parseBacklogsFromDoc(doc);
+
+          const profileData = {
+            held: att.held,
+            attended: att.attended,
+            percent: att.percent,
+            attendanceSubjects: att.subjects,
+            backlogsText: backlogsText,
+            cgpa: acad.cgpa,
+            academicSummary: acad.academicSummary,
+            lastUpdated: Date.now()
+          };
+
+          chrome.storage.local.set({ reecapProfileData: profileData });
+
+          if (acad.academicSummary && acad.cgpa !== '--') {
+            chrome.storage.local.get(['reecapAcademicData'], (existing) => {
+              const cur = existing?.reecapAcademicData || {};
+              const updated = {
+                ...cur,
+                overallStats: { ...(cur.overallStats || {}), ...acad.academicSummary },
+                lastUpdated: Date.now()
+              };
+              chrome.storage.local.set({ reecapAcademicData: updated });
+            });
+          }
+
+          if (typeof window.__reecap_refresh_aria === 'function') {
+            window.__reecap_refresh_aria();
+          }
+
+          resolve(profileData);
+        } catch (err) {
+          console.warn('ReEcap: Background profile prefetch failed:', err);
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  function parseAttendanceFromDoc(doc) {
+    let held = 0, attended = 0, percent = 0;
+    const subjects = [];
+
+    let table = doc.querySelector('table.reportTable');
+    if (!table) {
+      const presentPane = doc.getElementById('divProfile_Present') || doc;
+      const tables = Array.from(presentPane.querySelectorAll('table'));
+      for (const t of tables) {
+        const txt = t.textContent.toUpperCase();
+        if (txt.includes('HELD') && txt.includes('ATTEND') && (txt.includes('COURSE') || txt.includes('SUBJECT') || txt.includes('%'))) {
+          table = t;
+          break;
+        }
+      }
+    }
+
+    if (!table) return { held, attended, percent, subjects };
+
+    let colCourse = 1, colFaculty = -1, colHeld = 2, colAttend = 3, colPercent = 4;
+
+    Array.from(table.rows).forEach(row => {
+      const cells = Array.from(row.cells);
+      if (!cells.length) return;
+      const raw = cells.map(c => c.textContent.trim());
+      const labels = raw.map(v => v.toUpperCase());
+
+      if (labels.includes('COURSE') || labels.includes('SUBJECT')) {
+        colCourse = labels.includes('COURSE') ? labels.indexOf('COURSE') : labels.indexOf('SUBJECT');
+        colFaculty = labels.indexOf('FACULTY');
+        colHeld = labels.indexOf('HELD');
+        colAttend = labels.indexOf('ATTEND');
+        colPercent = labels.indexOf('%');
+        if (colHeld < 0) colHeld = colFaculty >= 0 ? colFaculty + 1 : colCourse + 1;
+        if (colAttend < 0) colAttend = colHeld + 1;
+        if (colPercent < 0) colPercent = colAttend + 1;
+        return;
+      }
+
+      const hasTotal = raw.some(c => c.toUpperCase().includes('TOTAL'));
+      if (hasTotal) {
+        const nums = raw.map(c => parseFloat(c)).filter(n => Number.isFinite(n));
+        if (nums.length >= 2) {
+          held = parseInt(nums[0], 10) || 0;
+          attended = parseInt(nums[1], 10) || 0;
+          if (nums.length >= 3) {
+            percent = nums[2];
+          } else {
+            percent = held > 0 ? Number(((attended / held) * 100).toFixed(2)) : 0;
+          }
+        }
+        return;
+      }
+
+      if (!Number.isFinite(parseInt(raw[0], 10))) return;
+      const sHeld = parseInt(raw[colHeld], 10) || 0;
+      const sAttend = parseInt(raw[colAttend], 10) || 0;
+      const suppliedPct = parseFloat(raw[colPercent]);
+      const sPercent = Number.isFinite(suppliedPct)
+        ? suppliedPct
+        : (sHeld > 0 ? Number(((sAttend / sHeld) * 100).toFixed(2)) : 0);
+
+      subjects.push({
+        subjName: String(raw[colCourse] || 'Subject').trim(),
+        name: String(raw[colCourse] || 'Subject').trim(),
+        faculty: colFaculty >= 0 ? String(raw[colFaculty] || '').trim() : '',
+        held: sHeld,
+        attend: sAttend,
+        attended: sAttend,
+        percent: sPercent
+      });
+    });
+
+    if (!held && subjects.length) {
+      held = subjects.reduce((sum, s) => sum + s.held, 0);
+      attended = subjects.reduce((sum, s) => sum + s.attend, 0);
+      percent = held > 0 ? Number(((attended / held) * 100).toFixed(2)) : 0;
+    }
+
+    return { held, attended, percent, subjects };
+  }
+
+  function parseAcademicFromDoc(doc) {
+    let cgpa = '--';
+    let academicSummary = null;
+    const pastPane = doc.getElementById('divProfile_Past') || doc.getElementById('divProfile_PastSem');
+    if (pastPane) {
+      const pastTables = pastPane.querySelectorAll('table');
+      for (const t of pastTables) {
+        const text = t.textContent.toUpperCase();
+        if (text.includes('OVER ALL SUMMARY') || text.includes('CGPA')) {
+          academicSummary = { cgpa: '--', passed: '--', failed: '--', credits: '--', result: '--' };
+          Array.from(t.rows).forEach(r => {
+            const cells = Array.from(r.cells).map(c => c.textContent.trim());
+            if (cells.length >= 2) {
+              const k = cells[0].toUpperCase();
+              const v = cells[1];
+              if (k.includes('CGPA')) academicSummary.cgpa = v;
+              if (k.includes('PASSED')) academicSummary.passed = v;
+              if (k.includes('FAILED')) academicSummary.failed = v;
+              if (k.includes('CREDITS')) academicSummary.credits = v;
+              if (k.includes('RESULT')) academicSummary.result = v;
+            }
+          });
+          if (academicSummary.cgpa !== '--') cgpa = academicSummary.cgpa;
+          break;
+        }
+      }
+    }
+    return { cgpa, academicSummary };
+  }
+
+  function parseBacklogsFromDoc(doc) {
+    let backlogsText = '0';
+    const backlogsDiv = doc.getElementById('divProfile_Backlogs');
+    if (backlogsDiv && backlogsDiv.textContent.trim()) {
+      backlogsText = backlogsDiv.textContent.trim();
+    }
+    return backlogsText;
   }
 
   /**
@@ -505,11 +758,11 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       const pageTitle = document.getElementById('reecap-page-title');
 
       const routeMap = {
-        attendance: { url: 'studentattendance.aspx', title: 'ATTENDANCE' },
-        marks: { url: 'studentmarksreport.aspx', title: 'MARKS REPORT' },
-        timetable: { url: 'studenttimetableoption.aspx', title: 'TIME TABLE' },
-        fees: { url: 'studentfeereceipt.aspx', title: 'FEE RECEIPT' },
-        examviewer: { url: 'ExamScriptViewer.aspx', title: 'EXAM SCRIPT VIEWER' }
+        attendance: { url: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', title: 'ATTENDANCE' },
+        marks: { url: 'Academics/StudentMarksReport.aspx?scrid=15', title: 'MARKS REPORT' },
+        timetable: { url: 'Academics/TimeTableReport.aspx?scrid=18', title: 'TIME TABLE' },
+        fees: { url: 'FeePayments/studentpayments.aspx?scrid=11', title: 'FEE DETAILS' },
+        examviewer: { url: 'Examinations/RevalutionScriptViewer.aspx', title: 'VIEW ANSWER SHEET' }
       };
 
       if (verb === 'overview') {
@@ -519,9 +772,13 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
 
       const route = routeMap[verb];
       if (route && iframe) {
-        if (overview) overview.style.setProperty('display', 'none', 'important');
-        iframe.style.removeProperty('display');
-        document.documentElement.setAttribute('data-overview-active', 'false');
+        if (typeof root.showIframe === 'function') {
+          root.showIframe();
+        } else {
+          if (overview) overview.style.setProperty('display', 'none', 'important');
+          iframe.style.removeProperty('display');
+          document.documentElement.setAttribute('data-overview-active', 'false');
+        }
         if (pageTitle) pageTitle.textContent = route.title;
         iframe.src = route.url;
 
@@ -529,7 +786,7 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         const links = document.querySelectorAll('a.reecap-sidebar-link');
         links.forEach(l => {
           const href = (l.getAttribute('href') || '').toLowerCase();
-          l.classList.toggle('active', href.includes(route.url));
+          l.classList.toggle('active', href.includes(route.url.toLowerCase()));
         });
       }
     }
@@ -539,7 +796,11 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
     getStudentDossier,
     generateAcademicInsights,
     prefetchAcademicData,
+    prefetchProfileData,
     parseMarksFromDiv,
+    parseAttendanceFromDoc,
+    parseAcademicFromDoc,
+    parseBacklogsFromDoc,
     streamAriaChat,
     executePortalAction
   };

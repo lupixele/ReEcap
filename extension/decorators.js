@@ -1632,10 +1632,19 @@ function extractAttendanceProfileData(pane) {
 
   if (!pane) return { held, attended, percent, subjects };
 
-  // The first reportTable inside the Present pane is the current-semester
-  // Attendance table. Its .rows/.cells collections deliberately exclude the
-  // containing layout rows, which contain text from all later sections.
-  const table = pane.querySelector('table.reportTable');
+  // Find the current-semester Attendance table: reportTable or table containing HELD & ATTEND
+  let table = pane.querySelector('table.reportTable');
+  if (!table) {
+    const presentPane = document.getElementById('divProfile_Present') || pane;
+    const tables = Array.from(presentPane.querySelectorAll('table'));
+    for (const t of tables) {
+      const txt = t.textContent.toUpperCase();
+      if (txt.includes('HELD') && txt.includes('ATTEND') && (txt.includes('COURSE') || txt.includes('SUBJECT') || txt.includes('%'))) {
+        table = t;
+        break;
+      }
+    }
+  }
   if (!table) return { held, attended, percent, subjects };
 
   let colCourse = 1;
@@ -1664,14 +1673,18 @@ function extractAttendanceProfileData(pane) {
       return;
     }
 
-    if (raw[0].toUpperCase().includes('TOTAL')) {
-      const tail = raw.slice(-3);
-      held = parseInt(tail[0], 10) || 0;
-      attended = parseInt(tail[1], 10) || 0;
-      const totalPercent = parseFloat(tail[2]);
-      percent = Number.isFinite(totalPercent)
-        ? totalPercent
-        : (held > 0 ? Number(((attended / held) * 100).toFixed(2)) : 0);
+    const hasTotal = raw.some(c => c.toUpperCase().includes('TOTAL'));
+    if (hasTotal) {
+      const nums = raw.map(c => parseFloat(c)).filter(n => Number.isFinite(n));
+      if (nums.length >= 2) {
+        held = parseInt(nums[0], 10) || 0;
+        attended = parseInt(nums[1], 10) || 0;
+        if (nums.length >= 3) {
+          percent = nums[2];
+        } else {
+          percent = held > 0 ? Number(((attended / held) * 100).toFixed(2)) : 0;
+        }
+      }
       return;
     }
 
@@ -1698,6 +1711,10 @@ function extractAttendanceProfileData(pane) {
     held = subjects.reduce((sum, subject) => sum + subject.held, 0);
     attended = subjects.reduce((sum, subject) => sum + subject.attend, 0);
     percent = held > 0 ? Number(((attended / held) * 100).toFixed(2)) : 0;
+  }
+
+  if (!percent && held > 0) {
+    percent = Number(((attended / held) * 100).toFixed(2));
   }
 
   return { held, attended, percent, subjects };
@@ -3535,8 +3552,16 @@ function showOverview() {
   const pageTitle = document.getElementById('reecap-page-title');
   const profileContainer = document.querySelector('.student-profile-container');
   
-  // UNCONDITIONALLY hide iframe so legacy views NEVER bleed into custom Overview
-  if (iframe) iframe.style.setProperty('display', 'none', 'important');
+  // Keep iframe alive and active in layout to sync data in background without visible bleed
+  if (iframe) {
+    iframe.style.setProperty('visibility', 'hidden', 'important');
+    iframe.style.setProperty('position', 'absolute', 'important');
+    iframe.style.setProperty('width', '1px', 'important');
+    iframe.style.setProperty('height', '1px', 'important');
+    iframe.style.setProperty('opacity', '0', 'important');
+    iframe.style.setProperty('pointer-events', 'none', 'important');
+    iframe.style.removeProperty('display');
+  }
   
   if (overview) overview.style.setProperty('display', 'flex', 'important');
   // Attempt to aggressively hide nested legacy profile wrappers
@@ -3571,7 +3596,15 @@ function showOverview() {
 function showIframe() {
   const iframe = document.getElementById('capIframeId');
   const overview = document.getElementById('reecap-overview');
-  if (iframe) iframe.style.removeProperty('display');
+  if (iframe) {
+    iframe.style.removeProperty('display');
+    iframe.style.removeProperty('visibility');
+    iframe.style.removeProperty('position');
+    iframe.style.removeProperty('width');
+    iframe.style.removeProperty('height');
+    iframe.style.removeProperty('opacity');
+    iframe.style.removeProperty('pointer-events');
+  }
   if (overview) overview.style.setProperty('display', 'none', 'important');
 
   document.documentElement.setAttribute('data-overview-active', 'false');
@@ -3703,6 +3736,15 @@ function rebuildMainLayout() {
 
   contentCol.appendChild(iframe);
 
+  // Ensure iframe points to StudentProfile so profile data (attendance, fee, backlogs)
+  // is seamlessly loaded and cached in the background while Overview is shown
+  try {
+    const curSrc = (iframe.getAttribute('src') || '').trim();
+    if (!curSrc || curSrc === '' || curSrc.includes('empty.html') || curSrc.endsWith('/StudentMaster.aspx')) {
+      iframe.src = 'Academics/StudentProfile.aspx?scrid=17';
+    }
+  } catch (e) {}
+
   columns.appendChild(sidebarCol);
   columns.appendChild(contentCol);
   layoutWrapper.appendChild(columns);
@@ -3725,8 +3767,13 @@ function rebuildMainLayout() {
   if (isStudentRole()) {
     try {
       initAriaSidebar(layoutWrapper);
-      if (window.__reecap_aria && typeof window.__reecap_aria.prefetchAcademicData === 'function') {
-        window.__reecap_aria.prefetchAcademicData();
+      if (window.__reecap_aria) {
+        if (typeof window.__reecap_aria.prefetchAcademicData === 'function') {
+          window.__reecap_aria.prefetchAcademicData();
+        }
+        if (typeof window.__reecap_aria.prefetchProfileData === 'function') {
+          window.__reecap_aria.prefetchProfileData();
+        }
       }
     } catch (err) {
       console.warn('ReEcap: Failed to init Aria sidebar:', err);
@@ -4412,14 +4459,17 @@ function redesignAttendancePage() {
   chrome.storage.local.get(['reecapProfileData'], (data) => {
     if (chrome.runtime && chrome.runtime.lastError) return;
 
-    // First, sync it immediately if we have it
     let prof = data ? data.reecapProfileData : null;
     renderView(prof);
-
-    // If it's missing or subjects aren't populated, we cannot prefetch it safely
-    // because background iframe fetching corrupts the ASP.NET scrid session and
-    // causes 401 Unauthorized logout loops.
   });
+
+  if (chrome && chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'local' && changes.reecapProfileData && changes.reecapProfileData.newValue) {
+        renderView(changes.reecapProfileData.newValue);
+      }
+    });
+  }
 }
 
 
