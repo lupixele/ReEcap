@@ -143,13 +143,22 @@ function initDecorators() {
             const ariaBtn = document.createElement('button');
             ariaBtn.type = 'button';
             ariaBtn.className = 'pill-btn reecap-aria-pill-btn';
+            ariaBtn.id = 'reecap-aria-masthead-btn';
             ariaBtn.innerHTML = '<span class="aria-sparkle">✦</span><span>Aria AI</span>';
             ariaBtn.title = 'Open Aria Academic Co-pilot (Ctrl + /)';
-            ariaBtn.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (typeof toggleAriaSidebar === 'function') toggleAriaSidebar();
-            });
+            const onAriaClick = (e) => {
+              if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+              console.log('ReEcap: Aria pill button clicked');
+              if (typeof toggleAriaSidebar === 'function') {
+                toggleAriaSidebar();
+              } else if (typeof window.toggleAriaSidebar === 'function') {
+                window.toggleAriaSidebar();
+              }
+            };
+            ariaBtn.addEventListener('click', onAriaClick);
             userCluster.appendChild(ariaBtn);
          }
 
@@ -4494,8 +4503,14 @@ function injectPdfGenerator() {
 
 let ariaDossierCache = null;
 let ariaMessagesHistory = [];
+let ariaLastToggleTime = 0;
 
 function toggleAriaSidebar(forceOpen) {
+  const now = Date.now();
+  if (now - ariaLastToggleTime < 250 && typeof forceOpen !== 'boolean') {
+    return;
+  }
+  ariaLastToggleTime = now;
   let sidebar = document.getElementById('reecap-aria-sidebar');
   let scrim = document.getElementById('reecap-aria-scrim');
   if (!sidebar) {
@@ -4513,14 +4528,26 @@ function toggleAriaSidebar(forceOpen) {
     return;
   }
 
-  const isOpen = sidebar.classList.contains('is-open');
+  const isOpen = sidebar.classList.contains('is-open') || sidebar.getAttribute('data-open') === 'true';
   const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
 
+  console.log('ReEcap: Aria Sidebar state transitioning to:', shouldOpen ? 'OPEN' : 'CLOSED');
+
   sidebar.classList.toggle('is-open', shouldOpen);
+  sidebar.setAttribute('data-open', String(shouldOpen));
   sidebar.setAttribute('aria-hidden', String(!shouldOpen));
+  sidebar.style.setProperty('transform', shouldOpen ? 'translateX(0)' : 'translateX(100%)', 'important');
+  sidebar.style.setProperty('display', 'flex', 'important');
+  sidebar.style.setProperty('visibility', 'visible', 'important');
+  sidebar.style.setProperty('z-index', '999999', 'important');
+
   if (scrim) {
     scrim.classList.toggle('is-open', shouldOpen);
+    scrim.setAttribute('data-open', String(shouldOpen));
     scrim.setAttribute('aria-hidden', String(!shouldOpen));
+    scrim.style.setProperty('opacity', shouldOpen ? '1' : '0', 'important');
+    scrim.style.setProperty('pointer-events', shouldOpen ? 'auto' : 'none', 'important');
+    scrim.style.setProperty('z-index', '999998', 'important');
   }
 
   if (shouldOpen) {
@@ -4544,7 +4571,7 @@ async function refreshAriaDossier() {
 
 function updateAriaStrip(dossier) {
   const strip = document.getElementById('aria-student-strip');
-  if (!strip) return;
+  if (!strip || !dossier) return;
 
   const cgpa = dossier.academic?.cgpa || '--';
   const att = dossier.attendance?.overallPercent || '--';
@@ -4575,7 +4602,7 @@ function updateAriaStrip(dossier) {
 
 function updateAriaSuggestions(dossier) {
   const panel = document.getElementById('aria-suggestions-panel');
-  if (!panel || !window.__reecap_aria) return;
+  if (!panel || !window.__reecap_aria || !dossier) return;
 
   const insights = window.__reecap_aria.generateAcademicInsights(dossier);
   let html = '';

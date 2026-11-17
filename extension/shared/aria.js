@@ -111,8 +111,10 @@
    */
   function generateAcademicInsights(dossier) {
     const suggestions = [];
-    const cgpa = parseFloat(dossier.academic.cgpa);
-    const overallAtt = parseFloat(dossier.attendance.overallPercent);
+    if (!dossier) return suggestions;
+
+    const cgpa = parseFloat(dossier.academic?.cgpa);
+    const overallAtt = parseFloat(dossier.attendance?.overallPercent);
 
     // 1. CGPA & Academic Standing
     if (!isNaN(cgpa)) {
@@ -141,8 +143,9 @@
     }
 
     // 2. Attendance alerts & bunk opportunities
-    const criticalSubjects = dossier.attendance.subjects.filter(s => s.status === 'critical');
-    const safeSubjects = dossier.attendance.subjects.filter(s => s.status === 'safe' && s.bunks > 0);
+    const subjects = Array.isArray(dossier.attendance?.subjects) ? dossier.attendance.subjects : [];
+    const criticalSubjects = subjects.filter(s => s && s.status === 'critical');
+    const safeSubjects = subjects.filter(s => s && s.status === 'safe' && s.bunks > 0);
 
     if (criticalSubjects.length > 0) {
       const names = criticalSubjects.map(s => `${s.name} (${s.percent}%, need ${s.needed} classes)`).join(', ');

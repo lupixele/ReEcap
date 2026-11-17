@@ -5336,8 +5336,16 @@ table#tblquestions input[type="text"]:not([value]) {
   padding: 6px 14px !important;
   border-radius: 9999px !important;
   cursor: pointer !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 10 !important;
+  user-select: none !important;
   transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.reecap-aria-pill-btn * {
+  pointer-events: none !important;
 }
 
 .reecap-aria-pill-btn:hover {
@@ -5367,7 +5375,7 @@ table#tblquestions input[type="text"]:not([value]) {
   width: 410px !important;
   max-width: 94vw !important;
   height: 100vh !important;
-  z-index: 10000 !important;
+  z-index: 999999 !important;
   background: var(--surface-card) !important;
   border-left: 1px solid var(--border-light) !important;
   box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18), var(--ambient-glow) !important;
@@ -5379,8 +5387,10 @@ table#tblquestions input[type="text"]:not([value]) {
   box-sizing: border-box !important;
 }
 
-.reecap-aria-sidebar.is-open {
+.reecap-aria-sidebar.is-open,
+.reecap-aria-sidebar[data-open="true"] {
   transform: translateX(0) !important;
+  visibility: visible !important;
 }
 
 /* Scrim / Backdrop */
@@ -5389,13 +5399,14 @@ table#tblquestions input[type="text"]:not([value]) {
   inset: 0 !important;
   background: rgba(0, 0, 0, 0.45) !important;
   backdrop-filter: blur(2px) !important;
-  z-index: 9999 !important;
+  z-index: 999998 !important;
   opacity: 0 !important;
   pointer-events: none !important;
   transition: opacity 0.25s ease !important;
 }
 
-.reecap-aria-scrim.is-open {
+.reecap-aria-scrim.is-open,
+.reecap-aria-scrim[data-open="true"] {
   opacity: 1 !important;
   pointer-events: auto !important;
 }
