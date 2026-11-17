@@ -23,7 +23,8 @@ let CURRENT_ROLE = 'rbtStudent'; // Default assumption, overridden by storage
 function isStudentRole() {
   const path = window.location.pathname.toLowerCase();
 
-  if (!path.includes('studentmaster.aspx')) return false;
+  // StudentMaster.aspx is unequivocally the student portal
+  if (path.includes('studentmaster.aspx')) return true;
 
   const lblUser = document.getElementById('lblUser');
   if (lblUser && lblUser.textContent) {
@@ -146,6 +147,7 @@ function initDecorators() {
             ariaBtn.title = 'Open Aria Academic Co-pilot (Ctrl + /)';
             ariaBtn.addEventListener('click', (e) => {
               e.preventDefault();
+              e.stopPropagation();
               if (typeof toggleAriaSidebar === 'function') toggleAriaSidebar();
             });
             userCluster.appendChild(ariaBtn);
@@ -3579,7 +3581,9 @@ function initResponsiveNavigation() {
 }
 
 function closeResponsiveNavigation(options) {
-  responsiveNavigationController?.close(options);
+  try {
+    responsiveNavigationController?.close(options);
+  } catch (e) {}
 }
 
 function rebuildMainLayout() {
@@ -3643,13 +3647,22 @@ function rebuildMainLayout() {
   masterTable.parentNode.insertBefore(layoutWrapper, masterTable);
   layoutWrapper.insertAdjacentElement('afterend', navigationScrim);
   masterTable.style.display = 'none';
-  initResponsiveNavigation();
+
+  try {
+    initResponsiveNavigation();
+  } catch (err) {
+    console.warn('ReEcap: Failed to init responsive navigation:', err);
+  }
 
   // Initialize Aria AI Academic Assistant for Students
   if (isStudentRole()) {
-    initAriaSidebar(layoutWrapper);
-    if (window.__reecap_aria && typeof window.__reecap_aria.prefetchAcademicData === 'function') {
-      window.__reecap_aria.prefetchAcademicData();
+    try {
+      initAriaSidebar(layoutWrapper);
+      if (window.__reecap_aria && typeof window.__reecap_aria.prefetchAcademicData === 'function') {
+        window.__reecap_aria.prefetchAcademicData();
+      }
+    } catch (err) {
+      console.warn('ReEcap: Failed to init Aria sidebar:', err);
     }
   }
 
@@ -4483,16 +4496,32 @@ let ariaDossierCache = null;
 let ariaMessagesHistory = [];
 
 function toggleAriaSidebar(forceOpen) {
-  const sidebar = document.getElementById('reecap-aria-sidebar');
-  const scrim = document.getElementById('reecap-aria-scrim');
-  if (!sidebar) return;
+  let sidebar = document.getElementById('reecap-aria-sidebar');
+  let scrim = document.getElementById('reecap-aria-scrim');
+  if (!sidebar) {
+    try {
+      console.log('ReEcap: Lazily mounting Aria sidebar...');
+      initAriaSidebar();
+      sidebar = document.getElementById('reecap-aria-sidebar');
+      scrim = document.getElementById('reecap-aria-scrim');
+    } catch (e) {
+      console.error('ReEcap: Lazy initAriaSidebar failed:', e);
+    }
+  }
+  if (!sidebar) {
+    console.warn('ReEcap: Unable to initialize Aria sidebar');
+    return;
+  }
 
   const isOpen = sidebar.classList.contains('is-open');
   const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
 
   sidebar.classList.toggle('is-open', shouldOpen);
   sidebar.setAttribute('aria-hidden', String(!shouldOpen));
-  if (scrim) scrim.classList.toggle('is-open', shouldOpen);
+  if (scrim) {
+    scrim.classList.toggle('is-open', shouldOpen);
+    scrim.setAttribute('aria-hidden', String(!shouldOpen));
+  }
 
   if (shouldOpen) {
     const input = document.getElementById('aria-input');
@@ -4635,8 +4664,9 @@ function initAriaSidebar(layoutWrapper) {
     </form>
   `;
 
-  document.body.appendChild(scrim);
-  document.body.appendChild(sidebar);
+  const mountPoint = document.body || document.documentElement;
+  mountPoint.appendChild(scrim);
+  mountPoint.appendChild(sidebar);
 
   // Close button
   const closeBtn = sidebar.querySelector('.aria-close-btn');
