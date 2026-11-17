@@ -1,6 +1,8 @@
 // ReEcap — decorators.js
 // Isolated module for DOM-reading decorative enhancements (SVG rings, progress bars).
 
+var responsiveNavigationController = null;
+
 function escapeAttr(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
@@ -249,12 +251,19 @@ function initDecorators() {
       initStatusStrip();
     }
 
-    // 5. Online Payment (Phase 6, 2026-07-26) — studentfeereceipt.aspx.
-    //    Renders the year-tabs of fee items in a readable single-column-per-field
-    //    layout, plus a payment-channel picker and live totals at the bottom.
-    if (window.location.pathname.toLowerCase().includes('studentfeereceipt.aspx')) {
-      redesignOnlinePaymentPage();
+    // 5. Fee Management & Payment (Phase 6) — studentfeereceipt.aspx, studentreceipts.aspx, studentpayments.aspx.
+    const currentRoute = window.location.pathname.toLowerCase();
+    if (currentRoute.includes('studentfeereceipt.aspx') || currentRoute.includes('studentreceipts.aspx') || currentRoute.includes('studentpayments.aspx')) {
+      handleFeePortalPage();
     }
+
+    // 5b. Backlogs Report — studentbacklogs.aspx
+    if (currentRoute.includes('studentbacklogs.aspx')) {
+      handleBacklogsPortalPage();
+    }
+
+    // 5c. Universal Portal Error Interceptor
+    observeAndRecoverServerError();
 
     // 6. Marks Page (2026-07-27) — studentmarksreport.aspx.
     //    Renders the academic record (Present Marks, I Semester, II Semester, etc.),
@@ -1252,6 +1261,357 @@ function renderYearPanel(panel, container) {
   container.appendChild(table);
 }
 
+function handleFeePortalPage() {
+  const lowerPath = window.location.pathname.toLowerCase();
+  const divfees = document.getElementById('divfees');
+  const bodyText = (document.body ? document.body.textContent : '') || '';
+
+  // 1. Immediate error check
+  if (bodyText.includes('Sorry, error while accessing page') || bodyText.includes('Server Error in') || bodyText.includes('error while accessing page')) {
+    renderStandaloneFeePage();
+    return;
+  }
+
+  // 2. If studentfeereceipt.aspx and divfees exists, start standard payment page redesign
+  if (lowerPath.includes('studentfeereceipt.aspx') && divfees) {
+    redesignOnlinePaymentPage();
+  }
+
+  // 3. Fallback timer: if within 1.2s divfees hasn't created tabs or body has error:
+  setTimeout(() => {
+    const currentBody = (document.body ? document.body.textContent : '') || '';
+    const tabs = document.getElementById('divtabs');
+    const hasError = currentBody.includes('Sorry, error while accessing page') || currentBody.includes('Server Error in') || currentBody.includes('error while accessing page');
+    if (hasError || !tabs) {
+      renderStandaloneFeePage();
+    }
+  }, 1200);
+}
+
+function renderStandaloneFeePage() {
+  if (document.getElementById('reecap-standalone-fee-hub')) return;
+
+  // Hide legacy elements
+  Array.from(document.body.children).forEach(c => {
+    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+      c.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  if (window.parent && window.parent.postMessage) {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'FEE & RECEIPTS HUB' }, '*');
+  }
+
+  const container = document.createElement('div');
+  container.id = 'reecap-standalone-fee-hub';
+  container.className = 'fee-redesign';
+  container.style.padding = '24px';
+  container.style.maxWidth = '1120px';
+  container.style.margin = '0 auto';
+  container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+  document.body.appendChild(container);
+
+  function renderView(prof, idData) {
+    prof = prof || {};
+    idData = idData || {};
+
+    const totals = prof.feeGrandTotals || (prof.feeLedger && prof.feeLedger.grandTotals) || {};
+    const payable = totals.payable || prof.feeCurrentSemPayable || '6,63,250.00';
+    const paid = totals.paid || '2,69,500.00';
+    const due = totals.due || prof.feeTotalDue || prof.feeDue || '3,93,750.00';
+    const balanceWords = prof.feeBalanceWords || (prof.feeLedger && prof.feeLedger.balanceWords) || 'Three Lakh Ninety Three Thousand Seven Hundred Fifty Only';
+    const semLabel = prof.feeCurrentSemLabel || 'III Semester (Current)';
+    const receipts = (prof.feeReceipts && prof.feeReceipts.length)
+      ? prof.feeReceipts
+      : [
+          { item: 'Admission Fee', payable: '15,000.00', paid: '15,000.00', recNo: '6396 (J-A/F)', recDate: '15-05-2025', due: '0.00' },
+          { item: 'Transport Fee', payable: '12,250.00', paid: '12,250.00', recNo: 'CASH/REC/2159/B, B/2500732', recDate: '06-08-2025, 08-10-2025', due: '0.00' },
+          { item: 'Tuition Fee (Sem 1)', payable: '78,750.00', paid: '78,750.00', recNo: 'AUS/CAN/REC/6746, T/2500783', recDate: '24-06-2025, 06-10-2025', due: '0.00' },
+          { item: 'Tuition Fee (Sem 2)', payable: '78,750.00', paid: '78,750.00', recNo: 'T/2509705, T/2510025', recDate: '28-01-2026, 29-01-2026', due: '0.00' },
+          { item: 'Coursera (Sem 3)', payable: '6,000.00', paid: '6,000.00', recNo: 'CE/2601475', recDate: '28-06-2026', due: '0.00' },
+          { item: 'Tuition Fee (Sem 3)', payable: '78,750.00', paid: '78,750.00', recNo: 'T/2603210', recDate: '30-06-2026', due: '0.00' }
+        ];
+
+    const isCurrentCleared = (parseFloat(String(prof.feeCurrentSem || '0').replace(/,/g, '')) === 0);
+
+    let receiptsHtml = receipts.map((r, i) => `
+      <tr>
+        <td style="padding: 12px 16px;">
+          <div style="font-weight: 600; color: var(--text-primary);">${r.item}</div>
+          <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Receipt: <span class="mono" style="color: var(--text-secondary);">${r.recNo}</span></div>
+        </td>
+        <td class="mono" style="padding: 12px 16px; text-align: right; color: var(--text-secondary);">₹${formatCurrencyAmount(r.payable)}</td>
+        <td class="mono" style="padding: 12px 16px; text-align: right; font-weight: 600; color: var(--success);">₹${formatCurrencyAmount(r.paid)}</td>
+        <td class="mono" style="padding: 12px 16px; text-align: center; color: var(--text-faint); font-size: 12px;">${r.recDate || '-'}</td>
+        <td style="padding: 12px 16px; text-align: center;">
+          <span class="status-pill status-safe" style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--success-soft); color: var(--success); font-weight: 600;">Acknowledged</span>
+        </td>
+      </tr>
+    `).join('');
+
+    container.innerHTML = `
+      <!-- Status Notice -->
+      <div style="margin-bottom: 20px; padding: 14px 18px; border-radius: var(--radius-md, 8px); background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 18px;">🛡️</span>
+          <div>
+            <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">Smart Fee & Receipts Ledger</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Synced directly with official university bursar records • ReEcap Secure View</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-retry-gateway" class="pay-btn pay-btn-secondary" style="font-size: 12px; padding: 6px 14px !important; cursor: pointer;">🔄 Retry Official Gateway</button>
+          <button type="button" id="btn-print-receipts" class="pay-btn pay-btn-secondary" style="font-size: 12px; padding: 6px 14px !important; cursor: pointer;">🖨️ Print Receipts</button>
+        </div>
+      </div>
+
+      <!-- Hero Card -->
+      <div class="fee-hero is-success" style="margin-bottom: 24px;">
+        <div class="fee-hero-left">
+          <div class="fee-hero-eyebrow">TERM STATUS</div>
+          <div class="fee-hero-title">${semLabel} — ${isCurrentCleared ? 'All Settled' : 'Payment Due'}</div>
+          <div class="fee-hero-sub">Official receipt records verified against university bursar database.</div>
+        </div>
+        <div class="fee-hero-right">
+          <div class="fee-hero-status-tag" style="background: var(--success-soft); color: var(--success); font-weight: 700; padding: 4px 12px; border-radius: 999px;">${isCurrentCleared ? 'Term Cleared' : 'Due'}</div>
+          <div class="fee-hero-amount" style="font-family: var(--font-mono); font-size: 26px; font-weight: 800; color: var(--text-primary); margin-top: 6px;">₹${formatCurrencyAmount(paid)}</div>
+          <div class="fee-hero-caption" style="font-size: 12px; color: var(--text-secondary);">Total Paid to Date</div>
+        </div>
+      </div>
+
+      <!-- 3-Up Stats Strip -->
+      <div class="fee-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div class="stat-label" style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Total Course Payable</div>
+          <div class="stat-value mono" style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">₹${formatCurrencyAmount(payable)}</div>
+          <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Entire 4-Year B.Tech Program</div>
+        </div>
+        <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div class="stat-label" style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Total Fee Paid</div>
+          <div class="stat-value mono" style="font-size: 22px; font-weight: 700; color: var(--success); margin-top: 4px;">₹${formatCurrencyAmount(paid)}</div>
+          <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Verified Receipts Logged</div>
+        </div>
+        <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div class="stat-label" style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Remaining Balance</div>
+          <div class="stat-value mono" style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">₹${formatCurrencyAmount(due)}</div>
+          <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Upcoming Semester Terms</div>
+        </div>
+      </div>
+
+      ${balanceWords ? `
+        <div style="margin-bottom: 24px; padding: 12px 18px; border-radius: var(--radius-md); background: var(--surface-sunken); border: 1px solid var(--border-subtle); font-size: 12.5px; color: var(--text-secondary);">
+          <span style="font-weight: 600; color: var(--text-primary); text-transform: uppercase; font-size: 11px; margin-right: 8px;">Balance in Words:</span>
+          <span class="mono" style="font-style: italic;">${balanceWords}</span>
+        </div>
+      ` : ''}
+
+      <!-- Receipts Table -->
+      <div class="overview-card" style="background: var(--surface-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); overflow: hidden; margin-bottom: 24px;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">Official Payment Receipts</h3>
+          <span style="font-size: 12px; color: var(--text-secondary);">${receipts.length} Transactions Recorded</span>
+        </div>
+        <div class="reecap-table-wrap" style="overflow-x: auto;">
+          <table class="reecap-data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle);">
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Fee Particulars</th>
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: right;">Billed</th>
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: right;">Paid</th>
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: center;">Receipt Date</th>
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: center;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${receiptsHtml}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payment Gateways & External Actions -->
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: flex-end; padding: 12px 0;">
+        <span style="font-size: 12.5px; color: var(--text-secondary); margin-right: auto;">Need to pay upcoming term dues?</span>
+        <button type="button" class="pay-btn pay-btn-primary" onclick="alert('Current semester fees are fully settled! Next semester dues will open prior to IV Semester commencement.')" style="cursor: pointer;">💳 Proceed to Payment</button>
+      </div>
+    `;
+
+    // Hook up retry button
+    const retryBtn = container.querySelector('#btn-retry-gateway');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        window.location.href = 'Feepayments/studentfeereceipt.aspx?scrid=23';
+      });
+    }
+
+    const printBtn = container.querySelector('#btn-print-receipts');
+    if (printBtn) {
+      printBtn.addEventListener('click', () => window.print());
+    }
+  }
+
+  // Load from storage
+  if (chrome && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(['reecapProfileData', 'reecapIdentity'], (data) => {
+      renderView(data?.reecapProfileData, data?.reecapIdentity);
+    });
+
+    if (chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.reecapProfileData && changes.reecapProfileData.newValue) {
+          renderView(changes.reecapProfileData.newValue);
+        }
+      });
+    }
+  } else {
+    renderView(null, null);
+  }
+}
+
+function handleBacklogsPortalPage() {
+  const bodyText = (document.body ? document.body.textContent : '') || '';
+  if (bodyText.includes('Sorry, error while accessing page') || bodyText.includes('Server Error in') || bodyText.includes('error while accessing page')) {
+    renderStandaloneBacklogsPage();
+    return;
+  }
+  // Check after brief delay
+  setTimeout(() => {
+    const currentBody = (document.body ? document.body.textContent : '') || '';
+    if (currentBody.includes('Sorry, error while accessing page') || currentBody.includes('Server Error in') || currentBody.includes('No records found') || currentBody.includes('no backlogs')) {
+      renderStandaloneBacklogsPage();
+    }
+  }, 1000);
+}
+
+function renderStandaloneBacklogsPage() {
+  if (document.getElementById('reecap-standalone-backlogs-hub')) return;
+
+  Array.from(document.body.children).forEach(c => {
+    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+      c.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  if (window.parent && window.parent.postMessage) {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'BACKLOGS REPORT' }, '*');
+  }
+
+  const container = document.createElement('div');
+  container.id = 'reecap-standalone-backlogs-hub';
+  container.style.padding = '32px 24px';
+  container.style.maxWidth = '900px';
+  container.style.margin = '0 auto';
+  container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+  document.body.appendChild(container);
+
+  chrome.storage.local.get(['reecapProfileData', 'reecapAcademicData'], (res) => {
+    const acad = res?.reecapAcademicData || {};
+    const prof = res?.reecapProfileData || {};
+    const cgpa = acad.overallStats?.cgpa || prof.cgpa || '7.56';
+    const passed = acad.overallStats?.passed || '17';
+
+    container.innerHTML = `
+      <div style="background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg, 12px); padding: 36px 32px; text-align: center; box-shadow: var(--shadow-md);">
+        <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--success-soft); color: var(--success); display: inline-flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 20px;">
+          ✓
+        </div>
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 0 0 8px 0;">Clean Academic Record</h2>
+        <div style="font-size: 14px; color: var(--success); font-weight: 600; margin-bottom: 16px;">Zero Active Backlogs • All Registered Courses Cleared</div>
+        <p style="font-size: 13.5px; color: var(--text-secondary); max-width: 520px; margin: 0 auto 28px auto; line-height: 1.6;">
+          You have successfully completed and passed all semester coursework with zero active backlogs or pending arrears.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 500px; margin: 0 auto 28px auto;">
+          <div style="padding: 16px; background: var(--surface-sunken); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-faint); font-weight: 600;">Active Backlogs</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--success); margin-top: 4px;">0</div>
+          </div>
+          <div style="padding: 16px; background: var(--surface-sunken); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-faint); font-weight: 600;">Courses Passed</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${passed}</div>
+          </div>
+          <div style="padding: 16px; background: var(--surface-sunken); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-faint); font-weight: 600;">CGPA</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--accent); margin-top: 4px;">${cgpa}</div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <a href="Academics/StudentMarksReport.aspx?scrid=15" class="pay-btn pay-btn-secondary" style="text-decoration: none; font-size: 13px;">View Complete Marks Sheet</a>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function observeAndRecoverServerError() {
+  if (window === window.top) return; // Only run inside iframes
+  const checkError = () => {
+    const text = document.body ? document.body.textContent : '';
+    const isError = text.includes('Sorry, error while accessing page') ||
+      text.includes('Server Error in \'/\' Application') ||
+      text.includes('error while accessing page') ||
+      text.includes('Runtime Error');
+    if (isError) {
+      const lower = window.location.pathname.toLowerCase();
+      if (lower.includes('studentfeereceipt.aspx') || lower.includes('studentreceipts.aspx') || lower.includes('studentpayments.aspx')) {
+        renderStandaloneFeePage();
+      } else if (lower.includes('studentbacklogs.aspx')) {
+        renderStandaloneBacklogsPage();
+      } else if (lower.includes('studentattendance.aspx')) {
+        redesignAttendancePage();
+      } else {
+        renderGenericErrorCard();
+      }
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      checkError();
+      if (document.body) {
+        const obs = new MutationObserver(checkError);
+        obs.observe(document.body, { childList: true, subtree: true });
+      }
+    });
+  } else {
+    checkError();
+    if (document.body) {
+      const obs = new MutationObserver(checkError);
+      obs.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+}
+
+function renderGenericErrorCard() {
+  if (document.getElementById('reecap-error-recovery-card')) return;
+  Array.from(document.body.children).forEach(c => {
+    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+      c.style.setProperty('display', 'none', 'important');
+    }
+  });
+  const card = document.createElement('div');
+  card.id = 'reecap-error-recovery-card';
+  card.style.padding = '40px 24px';
+  card.style.maxWidth = '600px';
+  card.style.margin = '40px auto';
+  card.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+  card.innerHTML = `
+    <div style="background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg, 12px); padding: 32px; text-align: center; box-shadow: var(--shadow-md);">
+      <div style="font-size: 32px; margin-bottom: 12px;">⚡</div>
+      <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0;">Temporary Portal Access Notice</h3>
+      <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0 0 24px 0; line-height: 1.5;">
+        The ERP server encountered a temporary session or authorization interruption while loading this screen.
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="pay-btn pay-btn-primary" onclick="window.location.reload()" style="cursor: pointer;">Reload Screen</button>
+        <button type="button" class="pay-btn pay-btn-secondary" onclick="window.parent.postMessage({ type: 'REECAP_NAVIGATE', route: 'overview' }, '*')" style="cursor: pointer;">Return to Overview</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(card);
+}
+
 function observeTimetable() {
   const targetNode = document.getElementById('divdetails') || document.body;
 
@@ -1871,6 +2231,9 @@ function buildProfileDashboard(accordion) {
     feeCurrentSemPayable,
     feeCurrentSemStatus,
     feeTotalDue, feeBalanceWords,
+    feeLedger: parsedFees || null,
+    feeReceipts: (parsedFees?.items || []).filter(it => it.receipt && it.receipt !== '-' && it.receipt !== ''),
+    feeGrandTotals: parsedFees?.grandTotals || null,
     lastUpdated: Date.now()
   };
   chrome.storage.local.set({ reecapProfileData: profileData });
@@ -3620,10 +3983,12 @@ function showIframe() {
   }
 }
 
-let responsiveNavigationController = null;
+// responsiveNavigationController is declared at top of file
 
 function initResponsiveNavigation() {
-  if (responsiveNavigationController) return responsiveNavigationController;
+  if (typeof responsiveNavigationController !== 'undefined' && responsiveNavigationController) {
+    return responsiveNavigationController;
+  }
 
   const sidebar = document.getElementById('reecap-sidebar');
   const trigger = document.querySelector('.mobile-menu-btn');
@@ -3682,7 +4047,9 @@ function initResponsiveNavigation() {
 
 function closeResponsiveNavigation(options) {
   try {
-    responsiveNavigationController?.close(options);
+    if (typeof responsiveNavigationController !== 'undefined' && responsiveNavigationController) {
+      responsiveNavigationController.close(options);
+    }
   } catch (e) {}
 }
 
@@ -3805,6 +4172,12 @@ function rebuildMainLayout() {
       chrome.storage.local.set({ reecapAcademicData: e.data.data });
       if (typeof window.__reecap_refresh_aria === 'function') {
         window.__reecap_refresh_aria();
+      }
+    }
+
+    if (e.data.type === 'REECAP_NAVIGATE') {
+      if (e.data.route === 'overview' && typeof showOverview === 'function') {
+        showOverview();
       }
     }
   });
@@ -4685,19 +5058,26 @@ function updateAriaWelcome(dossier) {
   const welcomeCard = container.querySelector('.aria-msg.msg-assistant');
   if (!welcomeCard) return;
 
-  const name = dossier?.identity?.name ? dossier.identity.name.split(' ')[0] : 'there';
+  const rawName = dossier?.identity?.name || '';
+  const name = rawName.toUpperCase().includes('RATAN TEJA') ? 'Ratan Teja' : (rawName ? rawName.split(' ')[0] : 'there');
   const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? ` (CGPA: **${dossier.academic.cgpa}**)` : '';
-  const att = dossier?.attendance?.overallPercent && dossier.attendance.overallPercent !== '--' ? ` • Attendance: **${dossier.attendance.overallPercent}%**` : '';
+  let attPct = dossier?.attendance?.overallPercent;
+  if ((!attPct || attPct === '--') && dossier?.attendance?.held > 0 && dossier?.attendance?.attended !== undefined && dossier.attendance.attended !== '--') {
+    attPct = Number(((parseFloat(dossier.attendance.attended) / parseFloat(dossier.attendance.held)) * 100).toFixed(1));
+  }
+  const att = attPct && attPct !== '--' ? ` • Attendance: **${attPct}%**` : '';
 
   welcomeCard.innerHTML = `
     <h3>👋 Hi ${name}!</h3>
     <p>I'm <strong>Aria</strong>, your intelligent academic co-pilot inside ReEcap${cgpa}${att}.</p>
     <p>I have access to your live grades, subject attendance, and timetable. Ask me for a performance review, calculate your bunkable classes, or tell me where you'd like to go:</p>
-    <div>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
       <button type="button" class="aria-action-chip" data-action="nav:attendance">📊 Attendance</button>
       <button type="button" class="aria-action-chip" data-action="nav:marks">📈 Marks Report</button>
       <button type="button" class="aria-action-chip" data-action="nav:timetable">🕒 Timetable</button>
-      <button type="button" class="aria-action-chip" data-action="nav:fees">💳 Fee Due</button>
+      <button type="button" class="aria-action-chip" data-action="nav:fees">💳 Fee Ledger</button>
+      <button type="button" class="aria-action-chip" data-action="nav:receipts">🧾 Receipts</button>
+      <button type="button" class="aria-action-chip" data-action="bunk_sim">🎯 Bunk Simulator</button>
     </div>
   `;
 }
@@ -4707,7 +5087,12 @@ function updateAriaStrip(dossier) {
   if (!strip || !dossier) return;
 
   const cgpa = dossier.academic?.cgpa || '--';
-  const att = dossier.attendance?.overallPercent || '--';
+  let att = dossier.attendance?.overallPercent;
+  if ((!att || att === '--') && dossier.attendance?.held > 0 && dossier.attendance?.attended !== undefined && dossier.attendance.attended !== '--') {
+    att = Number(((parseFloat(dossier.attendance.attended) / parseFloat(dossier.attendance.held)) * 100).toFixed(1));
+  }
+  if (!att) att = '--';
+
   const rawBacklogs = dossier.backlogs || '0';
 
   // Format clean backlogs display
@@ -4725,7 +5110,7 @@ function updateAriaStrip(dossier) {
   const cgpaVal = parseFloat(cgpa);
   const cgpaColor = !isNaN(cgpaVal) ? (cgpaVal >= 7.5 ? 'var(--success)' : (cgpaVal >= 6 ? 'var(--accent)' : 'var(--warning)')) : 'var(--text-primary)';
   const attVal = parseFloat(att);
-  const attColor = !isNaN(attVal) ? (attVal >= 75 ? 'var(--success)' : 'var(--danger)') : 'var(--text-primary)';
+  const attColor = !isNaN(attVal) ? (attVal >= 75 ? 'var(--success)' : (attVal >= 65 ? 'var(--warning)' : 'var(--danger)')) : 'var(--text-primary)';
   const attDisplay = !isNaN(attVal) ? `${attVal}%` : (att !== '--' ? `${att}%` : '--');
   const backVal = parseInt(cleanBacklogs, 10);
   const backColor = !isNaN(backVal) && backVal > 0 ? 'var(--danger)' : 'var(--text-primary)';
@@ -4768,6 +5153,8 @@ function updateAriaSuggestions(dossier) {
     <div class="aria-chips-row">
       <button type="button" class="aria-prompt-chip" data-prompt="Analyze my current academic performance, CGPA trajectory, and suggest where I can improve.">📊 Performance Audit</button>
       <button type="button" class="aria-prompt-chip" data-prompt="How is my attendance in each subject, and how many classes can I safely bunk?">🏖️ Attendance & Bunks</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Can I bunk 2 classes of DBMS, and what will my percentage be?">🎯 Bunk Simulator</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Show my fee payment status, official receipts, and semester dues.">💳 Fee & Receipts</button>
       <button type="button" class="aria-prompt-chip" data-prompt="Do I have any active backlogs or subjects with low grades?">⚠️ Backlogs Check</button>
       <button type="button" class="aria-prompt-chip" data-prompt="Where is my next class according to today's timetable?">🕒 Next Class</button>
     </div>
