@@ -4763,40 +4763,29 @@ function redesignAttendancePage() {
     `;
 
     attendanceSubjects.forEach(s => {
-      const sColor = s.percent >= 75 ? "var(--success)" : (s.percent >= 65 ? "var(--warning)" : (s.held === 0 ? "var(--text-faint)" : "var(--error)"));
-      
+      const sAttend = s.attended !== undefined ? s.attended : (s.attend !== undefined ? s.attend : 0);
+      const sHeld = s.held !== undefined ? s.held : 0;
+      const sPct = s.percent !== undefined ? s.percent : (sHeld > 0 ? Number(((sAttend / sHeld) * 100).toFixed(2)) : 0);
+      const sColor = sPct >= 75 ? "var(--success)" : (sPct >= 65 ? "var(--warning)" : (sHeld === 0 ? "var(--text-faint)" : "var(--error)"));
+
       // Calculate bunk/attend limits for 75% target
       let targetStatusStr = '<span class="status-neutral">N/A</span>';
-      
-      // We want: (attended + attend_more) / (held + attend_more) >= 0.75
-      // To find attend_more: attended + A = 0.75*(held + A) 
-      // => attended + A = 0.75*held + 0.75*A 
-      // => 0.25*A = 0.75*held - attended
-      // => A = 3*held - 4*attended
-      const neededClasses = (3 * s.held) - (4 * s.attend);
-      
-      // We want: attended / (held + skip_more) >= 0.75
-      // => attended = 0.75*held + 0.75*skip_more
-      // => 0.75*skip_more = attended - 0.75*held
-      // => skip_more = (4/3)*attended - held
-      const skippableClasses = Math.floor((4/3) * s.attend - s.held);
+      const neededClasses = Math.max(0, (3 * sHeld) - (4 * sAttend));
+      const skippableClasses = Math.max(0, Math.floor((4/3) * sAttend - sHeld));
 
-      if (s.held === 0) {
+      if (sHeld === 0) {
          targetStatusStr = '<span class="status-neutral" style="color: var(--text-faint); font-size: 12px;">Classes pending</span>';
-      } else if (s.percent >= 75) {
+      } else if (sPct >= 75) {
          if (skippableClasses > 0) {
             targetStatusStr = `<div class="bunkable-tag">Can skip next <b>${skippableClasses}</b></div>`;
          } else {
-            // They are at exactly 75%. Falling below it is bad, so this is a warning.
             targetStatusStr = `<div class="bunkable-tag warning">Can skip <b>0</b></div>`;
          }
       } else {
-         // If they are between 65% and 75%, it's just a warning. Below 65% is critical red.
-         const pillTone = s.percent >= 65 ? 'warning' : 'critical';
+         const pillTone = sPct >= 65 ? 'warning' : 'critical';
          if (neededClasses > 0) {
             targetStatusStr = `<div class="bunkable-tag ${pillTone}">Attend next <b>${neededClasses}</b></div>`;
          } else {
-            // Technically impossible string if percent < 75, but safeguard.
             targetStatusStr = `<div class="bunkable-tag ${pillTone}">Attend next <b>0</b></div>`; 
          }
       }
@@ -4804,12 +4793,12 @@ function redesignAttendancePage() {
       html += `
         <tr>
           <td>
-            <div style="font-weight: 600; color: var(--text-primary);">${s.subjName}</div>
+            <div style="font-weight: 600; color: var(--text-primary);">${s.subjName || s.name || 'Subject'}</div>
             ${s.faculty ? `<div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; font-weight: 500;">${s.faculty}</div>` : ''}
           </td>
-          <td class="mono" style="text-align: right;">${s.held}</td>
-          <td class="mono" style="text-align: right; font-weight: 600;">${s.attend}</td>
-          <td class="mono" style="text-align: right; font-weight: 700; color: ${sColor};">${s.percent}%</td>
+          <td class="mono" style="text-align: right;">${sHeld}</td>
+          <td class="mono" style="text-align: right; font-weight: 600;">${sAttend}</td>
+          <td class="mono" style="text-align: right; font-weight: 700; color: ${sColor};">${sPct}%</td>
           <td style="text-align: center;">${targetStatusStr}</td>
           <td>
             <div class="progress-track" style="margin-top: 2px;">
