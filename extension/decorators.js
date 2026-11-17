@@ -138,6 +138,19 @@ function initDecorators() {
             userCluster.appendChild(lblUser);
          }
 
+         if (isStudentRole()) {
+            const ariaBtn = document.createElement('button');
+            ariaBtn.type = 'button';
+            ariaBtn.className = 'pill-btn reecap-aria-pill-btn';
+            ariaBtn.innerHTML = '<span class="aria-sparkle">✦</span><span>Aria AI</span>';
+            ariaBtn.title = 'Open Aria Academic Co-pilot (Ctrl + /)';
+            ariaBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              if (typeof toggleAriaSidebar === 'function') toggleAriaSidebar();
+            });
+            userCluster.appendChild(ariaBtn);
+         }
+
          if (changePass) {
             changePass.className = 'pill-btn';
             userCluster.appendChild(changePass);
@@ -642,6 +655,37 @@ function buildMarksPageUI(divMarks) {
         else if (k.includes('FAILED')) overallStats.failed = v;
       }
     });
+  }
+
+  // Extract structured semester courses for Aria AI academic intelligence
+  const structuredSemesters = [];
+  grades.forEach(g => {
+    const rows = Array.from(g.table.querySelectorAll('tr'));
+    if (rows.length > 1) {
+      const courses = [];
+      rows.slice(1).forEach(r => {
+        const cols = Array.from(r.querySelectorAll('td, th')).map(c => (c.textContent || '').trim());
+        if (cols.length >= 4) {
+          courses.push({
+            sno: cols[0] || '',
+            code: cols[1] || '',
+            name: cols[2] || '',
+            grade: cols[3] || '',
+            credits: cols[4] || '',
+            status: cols[5] || (cols[3] === 'F' ? 'FAIL' : 'PASS')
+          });
+        }
+      });
+      if (courses.length > 0) {
+        structuredSemesters.push({ semester: g.title, courses });
+      }
+    }
+  });
+
+  const academicData = { overallStats, semesterGrades: structuredSemesters, lastUpdated: Date.now() };
+  chrome.storage.local.set({ reecapAcademicData: academicData });
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'REECAP_ACADEMIC_DATA', data: academicData }, '*');
   }
 
   // 4) Build the new redesign wrapper.
@@ -3599,6 +3643,14 @@ function rebuildMainLayout() {
   masterTable.style.display = 'none';
   initResponsiveNavigation();
 
+  // Initialize Aria AI Academic Assistant for Students
+  if (isStudentRole()) {
+    initAriaSidebar(layoutWrapper);
+    if (window.__reecap_aria && typeof window.__reecap_aria.prefetchAcademicData === 'function') {
+      window.__reecap_aria.prefetchAcademicData();
+    }
+  }
+
   // Listen for updates from iframe
   window.addEventListener('message', (e) => {
     if (!e.data) return;
@@ -3614,6 +3666,16 @@ function rebuildMainLayout() {
       chrome.storage.local.set({ reecapProfileData: profileData });
       if (typeof updateOverviewCards === 'function') {
         updateOverviewCards(profileData);
+      }
+      if (typeof window.__reecap_refresh_aria === 'function') {
+        window.__reecap_refresh_aria();
+      }
+    }
+
+    if (e.data.type === 'REECAP_ACADEMIC_DATA') {
+      chrome.storage.local.set({ reecapAcademicData: e.data.data });
+      if (typeof window.__reecap_refresh_aria === 'function') {
+        window.__reecap_refresh_aria();
       }
     }
   });
@@ -4409,3 +4471,353 @@ function injectPdfGenerator() {
   script.onload = () => script.remove();
   document.head.appendChild(script);
 }
+
+
+// ────────────────────────────────────────────────────────────────
+// Aria AI Academic Co-pilot Sidebar (Integration)
+// ────────────────────────────────────────────────────────────────
+
+let ariaDossierCache = null;
+let ariaMessagesHistory = [];
+
+function toggleAriaSidebar(forceOpen) {
+  const sidebar = document.getElementById('reecap-aria-sidebar');
+  const scrim = document.getElementById('reecap-aria-scrim');
+  if (!sidebar) return;
+
+  const isOpen = sidebar.classList.contains('is-open');
+  const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
+
+  sidebar.classList.toggle('is-open', shouldOpen);
+  sidebar.setAttribute('aria-hidden', String(!shouldOpen));
+  if (scrim) scrim.classList.toggle('is-open', shouldOpen);
+
+  if (shouldOpen) {
+    const input = document.getElementById('aria-input');
+    if (input) setTimeout(() => input.focus(), 150);
+    refreshAriaDossier();
+  }
+}
+
+async function refreshAriaDossier() {
+  if (!window.__reecap_aria || typeof window.__reecap_aria.getStudentDossier !== 'function') return;
+  try {
+    const dossier = await window.__reecap_aria.getStudentDossier();
+    ariaDossierCache = dossier;
+    updateAriaStrip(dossier);
+    updateAriaSuggestions(dossier);
+  } catch (e) {
+    console.warn('ReEcap: Failed to refresh Aria dossier:', e);
+  }
+}
+
+function updateAriaStrip(dossier) {
+  const strip = document.getElementById('aria-student-strip');
+  if (!strip) return;
+
+  const cgpa = dossier.academic?.cgpa || '--';
+  const att = dossier.attendance?.overallPercent || '--';
+  const backlogs = dossier.backlogs || '0';
+
+  const cgpaVal = parseFloat(cgpa);
+  const cgpaColor = !isNaN(cgpaVal) ? (cgpaVal >= 7.5 ? 'var(--success)' : (cgpaVal >= 6 ? 'var(--accent)' : 'var(--warning)')) : 'var(--text-primary)';
+  const attVal = parseFloat(att);
+  const attColor = !isNaN(attVal) ? (attVal >= 75 ? 'var(--success)' : 'var(--danger)') : 'var(--text-primary)';
+  const backVal = parseInt(backlogs, 10);
+  const backColor = !isNaN(backVal) && backVal > 0 ? 'var(--danger)' : 'var(--text-primary)';
+
+  strip.innerHTML = `
+    <div class="aria-stat-badge">
+      <span class="stat-label">CGPA</span>
+      <span class="stat-value" style="color: ${cgpaColor};">${cgpa}</span>
+    </div>
+    <div class="aria-stat-badge">
+      <span class="stat-label">Attendance</span>
+      <span class="stat-value" style="color: ${attColor};">${att}%</span>
+    </div>
+    <div class="aria-stat-badge">
+      <span class="stat-label">Backlogs</span>
+      <span class="stat-value" style="color: ${backColor};">${backlogs}</span>
+    </div>
+  `;
+}
+
+function updateAriaSuggestions(dossier) {
+  const panel = document.getElementById('aria-suggestions-panel');
+  if (!panel || !window.__reecap_aria) return;
+
+  const insights = window.__reecap_aria.generateAcademicInsights(dossier);
+  let html = '';
+
+  if (insights.length > 0) {
+    const topInsight = insights[0];
+    const cardClass = topInsight.type === 'danger' ? 'card-danger' : (topInsight.type === 'success' ? 'card-success' : '');
+    html += `
+      <div class="aria-suggestion-card ${cardClass}">
+        <strong>${topInsight.title}:</strong> ${topInsight.message.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}
+        ${topInsight.action ? `<br><button type="button" class="aria-action-chip" data-action="${topInsight.action.actionKey}" style="margin-top: 6px;">${topInsight.action.label}</button>` : ''}
+      </div>
+    `;
+  }
+
+  html += `
+    <div class="aria-chips-row">
+      <button type="button" class="aria-prompt-chip" data-prompt="Analyze my current academic performance, CGPA trajectory, and suggest where I can improve.">📊 Performance Audit</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="How is my attendance in each subject, and how many classes can I safely bunk?">🏖️ Attendance & Bunks</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Do I have any active backlogs or subjects with low grades?">⚠️ Backlogs Check</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Where is my next class according to today's timetable?">🕒 Next Class</button>
+    </div>
+  `;
+
+  panel.innerHTML = html;
+}
+
+function initAriaSidebar(layoutWrapper) {
+  if (document.getElementById('reecap-aria-sidebar')) return;
+
+  const scrim = document.createElement('div');
+  scrim.id = 'reecap-aria-scrim';
+  scrim.className = 'reecap-aria-scrim';
+  scrim.setAttribute('aria-hidden', 'true');
+  scrim.addEventListener('click', () => toggleAriaSidebar(false));
+
+  const sidebar = document.createElement('aside');
+  sidebar.id = 'reecap-aria-sidebar';
+  sidebar.className = 'reecap-aria-sidebar';
+  sidebar.setAttribute('aria-label', 'Aria Academic Co-pilot');
+  sidebar.setAttribute('aria-hidden', 'true');
+
+  sidebar.innerHTML = `
+    <div class="aria-sidebar-header">
+      <div class="aria-brand">
+        <div class="aria-avatar">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="aria-title">Aria AI</div>
+          <div class="aria-subtitle">Academic Co-pilot</div>
+        </div>
+      </div>
+      <div class="aria-header-actions">
+        <button type="button" class="aria-close-btn" aria-label="Close Aria">&times;</button>
+      </div>
+    </div>
+
+    <div class="aria-student-strip" id="aria-student-strip">
+      <div class="aria-stat-badge"><span class="stat-label">CGPA</span><span class="stat-value">--</span></div>
+      <div class="aria-stat-badge"><span class="stat-label">Attendance</span><span class="stat-value">--</span></div>
+      <div class="aria-stat-badge"><span class="stat-label">Backlogs</span><span class="stat-value">--</span></div>
+    </div>
+
+    <div class="aria-suggestions-panel" id="aria-suggestions-panel"></div>
+
+    <div class="aria-messages" id="aria-messages" role="log" aria-live="polite"></div>
+
+    <form class="aria-composer" id="aria-composer">
+      <div class="aria-composer-box">
+        <textarea id="aria-input" placeholder="Ask Aria about grades, attendance, or navigation..." rows="1"></textarea>
+        <button type="submit" id="aria-send-btn" aria-label="Send message">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="aria-composer-footer">
+        <span>Powered by Aria Edge</span> • <kbd>Ctrl</kbd> + <kbd>/</kbd> to toggle • <kbd>Esc</kbd>
+      </div>
+    </form>
+  `;
+
+  document.body.appendChild(scrim);
+  document.body.appendChild(sidebar);
+
+  // Close button
+  const closeBtn = sidebar.querySelector('.aria-close-btn');
+  if (closeBtn) closeBtn.addEventListener('click', () => toggleAriaSidebar(false));
+
+  // Global Keyboard Shortcuts
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+      e.preventDefault();
+      toggleAriaSidebar();
+    } else if (e.key === 'Escape' && sidebar.classList.contains('is-open')) {
+      toggleAriaSidebar(false);
+    }
+  });
+
+  // Prompt chip clicks in suggestions panel
+  sidebar.addEventListener('click', (e) => {
+    const chip = e.target.closest('.aria-prompt-chip');
+    if (chip && chip.dataset.prompt) {
+      const input = document.getElementById('aria-input');
+      if (input) {
+        input.value = chip.dataset.prompt;
+        submitAriaMessage();
+      }
+    }
+
+    const actionChip = e.target.closest('.aria-action-chip');
+    if (actionChip && actionChip.dataset.action) {
+      if (window.__reecap_aria && window.__reecap_aria.executePortalAction) {
+        window.__reecap_aria.executePortalAction(actionChip.dataset.action);
+      }
+    }
+  });
+
+  // Auto-resize input textarea
+  const input = document.getElementById('aria-input');
+  if (input) {
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitAriaMessage();
+      }
+    });
+  }
+
+  // Composer submit
+  const form = document.getElementById('aria-composer');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      submitAriaMessage();
+    });
+  }
+
+  // Initial welcome message
+  loadInitialWelcome();
+  refreshAriaDossier();
+}
+
+async function loadInitialWelcome() {
+  const container = document.getElementById('aria-messages');
+  if (!container || container.children.length > 0) return;
+
+  const dossier = window.__reecap_aria ? await window.__reecap_aria.getStudentDossier() : null;
+  const name = dossier?.identity?.name ? dossier.identity.name.split(' ')[0] : 'there';
+  const cgpa = dossier?.academic?.cgpa !== '--' ? ` (CGPA: **${dossier.academic.cgpa}**)` : '';
+  const att = dossier?.attendance?.overallPercent !== '--' ? ` • Attendance: **${dossier.attendance.overallPercent}%**` : '';
+
+  const welcomeHtml = `
+    <div class="aria-msg msg-assistant">
+      <h3>👋 Hi ${name}!</h3>
+      <p>I'm <strong>Aria</strong>, your intelligent academic co-pilot inside ReEcap${cgpa}${att}.</p>
+      <p>I have access to your live grades, subject attendance, and timetable. Ask me for a performance review, calculate your bunkable classes, or tell me where you'd like to go:</p>
+      <div>
+        <button type="button" class="aria-action-chip" data-action="nav:attendance">📊 Attendance</button>
+        <button type="button" class="aria-action-chip" data-action="nav:marks">📈 Marks Report</button>
+        <button type="button" class="aria-action-chip" data-action="nav:timetable">🕒 Timetable</button>
+        <button type="button" class="aria-action-chip" data-action="nav:fees">💳 Fee Due</button>
+      </div>
+    </div>
+  `;
+  container.innerHTML = welcomeHtml;
+}
+
+function parseMarkdownAndActions(text) {
+  if (!text) return '';
+  let out = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Action chips [action:domain:target|Label]
+  out = out.replace(/\[action:([a-zA-Z0-9_:-]+)\|([^\]]+)\]/g, (match, act, label) => {
+    return `<button type="button" class="aria-action-chip" data-action="${act}">${label}</button>`;
+  });
+
+  // Headers
+  out = out.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  out = out.replace(/^## (.*$)/gim, '<h3>$1</h3>');
+
+  // Bold & Italic
+  out = out.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  out = out.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+  // Lists
+  out = out.replace(/^\s*-\s+(.*$)/gim, '<li>$1</li>');
+  out = out.replace(/(<li>.*<\/li>)/gms, '<ul>$1</ul>');
+
+  // Paragraphs & Linebreaks
+  out = out.replace(/\n\n+/g, '</p><p>');
+  out = `<p>${out}</p>`;
+  out = out.replace(/<p>\s*<\/p>/g, '');
+
+  return out;
+}
+
+async function submitAriaMessage() {
+  const input = document.getElementById('aria-input');
+  const sendBtn = document.getElementById('aria-send-btn');
+  const container = document.getElementById('aria-messages');
+  if (!input || !sendBtn || !container) return;
+
+  const query = input.value.trim();
+  if (!query) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Append user message
+  const userMsgEl = document.createElement('div');
+  userMsgEl.className = 'aria-msg msg-user';
+  userMsgEl.textContent = query;
+  container.appendChild(userMsgEl);
+  container.scrollTop = container.scrollHeight;
+
+  // Append assistant streaming placeholder with typing indicator
+  const assistantMsgEl = document.createElement('div');
+  assistantMsgEl.className = 'aria-msg msg-assistant';
+  assistantMsgEl.innerHTML = `
+    <div class="aria-typing-indicator">
+      <span class="aria-typing-dot"></span>
+      <span class="aria-typing-dot"></span>
+      <span class="aria-typing-dot"></span>
+    </div>
+  `;
+  container.appendChild(assistantMsgEl);
+  container.scrollTop = container.scrollHeight;
+
+  sendBtn.disabled = true;
+
+  ariaMessagesHistory.push({ role: 'user', content: query });
+
+  const dossier = ariaDossierCache || (window.__reecap_aria ? await window.__reecap_aria.getStudentDossier() : {});
+
+  if (window.__reecap_aria && window.__reecap_aria.streamAriaChat) {
+    window.__reecap_aria.streamAriaChat({
+      messages: ariaMessagesHistory,
+      dossier: dossier,
+      onChunk: (delta, fullText) => {
+        assistantMsgEl.innerHTML = parseMarkdownAndActions(fullText);
+        container.scrollTop = container.scrollHeight;
+      },
+      onDone: (finalText) => {
+        assistantMsgEl.innerHTML = parseMarkdownAndActions(finalText);
+        ariaMessagesHistory.push({ role: 'assistant', content: finalText });
+        sendBtn.disabled = false;
+        container.scrollTop = container.scrollHeight;
+      },
+      onError: (err) => {
+        assistantMsgEl.innerHTML = `<p style="color: var(--danger);">Unable to reach Aria inference. Try again shortly.</p>`;
+        sendBtn.disabled = false;
+      }
+    });
+  } else {
+    assistantMsgEl.innerHTML = `<p>Aria module not loaded.</p>`;
+    sendBtn.disabled = false;
+  }
+}
+
+window.toggleAriaSidebar = toggleAriaSidebar;
+window.__reecap_refresh_aria = refreshAriaDossier;

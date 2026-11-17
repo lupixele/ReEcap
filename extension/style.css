@@ -5317,3 +5317,447 @@ table#tblquestions input[type="text"]:not([value]) {
   opacity: 0.3 !important;
   box-shadow: none !important;
 }
+
+
+/* ==========================================================================
+   Aria AI Academic Co-pilot Sidebar & Navigation System
+   ========================================================================== */
+
+/* Top Masthead Aria Trigger Pill */
+.reecap-aria-pill-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface-card)) !important;
+  color: var(--accent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.reecap-aria-pill-btn:hover {
+  background: var(--accent) !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+}
+
+.reecap-aria-pill-btn .aria-sparkle {
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1;
+  transition: transform 0.25s ease;
+}
+
+.reecap-aria-pill-btn:hover .aria-sparkle {
+  color: #fff;
+  transform: rotate(25deg) scale(1.15);
+}
+
+/* Sidebar Drawer Container */
+.reecap-aria-sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 410px !important;
+  max-width: 94vw !important;
+  height: 100vh !important;
+  z-index: 10000 !important;
+  background: var(--surface-card) !important;
+  border-left: 1px solid var(--border-light) !important;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18), var(--ambient-glow) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transform: translateX(100%) !important;
+  transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1) !important;
+  user-select: text !important;
+  box-sizing: border-box !important;
+}
+
+.reecap-aria-sidebar.is-open {
+  transform: translateX(0) !important;
+}
+
+/* Scrim / Backdrop */
+.reecap-aria-scrim {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(2px) !important;
+  z-index: 9999 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease !important;
+}
+
+.reecap-aria-scrim.is-open {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Header */
+.aria-sidebar-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 16px 20px !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  background: var(--surface-card) !important;
+  flex-shrink: 0 !important;
+}
+
+.aria-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.aria-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark, var(--accent))) !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent) !important;
+  flex-shrink: 0 !important;
+}
+
+.aria-title {
+  font-family: var(--font-display, inherit) !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.2 !important;
+}
+
+.aria-subtitle {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 11px !important;
+  color: var(--text-faint) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+.aria-close-btn {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-secondary) !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.aria-close-btn:hover {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.05)) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Student Academic Health Strip */
+.aria-student-strip {
+  display: flex !important;
+  gap: 8px !important;
+  padding: 12px 18px !important;
+  background: var(--surface-sunken) !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  flex-shrink: 0 !important;
+  overflow-x: auto !important;
+}
+
+.aria-stat-badge {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-width: 80px !important;
+  padding: 8px 10px !important;
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-sm, 8px) !important;
+}
+
+.aria-stat-badge .stat-label {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 10px !important;
+  color: var(--text-faint) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  font-weight: 700 !important;
+}
+
+.aria-stat-badge .stat-value {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: var(--text-primary) !important;
+  margin-top: 2px !important;
+}
+
+/* Suggestions & Insight Chips Panel */
+.aria-suggestions-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 12px 18px 6px !important;
+  border-bottom: 1px dashed var(--border-light) !important;
+  flex-shrink: 0 !important;
+}
+
+.aria-suggestion-card {
+  padding: 10px 12px !important;
+  background: var(--surface-sunken) !important;
+  border-radius: var(--radius-sm, 8px) !important;
+  border-left: 3px solid var(--accent) !important;
+  font-size: 12px !important;
+  color: var(--text-secondary) !important;
+  line-height: 1.4 !important;
+}
+
+.aria-suggestion-card.card-danger {
+  border-left-color: var(--danger, #e53e3e) !important;
+}
+
+.aria-suggestion-card.card-success {
+  border-left-color: var(--success, #38a169) !important;
+}
+
+.aria-suggestion-card strong {
+  color: var(--text-primary) !important;
+}
+
+.aria-chips-row {
+  display: flex !important;
+  gap: 6px !important;
+  overflow-x: auto !important;
+  padding-bottom: 6px !important;
+}
+
+.aria-prompt-chip {
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 5px 10px !important;
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 9999px !important;
+  color: var(--text-secondary) !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+}
+
+.aria-prompt-chip:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-card)) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Messages Area */
+.aria-messages {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 16px 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+.aria-msg {
+  display: flex !important;
+  flex-direction: column !important;
+  max-width: 88% !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  word-break: break-word !important;
+}
+
+.aria-msg.msg-user {
+  align-self: flex-end !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-bottom-right-radius: 4px !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 25%, transparent) !important;
+}
+
+.aria-msg.msg-assistant {
+  align-self: flex-start !important;
+  background: var(--surface-sunken) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-bottom-left-radius: 4px !important;
+}
+
+.aria-msg.msg-assistant h3 {
+  margin: 0 0 8px !important;
+  font-size: 14px !important;
+  font-weight: 750 !important;
+  color: var(--text-primary) !important;
+}
+
+.aria-msg.msg-assistant p {
+  margin: 0 0 8px !important;
+}
+
+.aria-msg.msg-assistant p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.aria-msg.msg-assistant ul {
+  margin: 4px 0 8px 18px !important;
+  padding: 0 !important;
+}
+
+.aria-msg.msg-assistant li {
+  margin-bottom: 4px !important;
+}
+
+/* In-chat interactive action chips */
+.aria-action-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 4px 4px 4px 0 !important;
+  padding: 5px 11px !important;
+  border-radius: 9999px !important;
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent) !important;
+  color: var(--accent) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  text-decoration: none !important;
+}
+
+.aria-action-chip:hover {
+  background: var(--accent) !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent) !important;
+}
+
+/* Composer */
+.aria-composer {
+  padding: 12px 18px 16px !important;
+  background: var(--surface-card) !important;
+  border-top: 1px solid var(--border-light) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.aria-composer-box {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+  background: var(--surface-sunken) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 12px !important;
+  padding: 6px 10px !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.aria-composer-box:focus-within {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent) !important;
+}
+
+.aria-composer-box textarea {
+  flex: 1 !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  resize: none !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  color: var(--text-primary) !important;
+  line-height: 1.4 !important;
+  max-height: 120px !important;
+  padding: 4px 0 !important;
+}
+
+.aria-composer-box textarea::placeholder {
+  color: var(--text-faint) !important;
+}
+
+.aria-composer-box button[type="submit"] {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.18s ease, opacity 0.18s ease !important;
+}
+
+.aria-composer-box button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+}
+
+.aria-composer-box button[type="submit"]:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+}
+
+.aria-composer-footer {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 10px !important;
+  color: var(--text-faint) !important;
+  text-align: center !important;
+}
+
+.aria-composer-footer kbd {
+  background: var(--surface-sunken) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 4px !important;
+  padding: 1px 4px !important;
+  font-size: 9px !important;
+}
+
+/* Typing Indicator */
+.aria-typing-indicator {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 6px 10px !important;
+  background: var(--surface-sunken) !important;
+  border-radius: 12px !important;
+  width: fit-content !important;
+}
+
+.aria-typing-dot {
+  width: 5px !important;
+  height: 5px !important;
+  border-radius: 50% !important;
+  background: var(--text-faint) !important;
+  animation: ariaBlink 1.4s infinite both !important;
+}
+
+.aria-typing-dot:nth-child(2) { animation-delay: 0.2s !important; }
+.aria-typing-dot:nth-child(3) { animation-delay: 0.4s !important; }
+
+@keyframes ariaBlink {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.1); }
+}

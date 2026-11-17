@@ -26,7 +26,9 @@
         "activeTab"
     ],
     "host_permissions": [
-        "*://info.aec.edu.in/*"
+        "*://info.aec.edu.in/*",
+        "https://aria.lupixele.online/*",
+        "https://aria.lupixele.online/*"
     ],
     "content_scripts": [
         {
@@ -35,6 +37,7 @@
             ],
             "js": [
                 "shared/theme.js",
+                "shared/aria.js",
                 "content.js",
                 "decorators.js"
             ],
@@ -46,6 +49,7 @@
         {
             "resources": [
                 "shared/theme.js",
+                "shared/aria.js",
                 "shared/tokens.css",
                 "style.css",
                 "lib/jspdf.umd.min.js",
