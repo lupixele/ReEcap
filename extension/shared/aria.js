@@ -761,23 +761,29 @@
     const acad = dossier.academic || {};
     const subList = att.subjects?.map(s => `- ${s.name}: ${s.percent}% (Held: ${s.held}, Attended: ${s.attended}, Bunks: ${s.bunks}, Needed: ${s.needed})`).join('\n') || 'None recorded';
     
-    let gradesSummary = 'No detailed semester grades recorded yet.';
-    if (acad.semesters && acad.semesters.length > 0) {
-      gradesSummary = acad.semesters.map(sem => {
-        const cList = sem.courses.map(c => `  * ${c.name} (${c.code}): Grade ${c.grade}, Credits ${c.credits}`).join('\n');
-        return `Semester: ${sem.semester}\n${cList}`;
+    let gradesSummary = '';
+    const sems = (acad.semesters && acad.semesters.length > 0) ? acad.semesters : (dossier.academic?.semesters || []);
+    const validCourses = [];
+    if (sems.length > 0) {
+      gradesSummary = sems.map(sem => {
+        const cList = (sem.courses || sem.subjects || []).map(c => {
+          validCourses.push(c);
+          return `  * ${c.name} (${c.code}): Grade ${c.grade}, Points: ${c.gradePoints || c.points || '-'}, Credits: ${c.credits || '-'}`;
+        }).join('\n');
+        return `Semester: ${sem.semester || sem.title} (SGPA: ${sem.sgpa || sem.summary?.sgpa || '--'})\n${cList || '  (No courses listed)'}`;
       }).join('\n\n');
-    } else {
+    }
+    if (!validCourses.length) {
       gradesSummary = `Current CGPA is ${acad.cgpa || '7.56'} (${acad.credits || '41/41'} credits cleared, Zero Backlogs). Core completed courses include:
-- Digital Logic Design (Grade B)
-- Basic Electrical Engineering (Grade B)
-- Programming for Problem Solving Using C (Grade B+)
-- Data Structures (Grade B+)
-- Modern Physics (Grade B+)
-- Linear Algebra (Grade B+)
-- Python Programming (Grade A+)
-- Computer Organization & Architecture (Grade A)
-- Differential Equations (Grade A)`;
+- Digital Logic Design (Grade B, 6.0 pts)
+- Basic Electrical Engineering (Grade B, 6.0 pts)
+- Programming for Problem Solving Using C (Grade B+, 7.0 pts)
+- Data Structures (Grade B+, 7.0 pts)
+- Modern Physics (Grade B+, 7.0 pts)
+- Linear Algebra (Grade B+, 7.0 pts)
+- Python Programming (Grade A+, 9.0 pts)
+- Computer Organization & Architecture (Grade A, 8.0 pts)
+- Differential Equations & Vector Calculus (Grade A, 8.0 pts)`;
     }
 
     const rawName = id.name || 'Student';
@@ -902,8 +908,8 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       const semesters = acad.semesters || dossier.academic?.semesters || [];
       const allCourses = [];
       semesters.forEach(s => {
-        (s.courses || []).forEach(c => {
-          allCourses.push({ ...c, semester: s.semester });
+        (s.courses || s.subjects || []).forEach(c => {
+          allCourses.push({ ...c, semester: s.semester || s.title || 'Semester' });
         });
       });
 
@@ -1114,7 +1120,7 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       const routeMap = {
         attendance: { url: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', title: 'ATTENDANCE' },
         marks: { url: 'Academics/StudentMarksReport.aspx?scrid=15', title: 'MARKS REPORT' },
-        timetable: { url: 'Academics/TimeTableReport.aspx?scrid=18', title: 'TIME TABLE' },
+        timetable: { url: 'Academics/studenttimetableoption.aspx', title: 'TIMETABLE' },
         fees: { url: 'Feepayments/studentfeereceipt.aspx?scrid=23', title: 'FEE & RECEIPTS HUB' },
         receipts: { url: 'FeePayments/studentreceipts.aspx?scrid=28', title: 'RECEIPTS' },
         backlogs: { url: 'Academics/studentbacklogs.aspx?scrid=4', title: 'BACKLOGS REPORT' },

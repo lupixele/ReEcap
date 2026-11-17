@@ -728,13 +728,15 @@ function buildMarksPageUI(divMarks) {
           return;
         }
         const cols = Array.from(r.querySelectorAll('td, th')).map(c => (c.textContent || '').trim());
-        if (cols.length >= 7 && Number.isFinite(parseInt(cols[0], 10))) {
+        if (cols.length >= 6 && Number.isFinite(parseInt(cols[0], 10))) {
+          const hasSession = cols.length >= 8;
           const code = cols[1] || '';
           const name = cols[2] || '';
-          const grade = (cols.length >= 8 ? cols[4] : cols[3]) || cols[3] || '';
-          const points = parseFloat(cols.length >= 8 ? cols[5] : cols[4]) || 0;
-          const credits = parseFloat(cols.length >= 8 ? cols[6] : cols[5]) || 0;
-          const result = (cols.length >= 8 ? cols[7] : cols[6]) || (grade === 'F' ? 'FAIL' : 'PASS');
+          const grade = (hasSession ? cols[4] : cols[3]) || cols[3] || '';
+          const points = parseFloat(hasSession ? cols[5] : cols[4]) || 0;
+          const credits = parseFloat(hasSession ? cols[6] : cols[5]) || 0;
+          const rawResult = (hasSession ? cols[7] : cols[6]) || (grade === 'F' ? 'FAIL' : 'PASS');
+          const isPass = isSubjectPassed(grade, rawResult);
           courses.push({
             sno: cols[0] || '',
             code,
@@ -742,7 +744,7 @@ function buildMarksPageUI(divMarks) {
             grade,
             gradePoints: points,
             credits,
-            status: result.startsWith('P') ? 'PASS' : result
+            status: isPass ? 'PASS' : 'FAIL'
           });
         }
       });
@@ -832,6 +834,30 @@ function buildMarksPageUI(divMarks) {
   });
 }
 
+function isSubjectPassed(grade, result) {
+  const r = String(result || '').trim().toUpperCase();
+  const g = String(grade || '').trim().toUpperCase();
+
+  if (r === 'F' || r === 'FAIL' || r === 'FAILED' || r.includes('FAIL') || r.includes('ARREAR')) return false;
+  if (g === 'F' || g === 'AB' || g === 'ABSENT' || g === 'FAIL' || g === 'RA') return false;
+  if (r === 'P' || r === 'PASS' || r === 'PASSED' || r.includes('PASS') || r === 'CLEARED' || r === 'COMPLETED') return true;
+
+  const passingGrades = ['O', 'A+', 'A', 'B+', 'B', 'C', 'D', 'P', 'S', 'EX'];
+  return passingGrades.includes(g);
+}
+
+function getGradeBadgeClass(grade) {
+  const g = String(grade || '').trim().toUpperCase();
+  if (g === 'O') return 'grade-outstanding';
+  if (g === 'S' || g === 'A+') return 'grade-superior';
+  if (g === 'A') return 'grade-verygood';
+  if (g === 'B+' || g === 'B') return 'grade-good';
+  if (g === 'C') return 'grade-average';
+  if (g === 'P' || g === 'D') return 'grade-pass';
+  if (g === 'F' || g === 'AB' || g === 'RA') return 'grade-fail';
+  return 'grade-neutral';
+}
+
 function renderTranscriptBlock(sem) {
   // Build a clean subject-by-subject table for a semester. We avoid cloning
   // the legacy rows wholesale (which carry legacy class names like
@@ -863,30 +889,43 @@ function renderTranscriptBlock(sem) {
     `;
   }
 
-  // Pull column headers (S.No, Code, Name, Session, Grade, Points, Credits, Result)
-  const headers = Array.from(headerRow.querySelectorAll('th, td')).map(td => td.textContent.trim().replace(/<br\s*\/?>/gi, ' ').replace(/\s+/g, ' ').trim());
-
-  // Determine the session/column (varies by semester) and pull data.
+  // Determine the columns (supporting both 7-col and 8-col formats with or without Session)
   const subjectRows = dataRows.map(r => {
-    const cells = Array.from(r.querySelectorAll('td')).map(td => td.textContent.trim());
-    return cells;
-  }).filter(c => c.length >= 7);
+    return Array.from(r.querySelectorAll('td')).map(td => td.textContent.trim());
+  }).filter(c => c.length >= 6);
+
+  const hasSession = subjectRows.length > 0 && subjectRows[0].length >= 8;
 
   const bodyHtml = subjectRows.map(cells => {
-    const isPass = (cells[7] || '').toUpperCase().startsWith('P');
+    const sno = cells[0] || '';
+    const code = cells[1] || '';
+    const name = cells[2] || '';
+    const session = hasSession ? cells[3] : '';
+    const grade = hasSession ? cells[4] : cells[3];
+    const points = hasSession ? cells[5] : cells[4];
+    const credits = hasSession ? cells[6] : cells[5];
+    const rawResult = (hasSession ? cells[7] : cells[6]) || (grade === 'F' ? 'FAIL' : 'PASS');
+    const isPass = isSubjectPassed(grade, rawResult);
+    const resultDisplay = rawResult && rawResult !== '-' ? rawResult.toUpperCase() : (isPass ? 'PASS' : 'FAIL');
+    const gradeClass = getGradeBadgeClass(grade);
+
     return `
       <tr>
-        <td class="mono">${cells[0] || ''}</td>
-        <td class="mono">${cells[1] || ''}</td>
-        <td>${cells[2] || ''}</td>
-        <td class="mono">${cells[3] || ''}</td>
-        <td class="mono"><b>${cells[4] || ''}</b></td>
-        <td class="mono">${cells[5] || ''}</td>
-        <td class="mono">${cells[6] || ''}</td>
-        <td><span class="reecap-status-pill ${isPass ? 'status-pill-pass' : 'status-pill-fail'}">${cells[7] || '-'}</span></td>
+        <td class="mono">${sno}</td>
+        <td class="mono">${code}</td>
+        <td style="font-weight: 500;">${name}</td>
+        ${hasSession ? `<td class="mono" style="font-size: 11px;">${session}</td>` : ''}
+        <td class="mono"><span class="reecap-grade-pill ${gradeClass}"><b>${grade || '-'}</b></span></td>
+        <td class="mono">${points || '0'}</td>
+        <td class="mono">${credits || '0'}</td>
+        <td><span class="reecap-status-pill ${isPass ? 'status-pill-pass' : 'status-pill-fail'}">${resultDisplay}</span></td>
       </tr>
     `;
   }).join('');
+
+  const headers = hasSession
+    ? ['S.No', 'Code', 'Subject Title', 'Session', 'Grade', 'Points', 'Credits', 'Status']
+    : ['S.No', 'Code', 'Subject Title', 'Grade', 'Points', 'Credits', 'Status'];
 
   return `
     <div class="transcript-card">
@@ -2910,15 +2949,18 @@ function rebuildPastSemTab() {
         failed: mFail ? mFail[1] : '--',
         result: mRes ? mRes[1] : '--'
       };
-    } else if (currentSem && row.children.length >= 7 && !isNaN(parseInt(row.children[0].textContent.trim(), 10))) {
+    } else if (currentSem && row.children.length >= 6 && !isNaN(parseInt(row.children[0].textContent.trim(), 10))) {
       const cells = row.querySelectorAll('td');
+      const hasSession = cells.length >= 8;
       const code = cells[1]?.textContent.trim() || '';
       const name = cells[2]?.textContent.trim() || '';
-      const session = cells[3]?.textContent.trim() || '';
-      const grade = cells[4]?.textContent.trim() || '';
-      const points = cells[5]?.textContent.trim() || '-';
-      const credits = cells[6]?.textContent.trim() || '-';
-      const result = cells[7]?.textContent.trim() || (cells[6]?.textContent.trim() === 'PASS' || cells[6]?.textContent.trim() === 'FAIL' ? cells[6]?.textContent.trim() : '');
+      const session = hasSession ? (cells[3]?.textContent.trim() || '') : '';
+      const grade = (hasSession ? cells[4] : cells[3])?.textContent.trim() || '';
+      const points = (hasSession ? cells[5] : cells[4])?.textContent.trim() || '-';
+      const credits = (hasSession ? cells[6] : cells[5])?.textContent.trim() || '-';
+      const rawResult = (hasSession ? cells[7] : cells[6])?.textContent.trim() || '';
+      const isPass = isSubjectPassed(grade, rawResult);
+      const result = isPass ? 'PASS' : 'FAIL';
       if (code || name) {
         currentSem.subjects.push({ code, name, session, grade, points, credits, result });
       }
@@ -2926,6 +2968,54 @@ function rebuildPastSemTab() {
   });
 
   if (!semesters.length && cgpa === '--') return; // defensive
+
+  // Persist structured academic data for Aria AI and the rest of ReEcap
+  if (semesters.length > 0 && isExtensionValid()) {
+    try {
+      chrome.storage.local.get(['reecapAcademicData', 'reecapProfileData'], (stored) => {
+        if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) return;
+        const curAcad = stored?.reecapAcademicData || {};
+        const curProf = stored?.reecapProfileData || {};
+
+        const structuredForAria = semesters.map(sem => ({
+          semester: sem.title,
+          sgpa: sem.summary?.sgpa || '--',
+          courses: sem.subjects.map(sub => ({
+            code: sub.code,
+            name: sub.name,
+            grade: sub.grade,
+            gradePoints: parseFloat(sub.points) || 0,
+            credits: parseFloat(sub.credits) || 0,
+            status: isSubjectPassed(sub.grade, sub.result) ? 'PASS' : 'FAIL'
+          }))
+        }));
+
+        chrome.storage.local.set({
+          reecapAcademicData: {
+            ...curAcad,
+            overallStats: {
+              ...(curAcad.overallStats || {}),
+              cgpa: cgpa !== '--' ? cgpa : (curAcad.overallStats?.cgpa || '7.56'),
+              credits: totalCredits !== '--' ? totalCredits : (curAcad.overallStats?.credits || '41/41'),
+              passed: totalPassed !== '--' ? totalPassed : (curAcad.overallStats?.passed || '11'),
+              failed: totalFailed !== '--' ? totalFailed : (curAcad.overallStats?.failed || '0')
+            },
+            semesterGrades: structuredForAria,
+            lastUpdated: Date.now()
+          },
+          reecapProfileData: {
+            ...curProf,
+            cgpa: cgpa !== '--' ? cgpa : (curProf.cgpa || '7.56'),
+            semesterGrades: structuredForAria
+          }
+        }, () => {
+          void chrome.runtime?.lastError;
+        });
+      });
+    } catch (e) {
+      // Ignore extension context invalidation
+    }
+  }
 
   pane.dataset.reecapEnhanced = 'true';
   const newView = document.createElement('div');
@@ -2968,13 +3058,16 @@ function rebuildPastSemTab() {
             SGPA: <span style="color: var(--accent);">${sem.summary.sgpa || '--'}</span>
           </div>
         </div>
+    `;
+    const semHasSession = sem.subjects.some(s => s.session && s.session.trim() !== '');
+    html += `
         <div class="reecap-table-wrap">
           <table class="reecap-data-table">
             <thead>
               <tr>
                 <th>Code</th>
                 <th>Subject Title</th>
-                <th>Session</th>
+                ${semHasSession ? '<th>Session</th>' : ''}
                 <th>Grade</th>
                 <th>Points</th>
                 <th>Credits</th>
@@ -2982,23 +3075,24 @@ function rebuildPastSemTab() {
               </tr>
             </thead>
             <tbody>
-    `;
-    sem.subjects.forEach(s => {
-      const isPass = s.result && (s.result.toUpperCase().includes('PASS') || s.grade === 'O' || s.grade === 'A' || s.grade === 'B' || s.grade === 'C' || s.grade === 'D' || s.grade === 'S');
-      const badgeClass = isPass ? 'status-pill-pass' : 'status-pill-fail';
-      const resultLabel = s.result ? s.result.toUpperCase() : (isPass ? 'PASS' : 'FAIL');
-      html += `
-        <tr>
-          <td class="mono" style="color: var(--text-secondary);">${s.code}</td>
-          <td style="font-weight: 600; color: var(--text-primary);">${s.name}</td>
-          <td class="mono" style="font-size: 11px;">${s.session}</td>
-          <td class="mono" style="font-weight: 700; color: var(--text-primary);">${s.grade}</td>
-          <td class="mono">${s.points}</td>
-          <td class="mono">${s.credits}</td>
-          <td><span class="reecap-status-pill ${badgeClass}">${resultLabel}</span></td>
-        </tr>
-      `;
-    });
+        `;
+        sem.subjects.forEach(s => {
+          const isPass = isSubjectPassed(s.grade, s.result);
+          const badgeClass = isPass ? 'status-pill-pass' : 'status-pill-fail';
+          const resultLabel = isPass ? 'PASS' : 'FAIL';
+          const gradeClass = getGradeBadgeClass(s.grade);
+          html += `
+            <tr>
+              <td class="mono" style="color: var(--text-secondary);">${s.code}</td>
+              <td style="font-weight: 600; color: var(--text-primary);">${s.name}</td>
+              ${semHasSession ? `<td class="mono" style="font-size: 11px;">${s.session || '-'}</td>` : ''}
+              <td class="mono"><span class="reecap-grade-pill ${gradeClass}"><b>${s.grade}</b></span></td>
+              <td class="mono">${s.points}</td>
+              <td class="mono">${s.credits}</td>
+              <td><span class="reecap-status-pill ${badgeClass}">${resultLabel}</span></td>
+            </tr>
+          `;
+        });
     html += `
             </tbody>
           </table>
@@ -3776,13 +3870,14 @@ function buildSidebar() {
   submenus.forEach(s => s.remove());
   
   const groups = {
-    'Academics': ['ATTENDANCE', 'TIME TABLE', 'CHOOSE TIMETABLE', 'COURSE REGISTRATION', 'MARKS', 'LESSON PLAN', 'EXAMS DETAILS', 'HALLTICKET', 'VIEW ANSWER SHEET', 'VIEW EXAM PAPER', 'BACKLOGS'],
+    'Academics': ['ATTENDANCE', 'TIMETABLE', 'COURSE REGISTRATION', 'MARKS', 'LESSON PLAN', 'EXAMS DETAILS', 'HALLTICKET', 'VIEW ANSWER SHEET', 'VIEW EXAM PAPER', 'BACKLOGS'],
     'Finance': ['FEE DETAILS', 'ONLINE PAYMENT', 'COLLEGE FEE', 'EXAM FEE', 'RE-VALUATION', 'ONLINE TRANSACTIONS', 'RECEIPTS'],
     'Account': ['PROFILE', 'HOSTEL ROOM BOOKING', 'LIBRARY BOOKS', 'BOOK SEARCH']
   };
   
   const icons = {
     'ATTENDANCE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7l-2-2"></path><path d="M12 15l2-2"></path><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>',
+    'TIMETABLE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
     'TIME TABLE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
     'CHOOSE TIMETABLE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>',
     'COURSE REGISTRATION': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
@@ -3819,6 +3914,14 @@ function buildSidebar() {
       return;
     }
 
+    // Normalization: Consolidate Timetable options into a single working link
+    if (text === 'CHOOSE TIMETABLE' || text === 'TIME TABLE') {
+      text = 'TIMETABLE';
+      link.href = 'Academics/studenttimetableoption.aspx';
+      link.setAttribute('href', 'Academics/studenttimetableoption.aspx');
+      if (categorized['Academics'].some(it => it.text === 'TIMETABLE')) return;
+    }
+
     let matched = false;
     for (const [groupName, texts] of Object.entries(groups)) {
       if (texts.includes(text)) {
@@ -3830,7 +3933,7 @@ function buildSidebar() {
     if (!matched) categorized['Account'].push({ text, link });
   });
 
-  chrome.storage.sync.get({ sidebarOpen: { Academics: true, Finance: false, Account: false } }, ({ sidebarOpen }) => {
+  chrome.storage.sync.get({ sidebarOpen: { Academics: true, Finance: false, Account: false }, reecapHiddenNav: [] }, ({ sidebarOpen, reecapHiddenNav = [] }) => {
     menu.innerHTML = '';
 
     const navigationHeading = document.createElement('li');
@@ -3877,6 +3980,10 @@ function buildSidebar() {
         if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
       });
       const profileLi = document.createElement('li');
+      profileLi.dataset.navKey = 'PROFILE';
+      if (Array.isArray(reecapHiddenNav) && reecapHiddenNav.includes('PROFILE')) {
+        profileLi.classList.add('is-nav-hidden');
+      }
       profileLi.appendChild(profileLink);
       menu.appendChild(profileLi);
     }
@@ -3911,18 +4018,11 @@ function buildSidebar() {
         const a = item.link;
         a.className = 'reecap-sidebar-link';
 
-        // Stamp data-route-key at link creation so the sync side becomes a
-        // single dict lookup. We resolve against window.location for relative
-        // URLs (the portal mixes absolute and relative hrefs).
         const routeKey = (window.__reecap_theme && window.__reecap_theme.routeKeyForHref)
           ? window.__reecap_theme.routeKeyForHref(a.getAttribute('href') || '')
           : null;
         if (routeKey) a.setAttribute('data-route-key', routeKey);
 
-        // Seed the initial active state from the resolved route key. We do not
-        // call syncSidebarActiveState at build time because the iframe has not
-        // navigated yet — instead, we set the active class iff the *shell*
-        // pathname itself matches the link's route key.
         if (routeKey) {
           const shellKey = (window.__reecap_theme && window.__reecap_theme.matchActivePage)
             ? window.__reecap_theme.matchActivePage(window.location.pathname)
@@ -3937,6 +4037,10 @@ function buildSidebar() {
           if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
         });
         const li = document.createElement('li');
+        li.dataset.navKey = item.text;
+        if (Array.isArray(reecapHiddenNav) && reecapHiddenNav.includes(item.text)) {
+          li.classList.add('is-nav-hidden');
+        }
         li.appendChild(a);
         sectionInner.appendChild(li);
       });
@@ -3957,9 +4061,6 @@ function buildSidebar() {
         const isCollapsed = !groupHeader.classList.contains('is-collapsed');
         setGroupCollapsed(isCollapsed);
 
-        // An extension reload invalidates this page's existing content-script
-        // context. Keep the visual toggle working and skip preference storage
-        // until the user refreshes into the current extension context.
         if (typeof chrome === 'undefined' || !chrome.runtime?.id || !chrome.storage?.sync) return;
 
         try {
@@ -3969,22 +4070,177 @@ function buildSidebar() {
               const currentSidebarOpen = data.sidebarOpen || {};
               currentSidebarOpen[groupName] = !isCollapsed;
               chrome.storage.sync.set({ sidebarOpen: currentSidebarOpen }, () => {
-                // Consume a potential context-invalidated error after reload.
                 void chrome.runtime?.lastError;
               });
             } catch (e) {
-              // The extension was reloaded between get() and its callback.
             }
           });
         } catch (e) {
-          // The extension context has been invalidated; a page refresh reconnects it.
         }
       });
 
       menu.appendChild(groupHeader);
       menu.appendChild(section);
     }
+
+    // Insert Customize Menu Button at bottom of sidebar
+    const customizeFooter = document.createElement('div');
+    customizeFooter.className = 'reecap-sidebar-footer';
+    customizeFooter.innerHTML = `
+      <button type="button" class="reecap-sidebar-customize-btn" id="reecap-btn-customize-nav" title="Hide or show navigation links">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+        </svg>
+        <span>Customize Menu</span>
+      </button>
+    `;
+    const custBtn = customizeFooter.querySelector('#reecap-btn-customize-nav');
+    if (custBtn) {
+      custBtn.addEventListener('click', () => {
+        openNavCustomizeModal(categorized, profileItem);
+      });
+    }
+    menu.appendChild(customizeFooter);
     
+  });
+}
+
+function openNavCustomizeModal(categorized, profileItem) {
+  const existing = document.getElementById('reecap-nav-customize-modal');
+  if (existing) existing.remove();
+
+  if (!isExtensionValid()) return;
+
+  chrome.storage.sync.get({ reecapHiddenNav: [] }, ({ reecapHiddenNav = [] }) => {
+    const hiddenSet = new Set(Array.isArray(reecapHiddenNav) ? reecapHiddenNav : []);
+
+    const scrim = document.createElement('div');
+    scrim.id = 'reecap-nav-customize-modal';
+    scrim.className = 'reecap-modal-scrim';
+
+    const dialog = document.createElement('div');
+    dialog.className = 'reecap-modal-dialog';
+
+    const header = document.createElement('div');
+    header.className = 'reecap-modal-header';
+    header.innerHTML = `
+      <div class="reecap-modal-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+        </svg>
+        <span>Customize Navigation</span>
+      </div>
+      <button type="button" class="reecap-modal-close-btn" aria-label="Close modal">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    `;
+
+    const body = document.createElement('div');
+    body.className = 'reecap-modal-body';
+    body.innerHTML = `
+      <p class="reecap-modal-desc">
+        Select which links appear in your sidebar. Uncheck any option to hide it from your view. You can restore or modify this anytime.
+      </p>
+    `;
+
+    const modalGroups = {};
+    if (profileItem) {
+      modalGroups['Account'] = [{ text: profileItem.text }];
+    }
+    for (const [groupName, items] of Object.entries(categorized)) {
+      if (!modalGroups[groupName]) modalGroups[groupName] = [];
+      items.forEach(it => {
+        if (!modalGroups[groupName].some(x => x.text === it.text)) {
+          modalGroups[groupName].push({ text: it.text });
+        }
+      });
+    }
+
+    const checkboxMap = new Map();
+
+    for (const [groupName, items] of Object.entries(modalGroups)) {
+      if (items.length === 0) continue;
+      const grpEl = document.createElement('div');
+      grpEl.className = 'reecap-modal-group';
+      grpEl.innerHTML = `<div class="reecap-modal-group-title">${groupName}</div>`;
+
+      const listEl = document.createElement('div');
+      listEl.className = 'reecap-modal-item-list';
+
+      items.forEach(it => {
+        const row = document.createElement('label');
+        row.className = 'reecap-nav-toggle-row';
+        const isChecked = !hiddenSet.has(it.text);
+        row.innerHTML = `
+          <input type="checkbox" data-nav-text="${escapeAttr(it.text)}" ${isChecked ? 'checked' : ''} />
+          <span>${it.text}</span>
+        `;
+        const cb = row.querySelector('input');
+        checkboxMap.set(it.text, cb);
+        listEl.appendChild(row);
+      });
+
+      grpEl.appendChild(listEl);
+      body.appendChild(grpEl);
+    }
+
+    const footer = document.createElement('div');
+    footer.className = 'reecap-modal-footer';
+    footer.innerHTML = `
+      <button type="button" class="reecap-modal-btn reecap-modal-btn-secondary" id="btn-restore-all-nav">
+        Restore All
+      </button>
+      <div class="reecap-modal-btn-group">
+        <button type="button" class="reecap-modal-btn reecap-modal-btn-secondary" id="btn-cancel-nav">
+          Cancel
+        </button>
+        <button type="button" class="reecap-modal-btn reecap-modal-btn-primary" id="btn-save-nav">
+          Save Changes
+        </button>
+      </div>
+    `;
+
+    dialog.appendChild(header);
+    dialog.appendChild(body);
+    dialog.appendChild(footer);
+    scrim.appendChild(dialog);
+    document.body.appendChild(scrim);
+
+    const closeModal = () => scrim.remove();
+
+    header.querySelector('.reecap-modal-close-btn').addEventListener('click', closeModal);
+    footer.querySelector('#btn-cancel-nav').addEventListener('click', closeModal);
+    scrim.addEventListener('click', (e) => {
+      if (e.target === scrim) closeModal();
+    });
+
+    footer.querySelector('#btn-restore-all-nav').addEventListener('click', () => {
+      checkboxMap.forEach(cb => { cb.checked = true; });
+    });
+
+    footer.querySelector('#btn-save-nav').addEventListener('click', () => {
+      const newHidden = [];
+      checkboxMap.forEach((cb, text) => {
+        if (!cb.checked) newHidden.push(text);
+      });
+
+      if (isExtensionValid()) {
+        chrome.storage.sync.set({ reecapHiddenNav: newHidden }, () => {
+          document.querySelectorAll('#menu li[data-nav-key]').forEach(li => {
+            const key = li.dataset.navKey;
+            li.classList.toggle('is-nav-hidden', newHidden.includes(key));
+          });
+          closeModal();
+        });
+      } else {
+        closeModal();
+      }
+    });
   });
 }
 
@@ -4573,7 +4829,7 @@ function renderQuickLinksCard(container) {
 
   const links = [
     { label: 'Attendance', href: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7l-2-2"></path><path d="M12 15l2-2"></path><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>' },
-    { label: 'Timetable', href: 'Academics/TimeTableReport.aspx?scrid=18', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' },
+    { label: 'Timetable', href: 'Academics/studenttimetableoption.aspx', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' },
     { label: 'Marks', href: 'Academics/StudentMarksReport.aspx?scrid=15', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' },
     { label: 'Fee Details', href: 'FeePayments/studentpayments.aspx?scrid=11', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' },
     { label: 'Profile', href: 'Academics/StudentProfile.aspx?scrid=17', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' }
@@ -4635,9 +4891,11 @@ function initStatusStrip(targetSlot) {
   stripContainer.appendChild(strip);
 
   updateStatusStrip(strip);
-  setInterval(() => {
+  const stripClockInterval = setInterval(() => {
     if (isExtensionValid()) {
       updateStatusStrip(strip);
+    } else {
+      clearInterval(stripClockInterval);
     }
   }, 60000);
 
