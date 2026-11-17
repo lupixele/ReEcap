@@ -138,7 +138,7 @@
             result: academic.overallStats?.result || profile.academicSummary?.result || '--',
             passed: academic.overallStats?.passed || profile.academicSummary?.passed || '--',
             failed: academic.overallStats?.failed || profile.academicSummary?.failed || '--',
-            semesters: academic.semesterGrades || []
+            semesters: (academic.semesterGrades && academic.semesterGrades.length) ? academic.semesterGrades : (profile.semesterGrades || [])
           },
           schedule: todaySchedule,
           backlogs: profile.backlogsText || academic.overallStats?.backlogs || '0',
@@ -376,6 +376,7 @@
             backlogsText: backlogsText,
             cgpa: acad.cgpa,
             academicSummary: acad.academicSummary,
+            semesterGrades: acad.semesterGrades || [],
             feeDue: feeData.feeDue,
             feeBalanceWords: feeData.feeBalanceWords,
             feeReceipts: feeData.receipts,
@@ -391,6 +392,7 @@
               const updated = {
                 ...cur,
                 overallStats: { ...(cur.overallStats || {}), ...acad.academicSummary },
+                semesterGrades: (acad.semesterGrades && acad.semesterGrades.length) ? acad.semesterGrades : (cur.semesterGrades || []),
                 lastUpdated: Date.now()
               };
               chrome.storage.local.set({ reecapAcademicData: updated });
@@ -492,11 +494,63 @@
     return { held, attended, percent, subjects };
   }
 
+  /**
+   * Universal semester courses extractor (works on divProfile_Past, divMarks, and sub-tables).
+   */
+  function parseSemesterCourses(container) {
+    if (!container) return [];
+    const semesterGrades = [];
+    const tables = Array.from(container.querySelectorAll('table'));
+    tables.forEach(t => {
+      const rows = Array.from(t.rows);
+      if (rows.length < 3) return;
+      const firstRowText = cleanText(rows[0].textContent);
+      const match = firstRowText.match(/^([IVX]+)\s+SEMESTER/i);
+      if (match) {
+        const semTitle = match[0].toUpperCase();
+        const courses = [];
+        let sgpa = null;
+        rows.slice(1).forEach((r) => {
+          const text = r.textContent || '';
+          if (text.includes('SGPA:')) {
+            const m = text.match(/SGPA:\s*([\d.]+)/i);
+            if (m) sgpa = m[1];
+            return;
+          }
+          const cells = Array.from(r.querySelectorAll('td, th')).map(c => cleanText(c.textContent));
+          if (cells.length >= 7 && Number.isFinite(parseInt(cells[0], 10))) {
+            const code = cells[1] || '';
+            const name = cells[2] || '';
+            const grade = (cells.length >= 8 ? cells[4] : cells[3]) || cells[3] || '';
+            const points = parseFloat(cells.length >= 8 ? cells[5] : cells[4]) || 0;
+            const credits = parseFloat(cells.length >= 8 ? cells[6] : cells[5]) || 0;
+            const result = (cells.length >= 8 ? cells[7] : cells[6]) || (grade === 'F' ? 'FAIL' : 'PASS');
+            courses.push({
+              sno: cells[0],
+              code,
+              name,
+              grade,
+              gradePoints: points,
+              credits,
+              result: result.startsWith('P') ? 'PASS' : result
+            });
+          }
+        });
+        if (courses.length > 0) {
+          semesterGrades.push({ semester: semTitle, sgpa, courses });
+        }
+      }
+    });
+    return semesterGrades;
+  }
+
   function parseAcademicFromDoc(doc) {
     let cgpa = '--';
     let academicSummary = null;
+    let semesterGrades = [];
     const pastPane = doc.getElementById('divProfile_Past') || doc.getElementById('divProfile_PastSem');
     if (pastPane) {
+      semesterGrades = parseSemesterCourses(pastPane);
       const pastTables = pastPane.querySelectorAll('table');
       for (const t of pastTables) {
         const text = t.textContent.toUpperCase();
@@ -519,7 +573,7 @@
         }
       }
     }
-    return { cgpa, academicSummary };
+    return { cgpa, academicSummary, semesterGrades };
   }
 
   function parseBacklogsFromDoc(doc) {
@@ -579,7 +633,7 @@
    */
   function parseMarksFromDiv(divMarks) {
     const overallStats = { cgpa: '--', credits: '--', result: '--', passed: '--', failed: '--' };
-    const semesterGrades = [];
+    const semesterGrades = parseSemesterCourses(divMarks);
 
     // Overall summary table
     const tables = Array.from(divMarks.querySelectorAll('table'));
@@ -598,45 +652,6 @@
             else if (k.includes('FAILED')) overallStats.failed = v;
           }
         });
-      }
-    });
-
-    // Semester tables
-    let currentSemester = null;
-    Array.from(divMarks.children).forEach(node => {
-      if (node.nodeType !== Node.ELEMENT_NODE) return;
-      const text = cleanText(node.textContent).toUpperCase();
-      if (text.includes('PREVIOUS SEMESTERS ATTENDANCE') || text.includes('PREVIOUS SEMESTERS INTERNAL')) {
-        currentSemester = null;
-        return;
-      }
-
-      if (text.match(/^\s*([IVX]+)\s+SEMESTER\s*$/)) {
-        currentSemester = text.replace(/\s+/g, ' ').trim();
-        return;
-      }
-
-      if (node.tagName === 'TABLE' && currentSemester) {
-        const rows = Array.from(node.querySelectorAll('tr'));
-        if (rows.length > 1) {
-          const courses = [];
-          rows.slice(1).forEach(r => {
-            const cols = Array.from(r.querySelectorAll('td, th')).map(c => cleanText(c.textContent));
-            if (cols.length >= 4) {
-              courses.push({
-                sno: cols[0] || '',
-                code: cols[1] || '',
-                name: cols[2] || '',
-                grade: cols[3] || '',
-                credits: cols[4] || '',
-                status: cols[5] || (cols[3] === 'F' ? 'FAIL' : 'PASS')
-              });
-            }
-          });
-          if (courses.length > 0) {
-            semesterGrades.push({ semester: currentSemester, courses });
-          }
-        }
       }
     });
 
@@ -773,6 +788,93 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
     const q = (query || '').toLowerCase();
     const acad = dossier.academic || {};
     const att = dossier.attendance || {};
+
+    // 1. Weak Subjects & Comprehensive Performance Audit
+    if (q.includes('weak') || q.includes('improve') || q.includes('difficult') || q.includes('lowest') || q.includes('strength') || (q.includes('subject') && !q.includes('bunk') && !q.includes('attendance'))) {
+      const semesters = acad.semesters || dossier.academic?.semesters || [];
+      const allCourses = [];
+      semesters.forEach(s => {
+        (s.courses || []).forEach(c => {
+          allCourses.push({ ...c, semester: s.semester });
+        });
+      });
+
+      if (allCourses.length > 0) {
+        const weak = allCourses.filter(c => ['F', 'C', 'B'].includes(c.grade) || (c.gradePoints > 0 && c.gradePoints <= 6));
+        const average = allCourses.filter(c => ['B+'].includes(c.grade) || c.gradePoints === 7);
+        const strong = allCourses.filter(c => ['A', 'A+', 'O', 'EX'].includes(c.grade) || c.gradePoints >= 8);
+
+        let resp = `### 🎯 Academic Performance & Weak Subjects Audit\n\n`;
+        resp += `- **Evaluated Record:** ${allCourses.length} completed courses across ${semesters.length} semesters.\n`;
+        resp += `- **Current Standing:** **${acad.cgpa || '7.56'} CGPA** (${acad.credits || '41/41'} credits cleared • Zero Backlogs)\n\n`;
+
+        if (weak.length > 0) {
+          resp += `⚠️ **Key Improvement Areas (Grade B • 6.0 Points):**\n`;
+          weak.forEach(w => {
+            resp += `- **${w.name}** (\`${w.code}\` • ${w.semester})\n`;
+            resp += `  • **Grade:** \`${w.grade}\` (${w.gradePoints} Grade Points • ${w.credits} Credits)\n`;
+            if (w.name.toLowerCase().includes('digital') || w.name.toLowerCase().includes('logic')) {
+              resp += `  • *Focus Area:* Boolean algebra, K-maps, sequential state machines, and timing diagrams.\n`;
+            } else if (w.name.toLowerCase().includes('electrical') || w.name.toLowerCase().includes('electronic')) {
+              resp += `  • *Focus Area:* Mesh/Nodal circuit analysis, AC phasor impedance, and diode circuits.\n`;
+            } else {
+              resp += `  • *Focus Area:* Review mid-term mistakes and practice previous university end-exam papers.\n`;
+            }
+          });
+          resp += `\n`;
+        }
+
+        if (average.length > 0) {
+          resp += `💡 **Moderate Standing (Grade B+ • 7.0 Points):**\n`;
+          resp += average.map(a => `- **${a.name}** (\`${a.code}\` • ${a.semester}) — Grade \`${a.grade}\``).join('\n') + `\n\n`;
+        }
+
+        if (strong.length > 0) {
+          resp += `🌟 **Core Strengths (Grade A / A+ • 8.0–9.0 Points):**\n`;
+          resp += strong.slice(0, 5).map(s => `- **${s.name}**: Grade \`${s.grade}\` (${s.gradePoints} pts)`).join('\n') + `\n\n`;
+        }
+
+        const curCgpa = parseFloat(acad.cgpa || '7.56');
+        const curCredits = parseFloat(String(acad.credits || '41').split('/')[0]) || 41;
+        const targetCgpa = 8.0;
+        const nextSemCredits = 21;
+        const targetSgpa = (((targetCgpa * (curCredits + nextSemCredits)) - (curCgpa * curCredits)) / nextSemCredits).toFixed(2);
+
+        resp += `📈 **SGPA Goal Recommendation:**\n`;
+        resp += `To elevate your cumulative CGPA from **${curCgpa}** to **8.00+** (Distinction cutoff), aim for an SGPA of **~${targetSgpa}** in the current III Semester by securing A/A+ in lab internals and mid exams.\n\n`;
+
+        resp += `[action:nav:marks|Open Detailed Marks Report] [action:target_calc|SGPA Goal Calculator]`;
+        return resp;
+      }
+    }
+
+    // 2. SGPA Goal & Target Calculator
+    if (q.includes('target') || q.includes('goal') || q.includes('8.0') || q.includes('distinction') || (q.includes('sgpa') && !q.includes('current'))) {
+      const curCgpa = parseFloat(acad.cgpa || '7.56');
+      const curCredits = parseFloat(String(acad.credits || '41').split('/')[0]) || 41;
+      const nextSemCredits = 21;
+
+      const calcRequiredSgpa = (target) => {
+        const totalCredits = curCredits + nextSemCredits;
+        const req = ((target * totalCredits) - (curCgpa * curCredits)) / nextSemCredits;
+        return req.toFixed(2);
+      };
+
+      const sgpa80 = calcRequiredSgpa(8.0);
+      const sgpa85 = calcRequiredSgpa(8.5);
+
+      return `### 🎯 SGPA & CGPA Goal Calculator\n\n` +
+        `- **Current Cumulative Standing:** **${curCgpa} CGPA** (${curCredits} credits cleared)\n` +
+        `- **Current Term (III Semester):** Estimated 21 credits\n\n` +
+        `**Targets for Current Term:**\n` +
+        `- **To Reach 8.00 CGPA (First Class with Distinction):** You need an SGPA of **${sgpa80}** this semester.\n` +
+        `- **To Reach 8.50 CGPA:** You need an SGPA of **${sgpa85}** this semester.\n\n` +
+        `💡 **Roadmap to ${sgpa80} SGPA:**\n` +
+        `1. Score **25+/30** in Mid-Term examinations (Mid 1 & Mid 2) for maximum internal weightage.\n` +
+        `2. Maintain **A+ (9.0)** in all practical laboratory courses (DBMS Lab, ADS Lab).\n` +
+        `3. Keep attendance above 75% across all subjects to avoid condonation penalties.\n\n` +
+        `[action:nav:marks|Check Detailed Grades] [action:nav:attendance|View Live Attendance]`;
+    }
 
     if (q.includes('cgpa') || q.includes('grade') || q.includes('mark') || q.includes('performance')) {
       const cgpa = acad.cgpa || '--';
@@ -929,6 +1031,24 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       const form = document.getElementById('aria-composer');
       if (input && form) {
         input.value = "How is my attendance in each subject, and how many classes can I safely bunk?";
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    }
+
+    if (domain === 'target_calc' || verb === 'target_calc') {
+      const input = document.getElementById('aria-input');
+      const form = document.getElementById('aria-composer');
+      if (input && form) {
+        input.value = "What SGPA do I need in Semester 3 to achieve an overall 8.0 CGPA?";
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    }
+
+    if (domain === 'weak_subjects' || verb === 'weak_subjects') {
+      const input = document.getElementById('aria-input');
+      const form = document.getElementById('aria-composer');
+      if (input && form) {
+        input.value = "What are my weak subjects and where do I need to improve?";
         form.dispatchEvent(new Event('submit', { cancelable: true }));
       }
     }

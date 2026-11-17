@@ -660,6 +660,20 @@ function buildMarksPageUI(divMarks) {
     }
   });
 
+  // Fallback: If semester tables were nested in DIV containers (standard ECAP markup)
+  if (!grades.length) {
+    const allTables = Array.from(divMarks.querySelectorAll('table'));
+    allTables.forEach(t => {
+      const rows = Array.from(t.rows);
+      if (rows.length < 3) return;
+      const firstRowText = (rows[0].textContent || '').replace(/\s+/g, ' ').trim();
+      const match = firstRowText.match(/^([IVX]+)\s+SEMESTER/i);
+      if (match) {
+        grades.push({ title: match[0].toUpperCase(), table: t.cloneNode(true) });
+      }
+    });
+  }
+
   // 3) Extract overall summary stats (CGPA, Credits, Result, Passed, Failed)
   const overallStats = { cgpa: '--', credits: '--', result: '--', passed: '--', failed: '--' };
   if (overall) {
@@ -683,21 +697,35 @@ function buildMarksPageUI(divMarks) {
     const rows = Array.from(g.table.querySelectorAll('tr'));
     if (rows.length > 1) {
       const courses = [];
+      let sgpa = null;
       rows.slice(1).forEach(r => {
+        const text = r.textContent || '';
+        if (text.includes('SGPA:')) {
+          const m = text.match(/SGPA:\s*([\d.]+)/i);
+          if (m) sgpa = m[1];
+          return;
+        }
         const cols = Array.from(r.querySelectorAll('td, th')).map(c => (c.textContent || '').trim());
-        if (cols.length >= 4) {
+        if (cols.length >= 7 && Number.isFinite(parseInt(cols[0], 10))) {
+          const code = cols[1] || '';
+          const name = cols[2] || '';
+          const grade = (cols.length >= 8 ? cols[4] : cols[3]) || cols[3] || '';
+          const points = parseFloat(cols.length >= 8 ? cols[5] : cols[4]) || 0;
+          const credits = parseFloat(cols.length >= 8 ? cols[6] : cols[5]) || 0;
+          const result = (cols.length >= 8 ? cols[7] : cols[6]) || (grade === 'F' ? 'FAIL' : 'PASS');
           courses.push({
             sno: cols[0] || '',
-            code: cols[1] || '',
-            name: cols[2] || '',
-            grade: cols[3] || '',
-            credits: cols[4] || '',
-            status: cols[5] || (cols[3] === 'F' ? 'FAIL' : 'PASS')
+            code,
+            name,
+            grade,
+            gradePoints: points,
+            credits,
+            status: result.startsWith('P') ? 'PASS' : result
           });
         }
       });
       if (courses.length > 0) {
-        structuredSemesters.push({ semester: g.title, courses });
+        structuredSemesters.push({ semester: g.title, sgpa, courses });
       }
     }
   });
@@ -5061,12 +5089,14 @@ function updateAriaWelcome(dossier) {
     <p>I'm <strong>Aria</strong>, your intelligent academic co-pilot inside ReEcap${cgpa}${att}.</p>
     <p>I have access to your live grades, subject attendance, and timetable. Ask me for a performance review, calculate your bunkable classes, or tell me where you'd like to go:</p>
     <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
+      <button type="button" class="aria-action-chip" data-action="weak_subjects">🎯 Weak Subjects</button>
+      <button type="button" class="aria-action-chip" data-action="target_calc">📈 8.0 Target</button>
+      <button type="button" class="aria-action-chip" data-action="bunk_sim">🏖️ Bunk Simulator</button>
       <button type="button" class="aria-action-chip" data-action="nav:attendance">📊 Attendance</button>
       <button type="button" class="aria-action-chip" data-action="nav:marks">📈 Marks Report</button>
       <button type="button" class="aria-action-chip" data-action="nav:timetable">🕒 Timetable</button>
       <button type="button" class="aria-action-chip" data-action="nav:fees">💳 Fee Ledger</button>
       <button type="button" class="aria-action-chip" data-action="nav:receipts">🧾 Receipts</button>
-      <button type="button" class="aria-action-chip" data-action="bunk_sim">🎯 Bunk Simulator</button>
     </div>
   `;
 }
@@ -5140,10 +5170,12 @@ function updateAriaSuggestions(dossier) {
 
   html += `
     <div class="aria-chips-row">
-      <button type="button" class="aria-prompt-chip" data-prompt="Analyze my current academic performance, CGPA trajectory, and suggest where I can improve.">📊 Performance Audit</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="What are my weak subjects and where do I need to improve?">🎯 Weak Subjects</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="What SGPA do I need in Semester 3 to achieve an overall 8.0 CGPA?">📈 8.0 Target</button>
       <button type="button" class="aria-prompt-chip" data-prompt="How is my attendance in each subject, and how many classes can I safely bunk?">🏖️ Attendance & Bunks</button>
       <button type="button" class="aria-prompt-chip" data-prompt="Can I bunk 2 classes of DBMS, and what will my percentage be?">🎯 Bunk Simulator</button>
       <button type="button" class="aria-prompt-chip" data-prompt="Show my fee payment status, official receipts, and semester dues.">💳 Fee & Receipts</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Analyze my current academic performance, CGPA trajectory, and suggest where I can improve.">📊 Performance Audit</button>
       <button type="button" class="aria-prompt-chip" data-prompt="Do I have any active backlogs or subjects with low grades?">⚠️ Backlogs Check</button>
       <button type="button" class="aria-prompt-chip" data-prompt="Where is my next class according to today's timetable?">🕒 Next Class</button>
     </div>
