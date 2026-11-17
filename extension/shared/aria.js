@@ -67,12 +67,14 @@
         // Parse subject-wise attendance
         const rawSubjects = profile.attendanceSubjects || [];
         const subjectsAttendance = rawSubjects.map(s => {
-          const stats = calculateAttendanceStatus(s.attended, s.held);
+          const attended = s.attended !== undefined ? s.attended : (s.attend !== undefined ? s.attend : 0);
+          const held = s.held !== undefined ? s.held : 0;
+          const stats = calculateAttendanceStatus(attended, held);
           return {
-            name: s.subject || s.name || '',
-            held: s.held,
-            attended: s.attended,
-            percent: s.percent,
+            name: s.name || s.subjName || s.subject || '',
+            held: held,
+            attended: attended,
+            percent: s.percent !== undefined ? s.percent : (held > 0 ? ((attended / held) * 100).toFixed(1) : '0'),
             status: stats.status,
             bunks: stats.bunks,
             needed: stats.needed
@@ -91,11 +93,11 @@
             subjects: subjectsAttendance
           },
           academic: {
-            cgpa: academic.overallStats?.cgpa || '--',
-            credits: academic.overallStats?.credits || '--',
-            result: academic.overallStats?.result || '--',
-            passed: academic.overallStats?.passed || '--',
-            failed: academic.overallStats?.failed || '--',
+            cgpa: academic.overallStats?.cgpa || profile.cgpa || profile.academicSummary?.cgpa || '--',
+            credits: academic.overallStats?.credits || profile.academicSummary?.credits || '--',
+            result: academic.overallStats?.result || profile.academicSummary?.result || '--',
+            passed: academic.overallStats?.passed || profile.academicSummary?.passed || '--',
+            failed: academic.overallStats?.failed || profile.academicSummary?.failed || '--',
             semesters: academic.semesterGrades || []
           },
           schedule: todaySchedule,
@@ -199,8 +201,18 @@
             return;
           }
 
-          const resp = await fetch('studentmarksreport.aspx', { credentials: 'same-origin' });
-          if (!resp.ok) {
+          let resp = null;
+          try {
+            resp = await fetch('Academics/StudentMarksReport.aspx?scrid=15', { credentials: 'same-origin' });
+          } catch (e) {}
+
+          if (!resp || !resp.ok) {
+            try {
+              resp = await fetch('studentmarksreport.aspx', { credentials: 'same-origin' });
+            } catch (e) {}
+          }
+
+          if (!resp || !resp.ok) {
             resolve(null);
             return;
           }

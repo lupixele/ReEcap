@@ -5375,6 +5375,7 @@ table#tblquestions input[type="text"]:not([value]) {
   width: 410px !important;
   max-width: 94vw !important;
   height: 100vh !important;
+  max-height: 100vh !important;
   z-index: 999999 !important;
   background: var(--surface-card) !important;
   border-left: 1px solid var(--border-light) !important;
@@ -5385,6 +5386,7 @@ table#tblquestions input[type="text"]:not([value]) {
   transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1) !important;
   user-select: text !important;
   box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 .reecap-aria-sidebar.is-open,
@@ -5488,6 +5490,14 @@ table#tblquestions input[type="text"]:not([value]) {
   border-bottom: 1px solid var(--border-light) !important;
   flex-shrink: 0 !important;
   overflow-x: auto !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.aria-student-strip::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .aria-stat-badge {
@@ -5525,6 +5535,7 @@ table#tblquestions input[type="text"]:not([value]) {
   padding: 12px 18px 6px !important;
   border-bottom: 1px dashed var(--border-light) !important;
   flex-shrink: 0 !important;
+  overflow: hidden !important;
 }
 
 .aria-suggestion-card {
@@ -5551,21 +5562,31 @@ table#tblquestions input[type="text"]:not([value]) {
 
 .aria-chips-row {
   display: flex !important;
-  gap: 6px !important;
+  gap: 8px !important;
   overflow-x: auto !important;
-  padding-bottom: 6px !important;
+  padding: 2px 2px 6px !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.aria-chips-row::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .aria-prompt-chip {
   white-space: nowrap !important;
   font-size: 11px !important;
   font-weight: 600 !important;
-  padding: 5px 10px !important;
+  padding: 5px 11px !important;
   background: var(--surface-card) !important;
   border: 1px solid var(--border-light) !important;
   border-radius: 9999px !important;
   color: var(--text-secondary) !important;
   cursor: pointer !important;
+  user-select: none !important;
   transition: all 0.18s ease !important;
 }
 
@@ -5578,14 +5599,41 @@ table#tblquestions input[type="text"]:not([value]) {
 
 /* Messages Area */
 .aria-messages {
-  flex: 1 !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
   padding: 16px 18px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 14px !important;
   font-size: 13px !important;
   line-height: 1.55 !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--border) 45%, transparent) transparent !important;
+}
+
+.aria-messages::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.aria-messages::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.aria-messages::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--border) 45%, transparent) !important;
+  border-radius: 9999px !important;
+  border: 1px solid transparent !important;
+  background-clip: content-box !important;
+}
+
+.aria-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint) !important;
 }
 
 .aria-msg {
@@ -5701,6 +5749,14 @@ table#tblquestions input[type="text"]:not([value]) {
   line-height: 1.4 !important;
   max-height: 120px !important;
   padding: 4px 0 !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.aria-composer-box textarea::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .aria-composer-box textarea::placeholder {

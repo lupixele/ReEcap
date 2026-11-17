@@ -1605,6 +1605,12 @@ function renderTimetableLegend(schedule, legendMap) {
 }
 
 function observeProfileDashboard() {
+  const existingReport = document.getElementById('tblReport');
+  if (existingReport && !document.getElementById('reecap-profile-dashboard')) {
+    buildProfileDashboard(existingReport);
+    return;
+  }
+
   const targetNode = document.getElementById('divProfile') || document.body;
   if (!targetNode) return;
   
@@ -1613,7 +1619,6 @@ function observeProfileDashboard() {
     if (tblReport && !document.getElementById('reecap-profile-dashboard')) {
       obs.disconnect();
       buildProfileDashboard(tblReport);
-      // Title is now sent to parent via sendTitle() in the else-branch above
     }
   });
   
@@ -1680,9 +1685,11 @@ function extractAttendanceProfileData(pane) {
 
     subjects.push({
       subjName: String(raw[colCourse] || 'Subject').trim(),
+      name: String(raw[colCourse] || 'Subject').trim(),
       faculty: colFaculty >= 0 ? String(raw[colFaculty] || '').trim() : '',
       held: subjectHeld,
       attend: subjectAttend,
+      attended: subjectAttend,
       percent: subjectPercent
     });
   });
@@ -1806,8 +1813,43 @@ function buildProfileDashboard(accordion) {
     }
   } catch (e) { /* fee breakdown is best-effort — fall back to feeDue */ }
 
+  // Extract CGPA and academic record from Performance (Past)
+  let cgpa = '--';
+  let academicSummary = null;
+  try {
+    const pastPane = document.getElementById('divProfile_Past') || document.getElementById('divProfile_PastSem');
+    if (pastPane) {
+      const pastTables = pastPane.querySelectorAll('table');
+      for (const t of pastTables) {
+        const text = t.textContent.toUpperCase();
+        if (text.includes('OVER ALL SUMMARY') || text.includes('CGPA')) {
+          academicSummary = { cgpa: '--', passed: '--', failed: '--', credits: '--', result: '--' };
+          Array.from(t.rows).forEach(r => {
+            const cells = Array.from(r.cells).map(c => c.textContent.trim());
+            if (cells.length >= 2) {
+              const k = cells[0].toUpperCase();
+              const v = cells[1];
+              if (k.includes('CGPA')) academicSummary.cgpa = v;
+              if (k.includes('PASSED')) academicSummary.passed = v;
+              if (k.includes('FAILED')) academicSummary.failed = v;
+              if (k.includes('CREDITS')) academicSummary.credits = v;
+              if (k.includes('RESULT')) academicSummary.result = v;
+            }
+          });
+          if (academicSummary.cgpa !== '--') {
+            cgpa = academicSummary.cgpa;
+          }
+          break;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('ReEcap: Failed to extract CGPA from past profile table:', e);
+  }
+
   const profileData = {
     held, attended, percent, attendanceSubjects, backlogsText, feeDue,
+    cgpa, academicSummary,
     feeCurrentSem, feeCurrentSemLabel,
     feeCurrentSemPayable,
     feeCurrentSemStatus,
@@ -1815,6 +1857,22 @@ function buildProfileDashboard(accordion) {
     lastUpdated: Date.now()
   };
   chrome.storage.local.set({ reecapProfileData: profileData });
+
+  if (academicSummary && academicSummary.cgpa !== '--') {
+    chrome.storage.local.get(['reecapAcademicData'], (existing) => {
+      const cur = existing?.reecapAcademicData || {};
+      const updated = {
+        ...cur,
+        overallStats: { ...(cur.overallStats || {}), ...academicSummary },
+        lastUpdated: Date.now()
+      };
+      chrome.storage.local.set({ reecapAcademicData: updated });
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'REECAP_ACADEMIC_DATA', data: updated }, '*');
+      }
+    });
+  }
+
   window.parent.postMessage({
     type: 'REECAP_PROFILE_DATA',
     data: profileData
@@ -4564,9 +4622,34 @@ async function refreshAriaDossier() {
     ariaDossierCache = dossier;
     updateAriaStrip(dossier);
     updateAriaSuggestions(dossier);
+    updateAriaWelcome(dossier);
   } catch (e) {
     console.warn('ReEcap: Failed to refresh Aria dossier:', e);
   }
+}
+
+function updateAriaWelcome(dossier) {
+  if (ariaMessagesHistory.length > 0 || !dossier) return;
+  const container = document.getElementById('aria-messages');
+  if (!container) return;
+  const welcomeCard = container.querySelector('.aria-msg.msg-assistant');
+  if (!welcomeCard) return;
+
+  const name = dossier?.identity?.name ? dossier.identity.name.split(' ')[0] : 'there';
+  const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? ` (CGPA: **${dossier.academic.cgpa}**)` : '';
+  const att = dossier?.attendance?.overallPercent && dossier.attendance.overallPercent !== '--' ? ` • Attendance: **${dossier.attendance.overallPercent}%**` : '';
+
+  welcomeCard.innerHTML = `
+    <h3>👋 Hi ${name}!</h3>
+    <p>I'm <strong>Aria</strong>, your intelligent academic co-pilot inside ReEcap${cgpa}${att}.</p>
+    <p>I have access to your live grades, subject attendance, and timetable. Ask me for a performance review, calculate your bunkable classes, or tell me where you'd like to go:</p>
+    <div>
+      <button type="button" class="aria-action-chip" data-action="nav:attendance">📊 Attendance</button>
+      <button type="button" class="aria-action-chip" data-action="nav:marks">📈 Marks Report</button>
+      <button type="button" class="aria-action-chip" data-action="nav:timetable">🕒 Timetable</button>
+      <button type="button" class="aria-action-chip" data-action="nav:fees">💳 Fee Due</button>
+    </div>
+  `;
 }
 
 function updateAriaStrip(dossier) {
@@ -4575,13 +4658,26 @@ function updateAriaStrip(dossier) {
 
   const cgpa = dossier.academic?.cgpa || '--';
   const att = dossier.attendance?.overallPercent || '--';
-  const backlogs = dossier.backlogs || '0';
+  const rawBacklogs = dossier.backlogs || '0';
+
+  // Format clean backlogs display
+  let cleanBacklogs = '0';
+  if (rawBacklogs) {
+    const raw = String(rawBacklogs).toLowerCase();
+    if (raw.includes('no backlog') || raw.includes('no records') || raw.includes('have no backlogs') || raw.trim() === '0') {
+      cleanBacklogs = '0';
+    } else {
+      const match = raw.match(/\d+/);
+      cleanBacklogs = match ? match[0] : rawBacklogs;
+    }
+  }
 
   const cgpaVal = parseFloat(cgpa);
   const cgpaColor = !isNaN(cgpaVal) ? (cgpaVal >= 7.5 ? 'var(--success)' : (cgpaVal >= 6 ? 'var(--accent)' : 'var(--warning)')) : 'var(--text-primary)';
   const attVal = parseFloat(att);
   const attColor = !isNaN(attVal) ? (attVal >= 75 ? 'var(--success)' : 'var(--danger)') : 'var(--text-primary)';
-  const backVal = parseInt(backlogs, 10);
+  const attDisplay = !isNaN(attVal) ? `${attVal}%` : (att !== '--' ? `${att}%` : '--');
+  const backVal = parseInt(cleanBacklogs, 10);
   const backColor = !isNaN(backVal) && backVal > 0 ? 'var(--danger)' : 'var(--text-primary)';
 
   strip.innerHTML = `
@@ -4591,11 +4687,11 @@ function updateAriaStrip(dossier) {
     </div>
     <div class="aria-stat-badge">
       <span class="stat-label">Attendance</span>
-      <span class="stat-value" style="color: ${attColor};">${att}%</span>
+      <span class="stat-value" style="color: ${attColor};">${attDisplay}</span>
     </div>
     <div class="aria-stat-badge">
       <span class="stat-label">Backlogs</span>
-      <span class="stat-value" style="color: ${backColor};">${backlogs}</span>
+      <span class="stat-value" style="color: ${backColor};">${cleanBacklogs}</span>
     </div>
   `;
 }
