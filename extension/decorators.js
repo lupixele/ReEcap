@@ -3455,3 +3455,957 @@ function showOverview() {
   });
 }
 
+function showIframe() {
+  const iframe = document.getElementById('capIframeId');
+  const overview = document.getElementById('reecap-overview');
+  if (iframe) iframe.style.removeProperty('display');
+  if (overview) overview.style.setProperty('display', 'none', 'important');
+
+  document.documentElement.setAttribute('data-overview-active', 'false');
+
+  const overviewLink = document.querySelector('.reecap-sidebar-overview');
+  if (overviewLink) overviewLink.classList.remove('active');
+
+  if (typeof syncSidebarActiveState === 'function' && iframe && iframe.contentWindow) {
+    try {
+      const currentUrl = iframe.contentWindow.location.pathname.toLowerCase();
+      if (currentUrl) syncSidebarActiveState(currentUrl);
+    } catch (e) {}
+  }
+}
+
+function initResponsiveNavigation() {
+  if (responsiveNavigationController) return responsiveNavigationController;
+
+  const sidebar = document.getElementById('reecap-sidebar');
+  const trigger = document.querySelector('.mobile-menu-btn');
+  const scrim = document.querySelector('.reecap-nav-scrim');
+  if (!sidebar || !trigger || !scrim) return null;
+
+  const drawerQuery = window.matchMedia('(max-width: 1199px)');
+  let lastTrigger = null;
+
+  const setOpen = (isOpen, { restoreFocus = false, focusDrawer = false } = {}) => {
+    const open = drawerQuery.matches && isOpen;
+    sidebar.classList.toggle('is-open', open);
+    sidebar.inert = drawerQuery.matches && !open;
+    scrim.classList.toggle('is-visible', open);
+    scrim.setAttribute('aria-hidden', String(!open));
+    trigger.setAttribute('aria-expanded', String(open));
+    trigger.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+    document.documentElement.classList.toggle('reecap-nav-open', open);
+
+    if (open && focusDrawer) {
+      requestAnimationFrame(() => {
+        const closeButton = sidebar.querySelector('.reecap-nav-close');
+        (closeButton || sidebar).focus();
+      });
+    }
+    if (restoreFocus && lastTrigger) lastTrigger.focus();
+  };
+
+  const close = (options) => setOpen(false, options);
+  const toggle = () => {
+    lastTrigger = trigger;
+    const willOpen = !sidebar.classList.contains('is-open');
+    setOpen(willOpen, { focusDrawer: willOpen });
+  };
+  const onViewportChange = () => setOpen(false);
+
+  trigger.addEventListener('click', toggle);
+  sidebar.addEventListener('click', (event) => {
+    if (event.target.closest('.reecap-nav-close')) {
+      close({ restoreFocus: true });
+    }
+  });
+  scrim.addEventListener('click', () => close({ restoreFocus: true }));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && sidebar.classList.contains('is-open')) {
+      event.preventDefault();
+      close({ restoreFocus: true });
+    }
+  });
+  drawerQuery.addEventListener('change', onViewportChange);
+  setOpen(false);
+
+  responsiveNavigationController = { close, sync: () => setOpen(false) };
+  return responsiveNavigationController;
+}
+
+function closeResponsiveNavigation(options) {
+  responsiveNavigationController?.close(options);
+}
+
+function rebuildMainLayout() {
+  const iframe = document.getElementById('capIframeId');
+  const menu = document.getElementById('menu') || document.getElementById('tblScreens');
+  if (!iframe || !menu) return;
+
+  // Find the top-level layout table that holds the sidebar and iframe
+  const originalTable = iframe.closest('table');
+  if (!originalTable) return;
+  let masterTable = originalTable;
+  while (masterTable.parentElement && masterTable.parentElement.closest('table')) {
+      masterTable = masterTable.parentElement.closest('table');
+  }
+
+  const layoutWrapper = document.createElement('div');
+  layoutWrapper.className = 'reecap-layout-wrapper';
+
+  const pageTitle = document.createElement('h1');
+  pageTitle.id = 'reecap-page-title';
+  pageTitle.className = 'reecap-page-title';
+  pageTitle.textContent = 'Loading...';
+  const columns = document.createElement('div');
+  columns.className = 'reecap-layout-columns';
+
+  const sidebarCol = document.createElement('aside');
+  sidebarCol.id = 'reecap-sidebar';
+  sidebarCol.className = 'reecap-sidebar-col';
+  sidebarCol.setAttribute('aria-label', 'Portal navigation');
+
+  if (isEmployeeRole()) {
+    const leftMenu = document.getElementById('divLeftMenu');
+    if (leftMenu) sidebarCol.appendChild(leftMenu);
+    else sidebarCol.appendChild(menu);
+  } else {
+    sidebarCol.appendChild(menu);
+  }
+
+  const contentCol = document.createElement('main');
+  contentCol.id = 'reecap-content-col';
+  contentCol.className = 'reecap-content-col';
+  contentCol.appendChild(pageTitle); // Title is now inside the content column
+
+  // Build and insert Overview Page
+  const overviewDiv = document.createElement('div');
+  overviewDiv.id = 'reecap-overview';
+  overviewDiv.className = 'reecap-overview';
+  buildOverviewPage(overviewDiv);
+  contentCol.appendChild(overviewDiv);
+
+  contentCol.appendChild(iframe);
+
+  columns.appendChild(sidebarCol);
+  columns.appendChild(contentCol);
+  layoutWrapper.appendChild(columns);
+
+  const navigationScrim = document.createElement('div');
+  navigationScrim.className = 'reecap-nav-scrim';
+  navigationScrim.setAttribute('aria-hidden', 'true');
+
+  masterTable.parentNode.insertBefore(layoutWrapper, masterTable);
+  layoutWrapper.insertAdjacentElement('afterend', navigationScrim);
+  masterTable.style.display = 'none';
+  initResponsiveNavigation();
+
+  // Listen for updates from iframe
+  window.addEventListener('message', (e) => {
+    if (!e.data) return;
+
+    if (e.data.type === 'REECAP_SET_TITLE') {
+      if (document.documentElement.getAttribute('data-overview-active') !== 'true') {
+        pageTitle.textContent = e.data.title;
+      }
+    }
+
+    if (e.data.type === 'REECAP_PROFILE_DATA') {
+      const profileData = { ...e.data.data, lastUpdated: Date.now() };
+      chrome.storage.local.set({ reecapProfileData: profileData });
+      if (typeof updateOverviewCards === 'function') {
+        updateOverviewCards(profileData);
+      }
+    }
+  });
+
+  showOverview();
+}
+
+function buildOverviewPage(container) {
+  const stripSlot = document.createElement('div');
+  stripSlot.id = 'reecap-strip-slot';
+  stripSlot.className = 'reecap-strip-slot';
+  container.appendChild(stripSlot);
+  // Phase 3 (2026-07-26): the strip slot is now ALWAYS populated by
+  // initStatusStrip with a real DOM node carrying data-reecap-state. The
+  // shimmer skeleton has been removed — it was getting stuck visible
+  // because the legacy .reecap-status-strip CSS hides the real strip until
+  // data-reecap-strip-active is set, leaving the skeleton in front of nothing.
+  initStatusStrip(stripSlot);
+
+  const grid = document.createElement('div');
+  grid.className = 'overview-grid';
+  container.appendChild(grid);
+
+  const metricsSlot = document.createElement('div');
+  metricsSlot.className = 'overview-section-metrics';
+  grid.appendChild(metricsSlot);
+
+  if (!chrome || !chrome.storage || !chrome.storage.local) return;
+  try {
+    chrome.storage.local.get(['reecapTimetable', 'reecapIdentity', 'reecapProfileData'], (data) => {
+      if (chrome.runtime && chrome.runtime.lastError) return;
+
+      renderDashboardCards(metricsSlot, data ? data.reecapProfileData : null);
+      renderScheduleCard(grid, data ? data.reecapTimetable : null);
+      // renderQuickLinksCard(grid);
+      // The categorized sidebar groups are the single source of truth for
+      // navigation. Rendering a second quick-links strip there created
+      // duplicate entries, so we no longer inject reecap-sidebar-quicklinks.
+
+      // When the hidden cache warmer finishes, replace only the schedule card
+      // in place — no page refresh and no user navigation required.
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local' || !changes.reecapTimetable || !grid.isConnected) return;
+        const existingSchedule = grid.querySelector('.overview-schedule-card');
+        renderScheduleCard(grid, changes.reecapTimetable.newValue, existingSchedule);
+      });
+
+      // No schedule yet? Load the existing portal page silently in a one-shot
+      // helper iframe. Its all-frames content script runs observeTimetable(),
+      // writes the usual chrome.storage.local cache, then this helper removes
+      // itself. The user never has to open CHOOSE TIMETABLE manually.
+      if (!data || !data.reecapTimetable) prefetchTimetableData();
+    });
+  } catch (e) {}
+}
+
+function prefetchTimetableData() {
+  if (window !== window.top) return;
+  if (document.getElementById('reecap-timetable-prefetch')) return;
+
+  try {
+    chrome.storage.local.get(['reecapTimetable'], (data) => {
+      if (chrome.runtime && chrome.runtime.lastError) return;
+      if (data && data.reecapTimetable) return;
+      // Intentionally NOT prefetching timetable data in the background.
+      // Concurrent requests crash the ASP.NET session state causing a 401 loop.
+    });
+  } catch (e) {
+    // A reload can invalidate the extension context between overview render
+    // and storage lookup; the direct status-strip CTA remains available.
+  }
+}
+
+function renderSidebarQuickLinks() {
+  // Deprecated (Phase 4, 2026-07-26). The categorized sidebar groups already
+  // cover Attendance, Timetable, Marks, Fee, Profile, and Backlogs, so
+  // rendering a second list doubled every entry. The footer slot is removed.
+  if (document.querySelector('.reecap-sidebar-quicklinks')) {
+    document.querySelectorAll('.reecap-sidebar-quicklinks').forEach((el) => el.remove());
+  }
+}
+
+function updateOverviewCards(profileData) {
+  const slot = document.querySelector('.reecap-overview .overview-section-metrics');
+  if (!slot) return;
+  renderDashboardCards(slot, profileData);
+}
+
+function renderDashboardCards(slot, profileData) {
+  if (!slot) return;
+
+  const ringRadius = 42;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  let ringOffset = ringCircumference;
+  let ringDisplay = "N/A";
+  let ringColor = "var(--text-faint)";
+  let attended = 0, held = 0;
+  let backlogsText = "Syncing...";
+  let feeDue = "--";
+  let feeCurrentSem = "--";
+  let feeCurrentSemLabel = "Current Semester";
+  let feeCurrentSemStatus = "pending";
+  let feeCurrentSemPayable = null;
+  let feeBalanceWords = "";
+  let feeTotalDue = "--";
+  let syncedCaption = "Syncing from background Profile...";
+
+  if (profileData) {
+    held = profileData.held || 0;
+    attended = profileData.attended || 0;
+    if (held > 0) {
+      const percent = profileData.percent !== undefined ? profileData.percent : (attended / held * 100);
+      ringDisplay = percent.toFixed(2) + "%";
+      ringOffset = ringCircumference - (percent / 100) * ringCircumference;
+      ringColor = percent >= 75 ? "var(--success)" : (percent >= 65 ? "var(--warning)" : "var(--error)");
+    } else {
+      ringDisplay = "0%";
+    }
+    backlogsText = profileData.backlogsText !== undefined ? `${profileData.backlogsText}` : "0";
+    feeDue          = profileData.feeDue        !== undefined ? `${profileData.feeDue}` : "0.00";
+    feeCurrentSem        = profileData.feeCurrentSem !== undefined && profileData.feeCurrentSem !== null ? `${profileData.feeCurrentSem}` : "--";
+    feeCurrentSemLabel   = profileData.feeCurrentSemLabel || "Current Semester";
+    feeCurrentSemStatus  = profileData.feeCurrentSemStatus || 'pending';
+    feeCurrentSemPayable = profileData.feeCurrentSemPayable !== undefined && profileData.feeCurrentSemPayable !== null ? `${profileData.feeCurrentSemPayable}` : null;
+    feeBalanceWords      = profileData.feeBalanceWords || '';
+    feeTotalDue          = profileData.feeTotalDue   !== undefined && profileData.feeTotalDue   !== null ? `${profileData.feeTotalDue}` : "--";
+    if (profileData.lastUpdated) {
+      const minsAgo = Math.round((Date.now() - profileData.lastUpdated) / 60000);
+      syncedCaption = minsAgo < 2 ? "Synced just now" : `Synced ${minsAgo < 60 ? minsAgo + 'm' : Math.round(minsAgo/60) + 'h'} ago`;
+    } else {
+      syncedCaption = "Synced from Profile";
+    }
+  }
+
+  // Color logic + caption text for the two fee values.
+  // - Current semester bill: amber if due, green if paid, mute + "Assessment
+  //   pending" caption if the portal hasn't yet posted the row.
+  // - Total outstanding: red if anything owed, green otherwise.
+  // - The optional balance-words caption (e.g. "Three Lakh Ninety Three …")
+  //   sits under the Total row so the user can spot-check the portal.
+  const haveSemNumber   = feeCurrentSem !== "--" && feeCurrentSem !== "0.00" && parseFloat(feeCurrentSem) > 0;
+  const haveTotalNumber = feeTotalDue   !== "--" && feeTotalDue   !== "0.00" && parseFloat(feeTotalDue)   > 0;
+
+  let semClass = 'is-muted';
+  let semDisplay = '<span class="fee-status-badge is-success">Cleared</span>';
+  let semCaption = 'Assessment pending';
+  if (feeCurrentSemStatus === 'due') {
+    semClass = 'is-warning';
+    semDisplay = '₹' + formatCurrencyAmount(feeCurrentSem);
+    semCaption = 'Amount outstanding this term';
+  } else if (feeCurrentSemStatus === 'paid') {
+    semClass = 'is-success';
+    semDisplay = '<span class="fee-status-badge is-success">Cleared</span>';
+    semCaption = 'Cleared in full' + (feeBalanceWords ? ' · ' + feeBalanceWords : '');
+  }
+  // Fall through: 'pending' → green "Cleared" badge + pending caption.
+
+  const totalDisplay  = (haveTotalNumber ? '₹' + formatCurrencyAmount(feeTotalDue) : '<span class="fee-status-badge is-success">Cleared</span>');
+  const totalCaption  = haveTotalNumber
+    ? 'Across all assessed terms'
+    : 'All accounts settled';
+
+  slot.innerHTML = `
+    <div class="ring-card">
+      <div class="ring-wrap">
+        <svg width="100" height="100">
+          <circle class="ring-bg" cx="50" cy="50" r="${ringRadius}"></circle>
+          <circle class="ring-fg" cx="50" cy="50" r="${ringRadius}"
+                  stroke="${ringColor}"
+                  stroke-dasharray="${ringCircumference}"
+                  stroke-dashoffset="${ringOffset}"></circle>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-value overview-ring-value" style="color: ${ringColor}">${ringDisplay}</div>
+        </div>
+      </div>
+      <div class="ring-label">Attendance</div>
+      <div class="ring-caption">${profileData && held > 0 ? `${attended} / ${held} attended` : syncedCaption}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-top">
+        <div class="stat-label">Active Backlogs</div>
+      </div>
+      <div class="ring-value" style="color: var(--text-primary); font-size: ${profileData ? '16px' : '14px'};">
+        ${backlogsText}
+      </div>
+      <div class="ring-caption">${syncedCaption}</div>
+    </div>
+
+    <div class="stat-card fee-balance-card">
+      <div class="stat-top">
+        <div class="stat-label">Fee Balance</div>
+      </div>
+
+      <div class="fee-row">
+        <span class="fee-row-label">${feeCurrentSemLabel}</span>
+        <span class="fee-row-amount ${semClass}">${semDisplay}</span>
+      </div>
+      <div class="fee-row-caption">${semCaption}</div>
+
+      <div class="fee-divider"></div>
+
+      <div class="fee-row">
+        <span class="fee-row-label">Total Outstanding</span>
+        <span class="fee-row-amount ${haveTotalNumber ? 'is-critical' : 'is-success'}">${totalDisplay}</span>
+      </div>
+      <div class="fee-row-caption">${totalCaption}</div>
+
+      <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="fee-pay-pill">Pay Online</a>
+    </div>
+  `;
+
+  const payBtn = slot.querySelector('.fee-pay-pill');
+  if (payBtn) {
+    payBtn.addEventListener('click', () => {
+      showIframe();
+    });
+  }
+}
+
+function renderScheduleCard(container, timetableData, previousCard = null) {
+  const card = document.createElement('div');
+  card.className = 'overview-card overview-schedule-card';
+
+  // Cache warmers update chrome.storage.local asynchronously. Replace the
+  // existing empty card in place rather than append a duplicate schedule.
+  if (previousCard && previousCard.parentNode === container) {
+    previousCard.replaceWith(card);
+  } else {
+    container.appendChild(card);
+  }
+
+  const now = new Date();
+  const jsDayToName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const todayName = jsDayToName[now.getDay()];
+
+  let html = `<div class="overview-card-header"><span class="overview-card-title">Today's Schedule</span><span class="overview-card-subtitle">${todayName}, ${now.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span></div>`;
+
+  if (!timetableData || !timetableData.schedule) {
+    html += `<div class="schedule-empty">Preparing your schedule in the background…</div>`;
+    card.innerHTML = html;
+    return;
+  }
+
+  const { schedule, legendMap } = timetableData;
+  const todaysClasses = schedule[todayName] || [];
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+
+  let hasClasses = false;
+  let rowsHtml = `<div class="schedule-list">`;
+
+  todaysClasses.forEach(period => {
+    if (!period.subjectCode) return;
+    hasClasses = true;
+
+    const times = parseTimeRange(period.timeRange);
+    let isActive = false;
+    if (times && currentMins >= times.start && currentMins < times.end) {
+      isActive = true;
+    }
+
+    const primaryCode = period.subjectCode.split(',')[0].trim();
+    const details = (legendMap && legendMap[primaryCode]) || { name: period.subjectCode, faculty: '', room: '' };
+
+    rowsHtml += `
+      <div class="schedule-row ${isActive ? 'is-active' : ''}">
+        <div class="schedule-time">
+          <span>${period.timeRange.split(/[-to]/i)[0].trim()}</span>
+          <span class="schedule-time-end">${period.timeRange.split(/[-to]/i)[1] ? period.timeRange.split(/[-to]/i)[1].trim() : ''}</span>
+        </div>
+        <div class="schedule-details">
+          <div class="schedule-subject">${details.name}</div>
+          <div class="schedule-meta">
+            ${details.room ? `<span>${details.room}</span> <b>•</b> ` : ''}<span>${details.faculty}</span>
+          </div>
+        </div>
+        ${isActive ? `<div class="schedule-badge">NOW</div>` : ''}
+      </div>
+    `;
+  });
+
+  rowsHtml += `</div>`;
+
+  if (!hasClasses) {
+    html += `<div class="schedule-empty">No classes scheduled for today. Enjoy!</div>`;
+  } else {
+    html += rowsHtml;
+  }
+
+  card.innerHTML = html;
+}
+
+function renderQuickLinksCard(container) {
+  const card = document.createElement('div');
+  card.className = 'overview-card overview-quicklinks-card';
+
+  const links = [
+    { label: 'Attendance', href: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7l-2-2"></path><path d="M12 15l2-2"></path><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>' },
+    { label: 'Timetable', href: 'Academics/TimeTableReport.aspx?scrid=18', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' },
+    { label: 'Marks', href: 'Academics/StudentMarksReport.aspx?scrid=15', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' },
+    { label: 'Fee Details', href: 'FeePayments/studentpayments.aspx?scrid=11', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' },
+    { label: 'Profile', href: 'Academics/StudentProfile.aspx?scrid=17', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' }
+  ];
+
+  let html = `<div class="overview-card-header"><span class="overview-card-title">Quick Links</span></div><div class="quicklinks-grid">`;
+
+  links.forEach(item => {
+    html += `
+      <a href="${item.href}" target="capIframe" class="quicklink-item">
+        <div class="quicklink-icon">${item.icon}</div>
+        <div class="quicklink-label">${item.label}</div>
+      </a>
+    `;
+  });
+
+  html += `</div>`;
+  card.innerHTML = html;
+
+  card.querySelectorAll('.quicklink-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      showIframe();
+    });
+  });
+
+  container.appendChild(card);
+}
+
+// --- Pass 3: Status Strip Engine ---
+
+function initStatusStrip(targetSlot) {
+  const stripContainer = targetSlot || document.getElementById('reecap-strip-container');
+  if (!stripContainer) return;
+
+  const strip = document.createElement('div');
+  strip.className = 'reecap-status-strip';
+  strip.setAttribute('data-reecap-state', 'empty');
+  strip.setAttribute('role', 'status');
+  strip.setAttribute('aria-live', 'polite');
+  strip.innerHTML = `
+    <div class="status-content">
+      <div class="status-title"></div>
+      <div class="status-meta"></div>
+    </div>
+    <div class="status-identity" hidden>
+      <div class="id-roll"></div>
+      <div class="id-course"></div>
+    </div>
+    <div class="status-clock">
+      <div class="clock-time">--:--</div>
+      <div class="clock-date">--</div>
+    </div>
+  `;
+
+  // Only one strip belongs in this slot. This clears any strip left behind
+  // by a hot extension reload, avoiding duplicated clocks/listeners.
+  const existing = stripContainer.querySelector('.reecap-status-strip');
+  if (existing) existing.remove();
+  stripContainer.appendChild(strip);
+
+  updateStatusStrip(strip);
+  setInterval(() => updateStatusStrip(strip), 60000);
+
+  // Listen for instant updates from the iframe (all frames share local storage).
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && (changes.reecapTimetable || changes.reecapIdentity)) {
+      updateStatusStrip(strip);
+    }
+  });
+}
+
+function parseTimeRange(timeStr) {
+  const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?/g);
+  if (!match || match.length < 2) return null;
+  
+  function toMinutes(t) {
+    const parts = t.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?/i);
+    if (!parts) return 0;
+    let h = parseInt(parts[1], 10);
+    let m = parseInt(parts[2], 10);
+    let ampm = parts[3] ? parts[3].toUpperCase() : null;
+    
+    if (!ampm) {
+      if (h < 8) h += 12; 
+    } else {
+      if (ampm === 'PM' && h < 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+    }
+    return h * 60 + m;
+  }
+  
+  return {
+    start: toMinutes(match[0]),
+    end: toMinutes(match[1])
+  };
+}
+
+function updateStatusStrip(strip) {
+  if (!chrome || !chrome.storage || !chrome.storage.local) return;
+  try {
+    chrome.storage.local.get(['reecapTimetable', 'reecapIdentity'], (data) => {
+      if (chrome.runtime && chrome.runtime.lastError) return;
+      if (!data) return;
+    
+    const titleEl = strip.querySelector('.status-title');
+    const metaEl = strip.querySelector('.status-meta');
+    const idEl = strip.querySelector('.status-identity');
+    const idRoll = strip.querySelector('.id-roll');
+    const idCourse = strip.querySelector('.id-course');
+    const clockTime = strip.querySelector('.clock-time');
+    const clockDate = strip.querySelector('.clock-date');
+    const now = new Date();
+    
+    // Always update clock
+    if (clockTime) clockTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (clockDate) clockDate.textContent = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    
+    // Update Identity if available.
+    if (data.reecapIdentity && idEl) {
+       idEl.hidden = false;
+       if (idRoll) idRoll.textContent = data.reecapIdentity.RollNo || '';
+       if (idCourse) {
+          const course = data.reecapIdentity.Course || '';
+          const sem = data.reecapIdentity.Semester ? data.reecapIdentity.Semester.replace('Regular(', '').replace(')', '') : '';
+          idCourse.textContent = `${course} • ${sem}`;
+       }
+    } else if (idEl) {
+       idEl.hidden = true;
+    }
+
+    if (!data.reecapTimetable) {
+       // The strip itself is the empty state (never an indefinite shimmer).
+       // Make the page name a direct iframe link so one click starts syncing.
+       strip.setAttribute('data-reecap-state', 'empty');
+       strip.style.removeProperty('--accent');
+       if (titleEl) titleEl.textContent = "Set up your schedule";
+       if (metaEl) {
+         metaEl.innerHTML = `Visit <a class="status-strip-cta" href="Academics/studenttimetableoption.aspx" target="capIframe">CHOOSE TIMETABLE</a> once to sync your upcoming classes.`;
+         const setupLink = metaEl.querySelector('.status-strip-cta');
+         if (setupLink) setupLink.addEventListener('click', () => {
+           // Navigate the iframe directly — no intermediate dialog or extra action.
+           if (typeof showIframe === 'function') showIframe();
+         });
+       }
+       return;
+    }
+
+    strip.setAttribute('data-reecap-state', 'ready');
+    
+    const { schedule, legendMap } = data.reecapTimetable;
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+    const jsDayToName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const todayName = jsDayToName[now.getDay()];
+    
+    const todaysClasses = schedule[todayName] || [];
+    
+    let currentState = "DONE";
+    let activeClass = null;
+    let nextClass = null;
+    
+    for (let period of todaysClasses) {
+      if (!period.subjectCode) continue;
+      const times = parseTimeRange(period.timeRange);
+      if (!times) continue;
+      
+      if (currentMins >= times.start && currentMins < times.end) {
+        currentState = "IN_CLASS";
+        activeClass = period;
+        break;
+      } else if (currentMins < times.start) {
+        if (!nextClass) {
+           currentState = "NEXT_CLASS";
+           nextClass = period;
+        }
+      }
+    }
+    
+    function getDetails(period) {
+      const primaryCode = period.subjectCode.split(',')[0].trim();
+      return legendMap[primaryCode] || { name: primaryCode, faculty: '', room: '' };
+    }
+    
+    if (currentState === "IN_CLASS") {
+       const details = getDetails(activeClass);
+       strip.style.setProperty('--accent', 'var(--success)');
+       titleEl.textContent = `IN CLASS: ${details.name}`;
+       metaEl.innerHTML = `<span>${activeClass.timeRange}</span> <b>•</b> <span>${details.room}</span> <b>•</b> <span>${details.faculty}</span>`;
+    } else if (currentState === "NEXT_CLASS") {
+       const details = getDetails(nextClass);
+       strip.style.setProperty('--accent', 'var(--warning)');
+       titleEl.textContent = `NEXT: ${details.name}`;
+       metaEl.innerHTML = `<span>Starts at ${nextClass.timeRange.split(/[-to]/i)[0].trim()}</span> <b>•</b> <span>${details.room}</span>`;
+    } else {
+       strip.style.setProperty('--accent', 'var(--text-faint)');
+       titleEl.textContent = "No more classes today.";
+       metaEl.innerHTML = `Enjoy the rest of your day.`;
+    }
+  });
+  } catch (e) {
+    // Ignore context invalidated errors during extension reload
+  }
+}
+
+function redesignAttendancePage() {
+  // Let's hide the direct body content (usually a sorry / server error trace)
+  Array.from(document.body.children).forEach(c => {
+    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+      c.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'reecap-attendance-standalone';
+  wrapper.style.padding = '24px';
+  wrapper.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+  document.body.appendChild(wrapper);
+
+  // Send the title update up to the shell
+  if (window.parent && window.parent.postMessage) {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'ATTENDANCE (PRESENT)' }, '*');
+  }
+
+  if (!chrome || !chrome.storage || !chrome.storage.local) {
+    wrapper.innerHTML = '<div class="marks-empty">Unable to access storage.</div>';
+    return;
+  }
+
+  function renderView(profileData) {
+    if (!profileData || !profileData.attendanceSubjects || !profileData.attendanceSubjects.length) {
+      wrapper.innerHTML = '<div class="marks-empty" style="text-align:center; margin-top: 40px; color: var(--text-secondary);">No attendance data synced yet.<br><br><span style="font-size:12px;opacity:0.7">Loading Profile in the background...</span></div>';
+      return;
+    }
+
+    const { held, attended, percent, attendanceSubjects, lastUpdated } = profileData;
+
+    const ringRadius = 40;
+    const ringCircumf = 2 * Math.PI * ringRadius;
+    const offset = ringCircumf - (percent / 100) * ringCircumf;
+    const ringColor = percent >= 75 ? "var(--success)" : (percent >= 65 ? "var(--warning)" : (held === 0 ? "var(--text-faint)" : "var(--error)"));
+
+    let html = `
+      <!-- Top Overall Attendance Meter -->
+      <div class="overview-section-metrics" style="margin-bottom: 24px; display: flex; flex-direction: column;">
+        <div class="ring-card" style="flex: 1; min-width: 280px; flex-direction: row; gap: 24px; text-align: left; justify-content: flex-start; padding: 24px 32px;">
+          <div class="ring-wrap" style="width: 96px; height: 96px; flex-shrink: 0;">
+            <svg width="96" height="96">
+              <circle class="ring-bg" cx="48" cy="48" r="${ringRadius}" stroke-width="8"></circle>
+              <circle class="ring-fg" cx="48" cy="48" r="${ringRadius}" stroke-width="8" stroke="${ringColor}" stroke-dasharray="${ringCircumf}" stroke-dashoffset="${offset}"></circle>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-value" style="font-size: 15px; font-weight: 700; color: ${ringColor}">${held > 0 ? percent.toFixed(1) + '%' : '0%'}</div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin: 0; color: var(--text-primary);">Present Semester Attendance</h3>
+            <div style="font-size: 14px; color: var(--text-secondary); font-weight: 500;">
+              ${held > 0 ? `<span class="mono" style="font-weight: 600; color: var(--text-primary);">${attended}</span> attended out of <span class="mono" style="font-weight: 600; color: var(--text-primary);">${held}</span> total lectures held` : 'No attendance lectures logged for this term yet.'}
+            </div>
+            <div style="font-size: 12px; color: var(--text-faint); margin-top: 4px;">Status: ${held === 0 ? 'Not yet started / Vacation' : (percent >= 75 ? 'Satisfactory Standing' : 'Below 75% Requirement')}</div>
+          </div>
+        </div>
+      </div>
+
+    <!-- Subject Attendance Record Table -->
+      <div class="overview-card" style="margin-bottom: 24px;">
+        <div class="overview-card-header">
+          <span class="overview-card-title">Subject Attendance Record</span>
+          <span class="overview-card-subtitle">${lastUpdated ? 'Last synced: ' + new Date(lastUpdated).toLocaleString() : 'Current Term'}</span>
+        </div>
+        <div class="reecap-table-wrap">
+          <table class="reecap-data-table reecap-attendance-table">
+            <thead>
+              <tr>
+                <th>Subject Name</th>
+                <th style="text-align: right;">Held</th>
+                <th style="text-align: right;">Attended</th>
+                <th style="text-align: right;">Percentage</th>
+                <th style="text-align: center; width: 140px;">75% Target Status</th>
+                <th style="width: 140px; text-align: left;">Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    attendanceSubjects.forEach(s => {
+      const sColor = s.percent >= 75 ? "var(--success)" : (s.percent >= 65 ? "var(--warning)" : (s.held === 0 ? "var(--text-faint)" : "var(--error)"));
+      
+      // Calculate bunk/attend limits for 75% target
+      let targetStatusStr = '<span class="status-neutral">N/A</span>';
+      
+      // We want: (attended + attend_more) / (held + attend_more) >= 0.75
+      // To find attend_more: attended + A = 0.75*(held + A) 
+      // => attended + A = 0.75*held + 0.75*A 
+      // => 0.25*A = 0.75*held - attended
+      // => A = 3*held - 4*attended
+      const neededClasses = (3 * s.held) - (4 * s.attend);
+      
+      // We want: attended / (held + skip_more) >= 0.75
+      // => attended = 0.75*held + 0.75*skip_more
+      // => 0.75*skip_more = attended - 0.75*held
+      // => skip_more = (4/3)*attended - held
+      const skippableClasses = Math.floor((4/3) * s.attend - s.held);
+
+      if (s.held === 0) {
+         targetStatusStr = '<span class="status-neutral" style="color: var(--text-faint); font-size: 12px;">Classes pending</span>';
+      } else if (s.percent >= 75) {
+         if (skippableClasses > 0) {
+            targetStatusStr = `<div class="bunkable-tag">Can skip next <b>${skippableClasses}</b></div>`;
+         } else {
+            // They are at exactly 75%. Falling below it is bad, so this is a warning.
+            targetStatusStr = `<div class="bunkable-tag warning">Can skip <b>0</b></div>`;
+         }
+      } else {
+         // If they are between 65% and 75%, it's just a warning. Below 65% is critical red.
+         const pillTone = s.percent >= 65 ? 'warning' : 'critical';
+         if (neededClasses > 0) {
+            targetStatusStr = `<div class="bunkable-tag ${pillTone}">Attend next <b>${neededClasses}</b></div>`;
+         } else {
+            // Technically impossible string if percent < 75, but safeguard.
+            targetStatusStr = `<div class="bunkable-tag ${pillTone}">Attend next <b>0</b></div>`; 
+         }
+      }
+
+      html += `
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--text-primary);">${s.subjName}</div>
+            ${s.faculty ? `<div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; font-weight: 500;">${s.faculty}</div>` : ''}
+          </td>
+          <td class="mono" style="text-align: right;">${s.held}</td>
+          <td class="mono" style="text-align: right; font-weight: 600;">${s.attend}</td>
+          <td class="mono" style="text-align: right; font-weight: 700; color: ${sColor};">${s.percent}%</td>
+          <td style="text-align: center;">${targetStatusStr}</td>
+          <td>
+            <div class="progress-track" style="margin-top: 2px;">
+              <div class="progress-bar" style="width: ${Math.min(100, s.percent)}%; background: ${sColor};"></div>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    wrapper.innerHTML = html;
+  }
+
+  chrome.storage.local.get(['reecapProfileData'], (data) => {
+    if (chrome.runtime && chrome.runtime.lastError) return;
+
+    // First, sync it immediately if we have it
+    let prof = data ? data.reecapProfileData : null;
+    renderView(prof);
+
+    // If it's missing or subjects aren't populated, we cannot prefetch it safely
+    // because background iframe fetching corrupts the ASP.NET scrid session and
+    // causes 401 Unauthorized logout loops.
+  });
+}
+
+
+// ────────────────────────────────────────────────────────────────
+// Exam Script Viewer — "Save as PDF" (2026-08-29)
+// ────────────────────────────────────────────────────────────────
+// Injects a download button into the ExamScriptViewer page that
+// stitches all rendered <canvas> pages from #pdf_viewer into a
+// multi-page PDF using jsPDF.
+// ────────────────────────────────────────────────────────────────
+
+function observeExamViewer() {
+  document.body.classList.add('reecap-exam-viewer-page');
+
+  // Wait for the button container to exist in the DOM
+  const waitForContainer = () => {
+    const container = document.querySelector('.button-container');
+    if (container) {
+      injectSavePdfButton(container);
+      observePdfViewerChanges();
+    } else {
+      // The page might still be loading — retry
+      setTimeout(waitForContainer, 500);
+    }
+  };
+  waitForContainer();
+}
+
+/**
+ * Injects the "Save as PDF" button into the .button-container
+ */
+function injectSavePdfButton(container) {
+  if (container.querySelector('#reecap-save-pdf')) return;
+
+  const btn = document.createElement('a');
+  btn.id = 'reecap-save-pdf';
+  btn.className = 'btn btn-save-pdf';
+  btn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         style="vertical-align: -2px; margin-right: 4px;">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>Save as PDF`;
+  btn.style.cursor = 'pointer';
+  btn.addEventListener('click', saveExamAsPdf);
+  container.appendChild(btn);
+
+  // Disable initially until canvases are present
+  updateSavePdfState();
+}
+
+/**
+ * Watches #pdf_viewer for canvas additions/removals so we can
+ * enable/disable the Save button appropriately.
+ */
+function observePdfViewerChanges() {
+  const viewer = document.getElementById('pdf_viewer');
+  if (!viewer) return;
+
+  const observer = new MutationObserver(() => {
+    updateSavePdfState();
+  });
+
+  observer.observe(viewer, { childList: true, subtree: true });
+}
+
+/**
+ * Enable the button only when there are rendered canvases.
+ */
+function updateSavePdfState() {
+  const btn = document.getElementById('reecap-save-pdf');
+  if (!btn) return;
+
+  const canvases = document.querySelectorAll('#pdf_viewer canvas');
+  const hasContent = canvases.length > 0 &&
+    Array.from(canvases).some(c => c.width > 0 && c.height > 0);
+
+  if (hasContent) {
+    btn.classList.remove('disabled');
+    btn.style.pointerEvents = 'auto';
+    btn.style.opacity = '1';
+  } else {
+    btn.classList.add('disabled');
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.5';
+  }
+}
+
+function saveExamAsPdf() {
+  const btn = document.getElementById('reecap-save-pdf');
+  if (btn) {
+    btn.dataset.originalText = btn.innerHTML;
+    btn.innerHTML = 'Loading PDF engine...';
+    btn.style.pointerEvents = 'none';
+  }
+
+  // Inject jsPDF into the Main World safely (hiding AMD define to force window.jspdf creation)
+  if (!document.getElementById('reecap-jspdf-lib')) {
+    const hideAmd = document.createElement('script');
+    hideAmd.textContent = 'window.__temp_define = window.define; window.define = undefined;';
+    document.head.appendChild(hideAmd);
+
+    const script = document.createElement('script');
+    script.id = 'reecap-jspdf-lib';
+    script.src = chrome.runtime.getURL('lib/jspdf.umd.min.js');
+    script.onload = () => {
+      const restoreAmd = document.createElement('script');
+      restoreAmd.textContent = 'window.define = window.__temp_define;';
+      document.head.appendChild(restoreAmd);
+      injectPdfGenerator();
+    };
+    script.onerror = () => {
+      alert('Failed to load PDF engine.');
+      if (btn) {
+        btn.innerHTML = btn.dataset.originalText || 'Save as PDF';
+        btn.style.pointerEvents = 'auto';
+      }
+    };
+    document.head.appendChild(script);
+  } else {
+    injectPdfGenerator();
+  }
+}
+
+function injectPdfGenerator() {
+  // Execute the generator script in the Main World so it has access to window.jspdf
+  const script = document.createElement('script');
+  script.src = chrome.runtime.getURL('pdf_generator.js');
+  script.onload = () => script.remove();
+  document.head.appendChild(script);
+}
