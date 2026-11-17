@@ -5320,19 +5320,21 @@ table#tblquestions input[type="text"]:not([value]) {
 
 
 /* ==========================================================================
-   Aria AI Academic Co-pilot Sidebar & Navigation System
+   Aria AI Academic Co-pilot — Professional-Grade Design System (beautifului.dev)
    ========================================================================== */
 
-/* Top Masthead Aria Trigger Pill */
+/* ── 1. Masthead Trigger Pill ── */
 .reecap-aria-pill-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  background: color-mix(in srgb, var(--accent) 15%, var(--surface-card)) !important;
+  gap: 7px !important;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-card)) !important;
   color: var(--accent) !important;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   font-weight: 700 !important;
-  letter-spacing: 0.03em !important;
+  font-size: 12px !important;
+  letter-spacing: 0.02em !important;
   padding: 6px 14px !important;
   border-radius: 9999px !important;
   cursor: pointer !important;
@@ -5340,7 +5342,7 @@ table#tblquestions input[type="text"]:not([value]) {
   position: relative !important;
   z-index: 10 !important;
   user-select: none !important;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
@@ -5351,42 +5353,46 @@ table#tblquestions input[type="text"]:not([value]) {
 .reecap-aria-pill-btn:hover {
   background: var(--accent) !important;
   color: #fff !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 6px 16px -2px color-mix(in srgb, var(--accent) 40%, transparent) !important;
+  border-color: var(--accent) !important;
 }
 
 .reecap-aria-pill-btn .aria-sparkle {
   color: var(--accent);
   font-size: 13px;
   line-height: 1;
-  transition: transform 0.25s ease;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reecap-aria-pill-btn:hover .aria-sparkle {
   color: #fff;
-  transform: rotate(25deg) scale(1.15);
+  transform: rotate(25deg) scale(1.2);
 }
 
-/* Sidebar Drawer Container */
+/* ── 2. Sidebar Drawer & Elevation Layers (beautifului.dev Glassmorphism) ── */
 .reecap-aria-sidebar {
   position: fixed !important;
   top: 0 !important;
   right: 0 !important;
-  width: 410px !important;
-  max-width: 94vw !important;
+  width: 440px !important;
+  max-width: 96vw !important;
   height: 100vh !important;
   max-height: 100vh !important;
   z-index: 999999 !important;
   background: var(--surface-card) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
   border-left: 1px solid var(--border-light) !important;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18), var(--ambient-glow) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), -16px 0 48px -12px rgba(0, 0, 0, 0.35), var(--ambient-glow) !important;
   display: flex !important;
   flex-direction: column !important;
   transform: translateX(100%) !important;
-  transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1) !important;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
   user-select: text !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
 }
 
 .reecap-aria-sidebar.is-open,
@@ -5399,12 +5405,13 @@ table#tblquestions input[type="text"]:not([value]) {
 .reecap-aria-scrim {
   position: fixed !important;
   inset: 0 !important;
-  background: rgba(0, 0, 0, 0.45) !important;
-  backdrop-filter: blur(2px) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
   z-index: 999998 !important;
   opacity: 0 !important;
   pointer-events: none !important;
-  transition: opacity 0.25s ease !important;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .reecap-aria-scrim.is-open,
@@ -5413,7 +5420,7 @@ table#tblquestions input[type="text"]:not([value]) {
   pointer-events: auto !important;
 }
 
-/* Header */
+/* ── 3. Header with Model Selector & Live Status (beautifului.dev AgentHeader) ── */
 .aria-sidebar-header {
   display: flex !important;
   align-items: center !important;
@@ -5422,6 +5429,7 @@ table#tblquestions input[type="text"]:not([value]) {
   border-bottom: 1px solid var(--border-light) !important;
   background: var(--surface-card) !important;
   flex-shrink: 0 !important;
+  position: relative !important;
 }
 
 .aria-brand {
@@ -5431,20 +5439,50 @@ table#tblquestions input[type="text"]:not([value]) {
 }
 
 .aria-avatar {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 10px !important;
+  position: relative !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
   background: linear-gradient(135deg, var(--accent), var(--accent-dark, var(--accent))) !important;
   color: #fff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent) !important;
+  box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--accent) 45%, transparent) !important;
   flex-shrink: 0 !important;
 }
 
+.aria-avatar-ping {
+  position: absolute !important;
+  top: -2px !important;
+  right: -2px !important;
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 50% !important;
+  background: var(--success, #10b981) !important;
+  box-shadow: 0 0 0 2px var(--surface-card) !important;
+  animation: ariaPulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite !important;
+}
+
+@keyframes ariaPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.aria-brand-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.aria-brand-title-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
 .aria-title {
-  font-family: var(--font-display, inherit) !important;
   font-size: 16px !important;
   font-weight: 800 !important;
   color: var(--text-primary) !important;
@@ -5452,125 +5490,227 @@ table#tblquestions input[type="text"]:not([value]) {
   line-height: 1.2 !important;
 }
 
+.aria-version-pill {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent) !important;
+  padding: 1px 6px !important;
+  border-radius: 9999px !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.4 !important;
+}
+
 .aria-subtitle {
   font-family: var(--font-mono, monospace) !important;
   font-size: 11px !important;
   color: var(--text-faint) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
+  letter-spacing: 0.02em !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
 }
 
+.aria-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.aria-header-btn,
 .aria-close-btn {
   background: transparent !important;
-  border: none !important;
+  border: 1px solid transparent !important;
   color: var(--text-secondary) !important;
-  font-size: 22px !important;
-  line-height: 1 !important;
   width: 32px !important;
   height: 32px !important;
-  border-radius: 8px !important;
+  border-radius: 9px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  padding: 0 !important;
 }
 
+.aria-header-btn:hover,
 .aria-close-btn:hover {
-  background: var(--surface-hover, rgba(0, 0, 0, 0.05)) !important;
+  background: var(--surface-sunken) !important;
+  border-color: var(--border-light) !important;
   color: var(--text-primary) !important;
+  transform: translateY(-1px) !important;
 }
 
-/* Student Academic Health Strip */
+/* ── 4. ContextCards Grid (beautifului.dev ContextCards Primitive) ── */
 .aria-student-strip {
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 8px !important;
-  padding: 12px 18px !important;
-  background: var(--surface-sunken) !important;
+  padding: 14px 18px !important;
+  background: color-mix(in srgb, var(--surface-sunken) 50%, var(--surface-card)) !important;
   border-bottom: 1px solid var(--border-light) !important;
   flex-shrink: 0 !important;
-  overflow-x: auto !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
 }
 
-.aria-student-strip::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
-.aria-stat-badge {
+.aria-context-card {
   display: flex !important;
   flex-direction: column !important;
-  flex: 1 !important;
-  min-width: 80px !important;
-  padding: 8px 10px !important;
+  padding: 10px 12px !important;
   background: var(--surface-card) !important;
   border: 1px solid var(--border-light) !important;
-  border-radius: var(--radius-sm, 8px) !important;
-}
-
-.aria-stat-badge .stat-label {
-  font-family: var(--font-mono, monospace) !important;
-  font-size: 10px !important;
-  color: var(--text-faint) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  font-weight: 700 !important;
-}
-
-.aria-stat-badge .stat-value {
-  font-size: 14px !important;
-  font-weight: 800 !important;
-  color: var(--text-primary) !important;
-  margin-top: 2px !important;
-}
-
-/* Suggestions & Insight Chips Panel */
-.aria-suggestions-panel {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-  padding: 12px 18px 6px !important;
-  border-bottom: 1px dashed var(--border-light) !important;
-  flex-shrink: 0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative !important;
   overflow: hidden !important;
 }
 
-.aria-suggestion-card {
-  padding: 10px 12px !important;
+.aria-context-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border-light)) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.context-card-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+}
+
+.context-card-label {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.07em !important;
+  color: var(--text-faint) !important;
+}
+
+.context-card-badge {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  padding: 1px 6px !important;
+  border-radius: 9999px !important;
+  letter-spacing: 0.02em !important;
+}
+
+.badge-accent {
+  background: color-mix(in srgb, var(--accent) 14%, transparent) !important;
+  color: var(--accent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent) !important;
+}
+
+.badge-success {
+  background: color-mix(in srgb, var(--success, #10b981) 14%, transparent) !important;
+  color: var(--success, #10b981) !important;
+  border: 1px solid color-mix(in srgb, var(--success, #10b981) 25%, transparent) !important;
+}
+
+.badge-danger {
+  background: color-mix(in srgb, var(--danger, #ef4444) 14%, transparent) !important;
+  color: var(--danger, #ef4444) !important;
+  border: 1px solid color-mix(in srgb, var(--danger, #ef4444) 25%, transparent) !important;
+}
+
+.badge-neutral {
   background: var(--surface-sunken) !important;
-  border-radius: var(--radius-sm, 8px) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border-light) !important;
+}
+
+.context-card-value {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.03em !important;
+  margin-top: 4px !important;
+  line-height: 1.2 !important;
+}
+
+.context-card-meta {
+  font-size: 10.5px !important;
+  color: var(--text-faint) !important;
+  margin-top: 3px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* ── 5. Suggestions & InsightCards (beautifului.dev InsightCards Primitive) ── */
+.aria-suggestions-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  padding: 12px 18px 8px !important;
+  border-bottom: 1px dashed var(--border-light) !important;
+  flex-shrink: 0 !important;
+  background: var(--surface-card) !important;
+}
+
+.aria-insight-card {
+  padding: 12px 14px !important;
+  background: color-mix(in srgb, var(--surface-sunken) 70%, var(--surface-card)) !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--border-light) !important;
   border-left: 3px solid var(--accent) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.aria-insight-card.card-danger {
+  border-left-color: var(--danger, #ef4444) !important;
+}
+
+.aria-insight-card.card-success {
+  border-left-color: var(--success, #10b981) !important;
+}
+
+.insight-card-category {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: var(--accent) !important;
+  margin-bottom: 2px !important;
+}
+
+.aria-insight-card.card-danger .insight-card-category {
+  color: var(--danger, #ef4444) !important;
+}
+
+.aria-insight-card.card-success .insight-card-category {
+  color: var(--success, #10b981) !important;
+}
+
+.insight-card-title {
+  font-size: 13px !important;
+  font-weight: 750 !important;
+  color: var(--text-primary) !important;
+  margin-bottom: 3px !important;
+}
+
+.insight-card-body {
   font-size: 12px !important;
   color: var(--text-secondary) !important;
-  line-height: 1.4 !important;
+  line-height: 1.45 !important;
 }
 
-.aria-suggestion-card.card-danger {
-  border-left-color: var(--danger, #e53e3e) !important;
-}
-
-.aria-suggestion-card.card-success {
-  border-left-color: var(--success, #38a169) !important;
-}
-
-.aria-suggestion-card strong {
-  color: var(--text-primary) !important;
-}
-
-.aria-chips-row {
+/* ── 6. Prompt Chips Shelf (beautifului.dev Chips Row) ── */
+.prompt-chips-shelf {
   display: flex !important;
-  gap: 8px !important;
+  gap: 6px !important;
   overflow-x: auto !important;
-  padding: 2px 2px 6px !important;
+  padding: 2px 0 6px !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
   -webkit-overflow-scrolling: touch !important;
 }
 
-.aria-chips-row::-webkit-scrollbar {
+.prompt-chips-shelf::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -5578,26 +5718,31 @@ table#tblquestions input[type="text"]:not([value]) {
 
 .aria-prompt-chip {
   white-space: nowrap !important;
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
-  padding: 5px 11px !important;
+  padding: 6px 12px !important;
   background: var(--surface-card) !important;
   border: 1px solid var(--border-light) !important;
   border-radius: 9999px !important;
   color: var(--text-secondary) !important;
   cursor: pointer !important;
   user-select: none !important;
-  transition: all 0.18s ease !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
 }
 
 .aria-prompt-chip:hover {
   background: color-mix(in srgb, var(--accent) 12%, var(--surface-card)) !important;
-  border-color: var(--accent) !important;
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent) !important;
   color: var(--accent) !important;
-  transform: translateY(-1px) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 3px 8px -1px color-mix(in srgb, var(--accent) 25%, transparent) !important;
 }
 
-/* Messages Area */
+/* ── 7. Messages Scroll View ── */
 .aria-messages {
   flex: 1 1 0% !important;
   min-height: 0 !important;
@@ -5611,14 +5756,14 @@ table#tblquestions input[type="text"]:not([value]) {
   display: flex !important;
   flex-direction: column !important;
   gap: 14px !important;
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   line-height: 1.55 !important;
   scrollbar-width: thin !important;
   scrollbar-color: color-mix(in srgb, var(--border) 45%, transparent) transparent !important;
 }
 
 .aria-messages::-webkit-scrollbar {
-  width: 6px !important;
+  width: 5px !important;
 }
 
 .aria-messages::-webkit-scrollbar-track {
@@ -5626,23 +5771,28 @@ table#tblquestions input[type="text"]:not([value]) {
 }
 
 .aria-messages::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--border) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--border) 40%, transparent) !important;
   border-radius: 9999px !important;
-  border: 1px solid transparent !important;
-  background-clip: content-box !important;
 }
 
 .aria-messages::-webkit-scrollbar-thumb:hover {
   background: var(--text-faint) !important;
 }
 
+/* Message Cards */
 .aria-msg {
   display: flex !important;
   flex-direction: column !important;
-  max-width: 88% !important;
+  max-width: 92% !important;
   border-radius: 14px !important;
   padding: 12px 14px !important;
   word-break: break-word !important;
+  animation: ariaFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes ariaFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .aria-msg.msg-user {
@@ -5650,22 +5800,25 @@ table#tblquestions input[type="text"]:not([value]) {
   background: var(--accent) !important;
   color: #fff !important;
   border-bottom-right-radius: 4px !important;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 25%, transparent) !important;
+  box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--accent) 40%, transparent) !important;
+  font-weight: 500 !important;
 }
 
 .aria-msg.msg-assistant {
   align-self: flex-start !important;
-  background: var(--surface-sunken) !important;
+  background: color-mix(in srgb, var(--surface-sunken) 70%, var(--surface-card)) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--border-light) !important;
   border-bottom-left-radius: 4px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
 }
 
-.aria-msg.msg-assistant h3 {
-  margin: 0 0 8px !important;
+.aria-msg.msg-assistant h3.aria-heading {
+  margin: 0 0 10px !important;
   font-size: 14px !important;
-  font-weight: 750 !important;
+  font-weight: 800 !important;
   color: var(--text-primary) !important;
+  letter-spacing: -0.01em !important;
 }
 
 .aria-msg.msg-assistant p {
@@ -5677,7 +5830,7 @@ table#tblquestions input[type="text"]:not([value]) {
 }
 
 .aria-msg.msg-assistant ul {
-  margin: 4px 0 8px 18px !important;
+  margin: 4px 0 10px 18px !important;
   padding: 0 !important;
 }
 
@@ -5685,33 +5838,248 @@ table#tblquestions input[type="text"]:not([value]) {
   margin-bottom: 4px !important;
 }
 
-/* In-chat interactive action chips */
+.aria-code {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 12px !important;
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  background: color-mix(in srgb, var(--surface-card) 60%, var(--surface-sunken)) !important;
+  border: 1px solid var(--border-light) !important;
+  color: var(--accent) !important;
+}
+
+/* ── 8. ThinkingState Component (beautifului.dev ThinkingState Primitive) ── */
+.aria-thinking-card {
+  border-radius: 10px !important;
+  border: 1px solid var(--border-light) !important;
+  background: var(--surface-card) !important;
+  padding: 8px 12px !important;
+  margin-bottom: 10px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.thinking-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.thinking-spinner-icon {
+  width: 16px !important;
+  height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--accent) !important;
+}
+
+.spinning-svg {
+  animation: ariaSpin 1s linear infinite !important;
+}
+
+@keyframes ariaSpin {
+  100% { transform: rotate(360deg); }
+}
+
+.thinking-title {
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  color: var(--text-primary) !important;
+  flex: 1 !important;
+}
+
+.thinking-duration {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 10.5px !important;
+  color: var(--text-faint) !important;
+  background: var(--surface-sunken) !important;
+  padding: 1px 6px !important;
+  border-radius: 9999px !important;
+  border: 1px solid var(--border-light) !important;
+}
+
+.thinking-expand-btn {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-faint) !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s ease !important;
+}
+
+.aria-thinking-card.is-expanded .thinking-expand-btn svg {
+  transform: rotate(180deg) !important;
+}
+
+.thinking-trace {
+  display: none !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-top: 10px !important;
+  padding-top: 8px !important;
+  border-top: 1px dashed var(--border-light) !important;
+}
+
+.aria-thinking-card.is-expanded .thinking-trace {
+  display: flex !important;
+}
+
+.trace-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  font-size: 11.5px !important;
+  color: var(--text-secondary) !important;
+}
+
+.trace-icon {
+  font-size: 10px !important;
+  color: var(--text-faint) !important;
+}
+
+.trace-row.is-done .trace-icon {
+  color: var(--success, #10b981) !important;
+}
+
+.trace-row.is-active .trace-icon {
+  color: var(--accent) !important;
+  animation: ariaPulse 1.2s infinite !important;
+}
+
+/* ── 9. ToolChips Component (beautifului.dev ToolChips Primitive) ── */
+.aria-tool-chips-stack {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin: 6px 0 10px 0 !important;
+}
+
+.aria-tool-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent) !important;
+  color: var(--accent) !important;
+}
+
+.tool-chip-dot {
+  width: 5px !important;
+  height: 5px !important;
+  border-radius: 50% !important;
+  background: var(--accent) !important;
+}
+
+/* ── 10. RecordsTable Component (beautifului.dev RecordsTable Primitive) ── */
+.aria-table-wrapper {
+  overflow-x: auto !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border-light) !important;
+  background: var(--surface-card) !important;
+  margin: 8px 0 12px 0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.aria-records-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 12px !important;
+  text-align: left !important;
+}
+
+.aria-records-table th {
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 8px 12px !important;
+  background: var(--surface-sunken) !important;
+  color: var(--text-faint) !important;
+  border-bottom: 1px solid var(--border-light) !important;
+}
+
+.aria-records-table td {
+  padding: 8px 12px !important;
+  color: var(--text-secondary) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-light) 60%, transparent) !important;
+}
+
+.aria-records-table tr:last-child td {
+  border-bottom: none !important;
+}
+
+.aria-records-table tr:hover td {
+  background: color-mix(in srgb, var(--accent) 4%, transparent) !important;
+}
+
+/* ── 11. StreamingText with Glowing Pulse Cursor ── */
+.aria-stream-cursor {
+  display: inline-block !important;
+  width: 2px !important;
+  height: 14px !important;
+  background: var(--accent) !important;
+  margin-left: 2px !important;
+  vertical-align: middle !important;
+  animation: ariaCursorBlink 0.8s infinite cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes ariaCursorBlink {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.15; transform: scaleY(0.7); }
+}
+
+/* ── 12. Action Chips (beautifului.dev Action Pill Primitive) ── */
 .aria-action-chip {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  margin: 4px 4px 4px 0 !important;
-  padding: 5px 11px !important;
+  gap: 5px !important;
+  margin: 4px 6px 4px 0 !important;
+  padding: 6px 12px !important;
   border-radius: 9999px !important;
-  background: color-mix(in srgb, var(--accent) 15%, var(--surface-card)) !important;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent) !important;
   color: var(--accent) !important;
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   font-weight: 700 !important;
   cursor: pointer !important;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
   text-decoration: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.aria-action-chip .chip-sparkle {
+  font-size: 11px !important;
+  opacity: 0.85 !important;
+}
+
+.aria-action-chip .chip-chevron {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .aria-action-chip:hover {
   background: var(--accent) !important;
   color: #fff !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 40%, transparent) !important;
+  border-color: var(--accent) !important;
 }
 
-/* Composer */
-.aria-composer {
+.aria-action-chip:hover .chip-chevron {
+  transform: translateX(2px) !important;
+}
+
+/* ── 13. PromptBar Composer (beautifului.dev PromptBar Primitive) ── */
+.aria-composer.prompt-bar-card {
   padding: 12px 18px 16px !important;
   background: var(--surface-card) !important;
   border-top: 1px solid var(--border-light) !important;
@@ -5719,54 +6087,112 @@ table#tblquestions input[type="text"]:not([value]) {
   flex-direction: column !important;
   gap: 8px !important;
   flex-shrink: 0 !important;
+  position: relative !important;
 }
 
-.aria-composer-box {
+.prompt-bar-container {
   display: flex !important;
-  align-items: flex-end !important;
-  gap: 8px !important;
+  flex-direction: column !important;
   background: var(--surface-sunken) !important;
   border: 1px solid var(--border-light) !important;
-  border-radius: 12px !important;
-  padding: 6px 10px !important;
-  transition: border-color 0.2s, box-shadow 0.2s !important;
+  border-radius: 16px !important;
+  padding: 10px 12px 8px !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
 }
 
-.aria-composer-box:focus-within {
+.prompt-bar-container:focus-within {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent) !important;
+  background: var(--surface-card) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent), 0 6px 16px -4px rgba(0, 0, 0, 0.08) !important;
 }
 
-.aria-composer-box textarea {
-  flex: 1 !important;
+.prompt-bar-input-wrapper textarea {
+  width: 100% !important;
   background: transparent !important;
   border: none !important;
   outline: none !important;
   resize: none !important;
-  font-family: inherit !important;
-  font-size: 13px !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+  font-size: 13.5px !important;
   color: var(--text-primary) !important;
-  line-height: 1.4 !important;
+  line-height: 1.45 !important;
   max-height: 120px !important;
-  padding: 4px 0 !important;
+  padding: 2px 0 6px !important;
   scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
+  box-sizing: border-box !important;
 }
 
-.aria-composer-box textarea::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
-.aria-composer-box textarea::placeholder {
+.prompt-bar-input-wrapper textarea::placeholder {
   color: var(--text-faint) !important;
 }
 
-.aria-composer-box button[type="submit"] {
-  width: 32px !important;
-  height: 32px !important;
+.prompt-bar-controls {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding-top: 6px !important;
+  border-top: 1px solid color-mix(in srgb, var(--border-light) 60%, transparent) !important;
+}
+
+.prompt-bar-badges {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.prompt-model-badge,
+.prompt-context-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  color: var(--text-secondary) !important;
+  background: color-mix(in srgb, var(--surface-card) 60%, var(--surface-sunken)) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 9999px !important;
+  padding: 2px 7px !important;
+}
+
+.model-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: var(--success, #10b981) !important;
+}
+
+.prompt-bar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.prompt-action-btn {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-faint) !important;
+  width: 28px !important;
+  height: 28px !important;
   border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+}
+
+.prompt-action-btn:hover {
+  background: var(--surface-sunken) !important;
+  color: var(--text-primary) !important;
+}
+
+.prompt-send-pill {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
   background: var(--accent) !important;
   color: #fff !important;
   border: none !important;
@@ -5775,56 +6201,33 @@ table#tblquestions input[type="text"]:not([value]) {
   justify-content: center !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
-  transition: transform 0.18s ease, opacity 0.18s ease !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, opacity 0.2s ease !important;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 35%, transparent) !important;
 }
 
-.aria-composer-box button[type="submit"]:hover:not(:disabled) {
-  transform: translateY(-1px) !important;
+.prompt-send-pill:hover:not(:disabled) {
+  transform: translateY(-1.5px) scale(1.05) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 50%, transparent) !important;
 }
 
-.aria-composer-box button[type="submit"]:disabled {
-  opacity: 0.45 !important;
+.prompt-send-pill:disabled {
+  opacity: 0.35 !important;
   cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-.aria-composer-footer {
+.prompt-bar-footer {
   font-family: var(--font-mono, monospace) !important;
   font-size: 10px !important;
   color: var(--text-faint) !important;
   text-align: center !important;
 }
 
-.aria-composer-footer kbd {
+.prompt-bar-footer kbd {
   background: var(--surface-sunken) !important;
   border: 1px solid var(--border-light) !important;
   border-radius: 4px !important;
   padding: 1px 4px !important;
   font-size: 9px !important;
-}
-
-/* Typing Indicator */
-.aria-typing-indicator {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  padding: 6px 10px !important;
-  background: var(--surface-sunken) !important;
-  border-radius: 12px !important;
-  width: fit-content !important;
-}
-
-.aria-typing-dot {
-  width: 5px !important;
-  height: 5px !important;
-  border-radius: 50% !important;
-  background: var(--text-faint) !important;
-  animation: ariaBlink 1.4s infinite both !important;
-}
-
-.aria-typing-dot:nth-child(2) { animation-delay: 0.2s !important; }
-.aria-typing-dot:nth-child(3) { animation-delay: 0.4s !important; }
-
-@keyframes ariaBlink {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1.1); }
 }
