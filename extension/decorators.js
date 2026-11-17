@@ -3518,6 +3518,8 @@ function showIframe() {
   }
 }
 
+let responsiveNavigationController = null;
+
 function initResponsiveNavigation() {
   if (responsiveNavigationController) return responsiveNavigationController;
 
