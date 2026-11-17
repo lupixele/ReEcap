@@ -912,12 +912,12 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         const average = allCourses.filter(c => ['B+'].includes(c.grade) || c.gradePoints === 7);
         const strong = allCourses.filter(c => ['A', 'A+', 'O', 'EX'].includes(c.grade) || c.gradePoints >= 8);
 
-        let resp = `### 🎯 Academic Performance & Weak Subjects Audit\n\n`;
+        let resp = `### Academic Performance & Weak Subjects Audit\n\n`;
         resp += `- **Evaluated Record:** ${allCourses.length} completed courses across ${semesters.length} semesters.\n`;
         resp += `- **Current Standing:** **${acad.cgpa || '7.56'} CGPA** (${acad.credits || '41/41'} credits cleared • Zero Backlogs)\n\n`;
 
         if (weak.length > 0) {
-          resp += `⚠️ **Key Improvement Areas (Grade B • 6.0 Points):**\n`;
+          resp += `**Key Improvement Areas (Grade B • 6.0 Points):**\n`;
           weak.forEach(w => {
             resp += `- **${w.name}** (\`${w.code}\` • ${w.semester})\n`;
             resp += `  • **Grade:** \`${w.grade}\` (${w.gradePoints} Grade Points • ${w.credits} Credits)\n`;
@@ -933,12 +933,12 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         }
 
         if (average.length > 0) {
-          resp += `💡 **Moderate Standing (Grade B+ • 7.0 Points):**\n`;
+          resp += `**Moderate Standing (Grade B+ • 7.0 Points):**\n`;
           resp += average.map(a => `- **${a.name}** (\`${a.code}\` • ${a.semester}) — Grade \`${a.grade}\``).join('\n') + `\n\n`;
         }
 
         if (strong.length > 0) {
-          resp += `🌟 **Core Strengths (Grade A / A+ • 8.0–9.0 Points):**\n`;
+          resp += `**Core Strengths (Grade A / A+ • 8.0–9.0 Points):**\n`;
           resp += strong.slice(0, 5).map(s => `- **${s.name}**: Grade \`${s.grade}\` (${s.gradePoints} pts)`).join('\n') + `\n\n`;
         }
 
@@ -948,23 +948,23 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         const nextSemCredits = 21;
         const targetSgpa = (((targetCgpa * (curCredits + nextSemCredits)) - (curCgpa * curCredits)) / nextSemCredits).toFixed(2);
 
-        resp += `📈 **SGPA Goal Recommendation:**\n`;
+        resp += `**SGPA Goal Recommendation:**\n`;
         resp += `To elevate your cumulative CGPA from **${curCgpa}** to **8.00+** (Distinction cutoff), aim for an SGPA of **~${targetSgpa}** in the current III Semester by securing A/A+ in lab internals and mid exams.\n\n`;
 
         resp += `[action:nav:marks|Open Detailed Marks Report] [action:target_calc|SGPA Goal Calculator]`;
         return resp;
       } else {
         const curCgpa = acad.cgpa || '7.56';
-        let resp = `### 🎯 Academic Performance & Weak Subjects Audit\n\n`;
+        let resp = `### Academic Performance & Weak Subjects Audit\n\n`;
         resp += `- **Current Standing:** **${curCgpa} CGPA** (${acad.credits || '41/41'} credits cleared • Zero Backlogs)\n\n`;
-        resp += `⚠️ **Key Improvement Areas (Grade B • 6.0 Points):**\n`;
+        resp += `**Key Improvement Areas (Grade B • 6.0 Points):**\n`;
         resp += `- **Digital Logic Design**\n  • *Focus Area:* Boolean algebra, K-maps, sequential state machines, and timing diagrams.\n`;
         resp += `- **Basic Electrical Engineering**\n  • *Focus Area:* Mesh/Nodal circuit analysis, AC phasor impedance, and diode circuits.\n\n`;
-        resp += `💡 **Moderate Standing (Grade B+ • 7.0 Points):**\n`;
+        resp += `**Moderate Standing (Grade B+ • 7.0 Points):**\n`;
         resp += `- Programming for Problem Solving Using C (PPSUC)\n- Data Structures\n- Modern Physics\n- Linear Algebra\n\n`;
-        resp += `🌟 **Core Strengths (Grade A / A+ • 8.0–9.0 Points):**\n`;
+        resp += `**Core Strengths (Grade A / A+ • 8.0–9.0 Points):**\n`;
         resp += `- Python Programming: Grade \`A+\` (9 pts)\n- Computer Organization & Architecture: Grade \`A\` (8 pts)\n- Differential Equations & Vector Calculus: Grade \`A\` (8 pts)\n\n`;
-        resp += `📈 **SGPA Goal Recommendation:**\n`;
+        resp += `**SGPA Goal Recommendation:**\n`;
         resp += `To elevate your cumulative CGPA from **${curCgpa}** to **8.00+** (Distinction cutoff), aim for an SGPA of **~8.86** in the current III Semester by securing A/A+ in lab internals and mid exams.\n\n`;
         resp += `[action:nav:marks|Open Detailed Marks Report] [action:target_calc|SGPA Goal Calculator]`;
         return resp;
@@ -986,13 +986,13 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       const sgpa80 = calcRequiredSgpa(8.0);
       const sgpa85 = calcRequiredSgpa(8.5);
 
-      return `### 🎯 SGPA & CGPA Goal Calculator\n\n` +
+      return `### SGPA & CGPA Goal Calculator\n\n` +
         `- **Current Cumulative Standing:** **${curCgpa} CGPA** (${curCredits} credits cleared)\n` +
         `- **Current Term (III Semester):** Estimated 21 credits\n\n` +
         `**Targets for Current Term:**\n` +
         `- **To Reach 8.00 CGPA (First Class with Distinction):** You need an SGPA of **${sgpa80}** this semester.\n` +
         `- **To Reach 8.50 CGPA:** You need an SGPA of **${sgpa85}** this semester.\n\n` +
-        `💡 **Roadmap to ${sgpa80} SGPA:**\n` +
+        `**Roadmap to ${sgpa80} SGPA:**\n` +
         `1. Score **25+/30** in Mid-Term examinations (Mid 1 & Mid 2) for maximum internal weightage.\n` +
         `2. Maintain **A+ (9.0)** in all practical laboratory courses (DBMS Lab, ADS Lab).\n` +
         `3. Keep attendance above 75% across all subjects to avoid condonation penalties.\n\n` +
@@ -1004,13 +1004,13 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       const credits = acad.credits || '--';
       const passed = acad.passed || '--';
       const failed = acad.failed || '0';
-      return `### 📊 Academic Performance Overview\n\n` +
+      return `### Academic Performance Overview\n\n` +
         `- **Current CGPA:** **${cgpa}**\n` +
         `- **Total Credits Earned:** ${credits}\n` +
         `- **Courses Passed:** ${passed} | **Failed / Arrears:** ${failed}\n\n` +
         (parseFloat(cgpa) >= 7.5
-          ? `🌟 **Excellent standing!** You are well within the First Class with Distinction criteria. Keep focusing on core domain subjects.\n\n`
-          : `💡 **Target:** Aim to boost internal assignment and lab viva scores by 3–5 marks to improve your semester grade point average (SGPA).\n\n`) +
+          ? `**Current Standing:** You are well within the First Class with Distinction criteria. Keep focusing on core domain subjects.\n\n`
+          : `**Target:** Aim to boost internal assignment and lab viva scores by 3–5 marks to improve your semester grade point average (SGPA).\n\n`) +
         `[action:nav:marks|Open Detailed Marks Report]`;
     }
 
@@ -1036,37 +1036,37 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         const newPct = newHeld > 0 ? Number(((curAtt / newHeld) * 100).toFixed(1)) : 0;
         const maxBunks = matchedSubject.bunks || 0;
 
-        let resp = `### 🎯 Bunk Simulation: ${matchedSubject.name}\n\n`;
+        let resp = `### Bunk Simulation: ${matchedSubject.name}\n\n`;
         resp += `- **Current Standing:** ${curAtt}/${curHeld} classes attended (**${matchedSubject.percent}%**)\n`;
         resp += `- **If you miss ${bunkCount} class(es):** ${curAtt}/${newHeld} classes attended (**${newPct}%**)\n\n`;
 
         if (newPct >= 75) {
-          resp += `✅ **Safe to Bunk!** Your attendance will be **${newPct}%**, remaining **${(newPct - 75).toFixed(1)}% above** the 75% cutoff.\n`;
-          resp += `💡 You have a total safety cushion of **${maxBunks}** bunkable class(es) in this subject.\n\n`;
+          resp += `**Status:** Safe to bunk. Your attendance will remain at **${newPct}%**, which is **${(newPct - 75).toFixed(1)}% above** the 75% cutoff.\n`;
+          resp += `You have a total safety cushion of **${maxBunks}** bunkable class(es) in this subject.\n\n`;
         } else {
-          resp += `⚠️ **Risk Warning!** Skipping ${bunkCount} class(es) will drop your attendance to **${newPct}%**, which is **below the 75% threshold**!\n`;
-          resp += `💡 You can only safely skip **${maxBunks}** class(es) without falling into the condonation zone.\n\n`;
+          resp += `**Attendance Risk Warning:** Skipping ${bunkCount} class(es) will drop your attendance to **${newPct}%**, which is below the 75% mandatory threshold.\n`;
+          resp += `You can only safely skip **${maxBunks}** class(es) without falling into condonation.\n\n`;
         }
         resp += `[action:nav:attendance|View Live Attendance Table] [action:bunk_sim|Simulate Other Subjects]`;
         return resp;
       }
 
-      let resp = `### 🏖️ Attendance & Bunk Margin Simulator (Overall: ${overall}%)\n\n`;
+      let resp = `### Attendance & Bunk Margin Simulator (Overall: ${overall}%)\n\n`;
       if (critical.length > 0) {
-        resp += `⚠️ **Critical Attention (< 75%):**\n` +
+        resp += `**Critical Attendance Warning (< 75%):**\n` +
           critical.map(s => `- **${s.name}**: ${s.percent}% (Attend **${s.needed}** consecutive classes to clear shortage)`).join('\n') + '\n\n';
       }
       if (safe.length > 0) {
-        resp += `✅ **Safe Bunk Allowance (>= 75%):**\n` +
+        resp += `**Safe Bunk Allowance (>= 75%):**\n` +
           safe.map(s => `- **${s.name}**: ${s.percent}% (${s.attended}/${s.held}) • Can safely bunk **${s.bunks}** class(es)`).join('\n') + '\n\n';
       }
-      resp += `💡 *Tip: Ask me specifically, e.g., "Can I bunk 2 classes of DBMS?" for instant projection.*\n\n`;
+      resp += `*Tip: Ask specifically (e.g., "Can I bunk 2 classes of DBMS?") for an instant projection.*\n\n`;
       resp += `[action:nav:attendance|View Live Attendance] [action:nav:marks|Check Grades]`;
       return resp;
     }
 
     if (q.includes('class') || q.includes('timetable') || q.includes('schedule') || q.includes('period') || q.includes('next')) {
-      return `### 🕒 Today's Schedule & Classes\n\n` +
+      return `### Today's Schedule & Classes\n\n` +
         (dossier.schedule?.length > 0
           ? `You have classes scheduled today. Check the timetable dashboard for faculty and room details.\n\n`
           : `No classes recorded or today is a declared holiday / weekend.\n\n`) +
@@ -1076,7 +1076,7 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
     if (q.includes('fee') || q.includes('due') || q.includes('receipt') || q.includes('payment') || q.includes('tuition')) {
       const feeDue = dossier.feeDue || '0.00';
       const receipts = dossier.feeReceipts || [];
-      let resp = `### 💳 Tuition Fees & Official Receipts\n\n`;
+      let resp = `### Tuition Fees & Official Receipts\n\n`;
       resp += `- **Current Term Status:** Active Term Settled (₹0.00 due for this semester)\n`;
       resp += `- **Official Receipts Logged:** ${receipts.length || '6'} verified transactions on file\n\n`;
       if (receipts.length > 0) {

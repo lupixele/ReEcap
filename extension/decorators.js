@@ -163,7 +163,7 @@ function initDecorators() {
             ariaBtn.type = 'button';
             ariaBtn.className = 'pill-btn reecap-aria-pill-btn';
             ariaBtn.id = 'reecap-aria-masthead-btn';
-            ariaBtn.innerHTML = '<span class="aria-sparkle">✦</span><span>Aria AI</span>';
+            ariaBtn.innerHTML = '<svg class="aria-sparkle" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Aria AI</span>';
             ariaBtn.title = 'Open Aria Academic Co-pilot (Ctrl + /)';
             const onAriaClick = (e) => {
               if (e) {
@@ -1403,15 +1403,21 @@ function renderStandaloneFeePage() {
       <!-- Status Notice -->
       <div style="margin-bottom: 20px; padding: 14px 18px; border-radius: var(--radius-md, 8px); background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 18px;">🛡️</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary); flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
           <div>
             <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">Smart Fee & Receipts Ledger</div>
             <div style="font-size: 12px; color: var(--text-secondary);">Synced directly with official university bursar records • ReEcap Secure View</div>
           </div>
         </div>
         <div style="display: flex; gap: 8px;">
-          <button type="button" id="btn-retry-gateway" class="pay-btn pay-btn-secondary" style="font-size: 12px; padding: 6px 14px !important; cursor: pointer;">🔄 Retry Official Gateway</button>
-          <button type="button" id="btn-print-receipts" class="pay-btn pay-btn-secondary" style="font-size: 12px; padding: 6px 14px !important; cursor: pointer;">🖨️ Print Receipts</button>
+          <button type="button" id="btn-retry-gateway" class="pay-btn pay-btn-secondary" style="font-size: 12px; padding: 6px 14px !important; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Retry Official Gateway</span>
+          </button>
+          <button type="button" id="btn-print-receipts" class="pay-btn pay-btn-secondary" style="font-size: 12px; padding: 6px 14px !important; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Print Receipts</span>
+          </button>
         </div>
       </div>
 
@@ -1482,7 +1488,10 @@ function renderStandaloneFeePage() {
       <!-- Payment Gateways & External Actions -->
       <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: flex-end; padding: 12px 0;">
         <span style="font-size: 12.5px; color: var(--text-secondary); margin-right: auto;">Need to pay upcoming term dues?</span>
-        <button type="button" class="pay-btn pay-btn-primary" onclick="alert('Current semester fees are fully settled! Next semester dues will open prior to IV Semester commencement.')" style="cursor: pointer;">💳 Proceed to Payment</button>
+        <button type="button" class="pay-btn pay-btn-primary" onclick="alert('Current semester fees are fully settled! Next semester dues will open prior to IV Semester commencement.')" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          <span>Proceed to Payment</span>
+        </button>
       </div>
     `;
 
@@ -1568,8 +1577,8 @@ function renderStandaloneBacklogsPage() {
 
     container.innerHTML = `
       <div style="background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg, 12px); padding: 36px 32px; text-align: center; box-shadow: var(--shadow-md);">
-        <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--success-soft); color: var(--success); display: inline-flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 20px;">
-          ✓
+        <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--success-soft); color: var(--success); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         <h2 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 0 0 8px 0;">Clean Academic Record</h2>
         <div style="font-size: 14px; color: var(--success); font-weight: 600; margin-bottom: 16px;">Zero Active Backlogs • All Registered Courses Cleared</div>
@@ -1671,7 +1680,11 @@ function renderGenericErrorCard() {
   card.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
   card.innerHTML = `
     <div style="background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg, 12px); padding: 32px; text-align: center; box-shadow: var(--shadow-md);">
-      <div style="font-size: 32px; margin-bottom: 12px;">⚡</div>
+      <div style="margin-bottom: 16px; display: flex; justify-content: center;">
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--surface-sunken); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; color: var(--accent);">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div>
+      </div>
       <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0;">Temporary Portal Access Notice</h3>
       <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0 0 24px 0; line-height: 1.5;">
         The ERP server encountered a temporary session or authorization interruption while loading this screen.
@@ -5170,19 +5183,19 @@ function updateAriaWelcome(dossier) {
   welcomeCard.innerHTML = `
     <div class="aria-welcome-hero">
       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-        <span style="color: var(--accent); font-size: 14px;">✦</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" style="color: var(--accent);"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
         <strong style="font-size: 13.5px; color: var(--text-primary); letter-spacing: -0.01em;">Academic Co-Pilot Ready</strong>
       </div>
       <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
         Hello <strong>${name}</strong>! Connected to live Aditya University records. Your standing shows <strong>${cgpa} CGPA</strong> (${attDisplay} Attendance • Zero Backlogs).
       </p>
       <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-        <button type="button" class="aria-action-chip" data-action="weak_subjects"><span class="chip-sparkle">✦</span><span class="chip-label">Weak Subjects Audit</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-        <button type="button" class="aria-action-chip" data-action="target_calc"><span class="chip-sparkle">✦</span><span class="chip-label">8.0 SGPA Calculator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-        <button type="button" class="aria-action-chip" data-action="bunk_sim"><span class="chip-sparkle">✦</span><span class="chip-label">Bunk Simulator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-        <button type="button" class="aria-action-chip" data-action="nav:attendance"><span class="chip-sparkle">✦</span><span class="chip-label">Live Attendance</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-        <button type="button" class="aria-action-chip" data-action="nav:marks"><span class="chip-sparkle">✦</span><span class="chip-label">Detailed Grades</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-        <button type="button" class="aria-action-chip" data-action="nav:fees"><span class="chip-sparkle">✦</span><span class="chip-label">Tuition Fee Ledger</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <button type="button" class="aria-action-chip" data-action="weak_subjects"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg><span class="chip-label">Weak Subjects Audit</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <button type="button" class="aria-action-chip" data-action="target_calc"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg><span class="chip-label">8.0 SGPA Calculator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <button type="button" class="aria-action-chip" data-action="bunk_sim"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg><span class="chip-label">Bunk Simulator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <button type="button" class="aria-action-chip" data-action="nav:attendance"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg><span class="chip-label">Live Attendance</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <button type="button" class="aria-action-chip" data-action="nav:marks"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg><span class="chip-label">Detailed Grades</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <button type="button" class="aria-action-chip" data-action="nav:fees"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg><span class="chip-label">Tuition Fee Ledger</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
       </div>
     </div>
   `;
@@ -5259,37 +5272,40 @@ function updateAriaStrip(dossier) {
 
 function updateAriaSuggestions(dossier) {
   const panel = document.getElementById('aria-suggestions-panel');
-  if (!panel || !window.__reecap_aria || !dossier) return;
+  if (!panel) return;
 
-  const insights = window.__reecap_aria.generateAcademicInsights(dossier);
-  let html = '';
-
-  if (insights.length > 0) {
-    const topInsight = insights[0];
-    const cardClass = topInsight.type === 'danger' ? 'card-danger' : (topInsight.type === 'success' ? 'card-success' : '');
-    html += `
-      <div class="aria-insight-card ${cardClass}">
-        <div class="insight-card-category">${escapeAttr(topInsight.category || 'ACADEMIC INSIGHT')}</div>
-        <div class="insight-card-title">${escapeAttr(topInsight.title)}</div>
-        <div class="insight-card-body">${topInsight.message.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</div>
-        ${topInsight.action ? `<button type="button" class="aria-action-chip" data-action="${escapeAttr(topInsight.action.actionKey)}" style="margin-top: 8px;"><span class="chip-sparkle">✦</span><span class="chip-label">${escapeAttr(topInsight.action.label)}</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>` : ''}
-      </div>
-    `;
-  }
-
-  html += `
+  panel.innerHTML = `
     <div class="prompt-chips-shelf">
-      <button type="button" class="aria-prompt-chip" data-prompt="What are my weak subjects and where do I need to improve?"><span>🎯</span> Weak Subjects</button>
-      <button type="button" class="aria-prompt-chip" data-prompt="What SGPA do I need in Semester 3 to achieve an overall 8.0 CGPA?"><span>📈</span> 8.0 Target</button>
-      <button type="button" class="aria-prompt-chip" data-prompt="How is my attendance in each subject, and how many classes can I safely bunk?"><span>🏖️</span> Bunk Simulator</button>
-      <button type="button" class="aria-prompt-chip" data-prompt="Show my fee payment status, official receipts, and semester dues."><span>💳</span> Fee & Receipts</button>
-      <button type="button" class="aria-prompt-chip" data-prompt="Analyze my current academic performance, CGPA trajectory, and suggest where I can improve."><span>📊</span> Performance Audit</button>
-      <button type="button" class="aria-prompt-chip" data-prompt="Do I have any active backlogs or subjects with low grades?"><span>⚠️</span> Backlogs Check</button>
-      <button type="button" class="aria-prompt-chip" data-prompt="Where is my next class according to today's timetable?"><span>🕒</span> Next Class</button>
+      <button type="button" class="aria-prompt-chip" data-prompt="What are my weak subjects and where do I need to improve?">
+        <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+        <span>Weak Subjects</span>
+      </button>
+      <button type="button" class="aria-prompt-chip" data-prompt="What SGPA do I need in Semester 3 to achieve an overall 8.0 CGPA?">
+        <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+        <span>8.0 Target</span>
+      </button>
+      <button type="button" class="aria-prompt-chip" data-prompt="How is my attendance in each subject, and how many classes can I safely bunk?">
+        <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg>
+        <span>Attendance & Bunks</span>
+      </button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Show my fee payment status, official receipts, and semester dues.">
+        <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        <span>Fee & Receipts</span>
+      </button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Analyze my current academic performance, CGPA trajectory, and suggest where I can improve.">
+        <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Performance Audit</span>
+      </button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Do I have any active backlogs or subjects with low grades?">
+        <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span>Backlogs Check</span>
+      </button>
+      <button type="button" class="aria-prompt-chip" data-prompt="Where is my next class according to today's timetable?">
+        <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Next Class</span>
+      </button>
     </div>
   `;
-
-  panel.innerHTML = html;
 }
 
 function initAriaSidebar(layoutWrapper) {
@@ -5374,7 +5390,7 @@ function initAriaSidebar(layoutWrapper) {
               <span>Aura Super</span>
             </div>
             <div class="prompt-context-pill" title="Live ERP Master Synced">
-              <span>⚡</span>
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" style="color: var(--accent);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
               <span>ERP Live</span>
             </div>
           </div>
@@ -5522,19 +5538,19 @@ async function loadInitialWelcome() {
     <div class="aria-msg msg-assistant">
       <div class="aria-welcome-hero">
         <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-          <span style="color: var(--accent); font-size: 14px;">✦</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" style="color: var(--accent);"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
           <strong style="font-size: 13.5px; color: var(--text-primary); letter-spacing: -0.01em;">Academic Co-Pilot Ready</strong>
         </div>
         <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
           Hello <strong>${name}</strong>! Connected to live Aditya University records. Your standing shows <strong>${cgpa} CGPA</strong> (${attDisplay} Attendance • Zero Backlogs).
         </p>
         <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-          <button type="button" class="aria-action-chip" data-action="weak_subjects"><span class="chip-sparkle">✦</span><span class="chip-label">Weak Subjects Audit</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-          <button type="button" class="aria-action-chip" data-action="target_calc"><span class="chip-sparkle">✦</span><span class="chip-label">8.0 SGPA Calculator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-          <button type="button" class="aria-action-chip" data-action="bunk_sim"><span class="chip-sparkle">✦</span><span class="chip-label">Bunk Simulator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-          <button type="button" class="aria-action-chip" data-action="nav:attendance"><span class="chip-sparkle">✦</span><span class="chip-label">Live Attendance</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-          <button type="button" class="aria-action-chip" data-action="nav:marks"><span class="chip-sparkle">✦</span><span class="chip-label">Detailed Grades</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-          <button type="button" class="aria-action-chip" data-action="nav:fees"><span class="chip-sparkle">✦</span><span class="chip-label">Tuition Fee Ledger</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <button type="button" class="aria-action-chip" data-action="weak_subjects"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg><span class="chip-label">Weak Subjects Audit</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <button type="button" class="aria-action-chip" data-action="target_calc"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg><span class="chip-label">8.0 SGPA Calculator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <button type="button" class="aria-action-chip" data-action="bunk_sim"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg><span class="chip-label">Bunk Simulator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <button type="button" class="aria-action-chip" data-action="nav:attendance"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg><span class="chip-label">Live Attendance</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <button type="button" class="aria-action-chip" data-action="nav:marks"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg><span class="chip-label">Detailed Grades</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <button type="button" class="aria-action-chip" data-action="nav:fees"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg><span class="chip-label">Tuition Fee Ledger</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         </div>
       </div>
     </div>
@@ -5551,7 +5567,7 @@ function parseMarkdownAndActions(text) {
 
   // Action chips [action:domain:target|Label]
   out = out.replace(/\[action:([a-zA-Z0-9_:-]+)\|([^\]]+)\]/g, (match, act, label) => {
-    return `<button type="button" class="aria-action-chip" data-action="${act}"><span class="chip-sparkle">✦</span><span class="chip-label">${label}</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>`;
+    return `<button type="button" class="aria-action-chip" data-action="${act}"><svg class="chip-glyph" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"></polyline></svg><span class="chip-label">${label}</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>`;
   });
 
   // Tool chips [tool:name|Label]
@@ -5653,15 +5669,15 @@ async function submitAriaMessage() {
       </div>
       <div class="thinking-trace">
         <div class="trace-row trace-row-1 is-active">
-          <span class="trace-icon">✦</span>
+          <span class="trace-icon"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"></circle></svg></span>
           <span class="trace-text">Ingesting live student dossier & transcript records</span>
         </div>
         <div class="trace-row trace-row-2">
-          <span class="trace-icon">✦</span>
+          <span class="trace-icon"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"></circle></svg></span>
           <span class="trace-text">Simulating attendance cutoff & 75% bunk buffer</span>
         </div>
         <div class="trace-row trace-row-3">
-          <span class="trace-icon">✦</span>
+          <span class="trace-icon"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"></circle></svg></span>
           <span class="trace-text">Formulating targeted academic guidance & SGPA targets</span>
         </div>
       </div>
@@ -5680,6 +5696,8 @@ async function submitAriaMessage() {
   const row2 = assistantMsgEl.querySelector('.trace-row-2');
   const row3 = assistantMsgEl.querySelector('.trace-row-3');
 
+  const checkSvg = `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
   elapsedTimer = setInterval(() => {
     if (settled) return;
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -5690,14 +5708,14 @@ async function submitAriaMessage() {
       row1.classList.remove('is-active');
       row1.classList.add('is-done');
       const icon = row1.querySelector('.trace-icon');
-      if (icon) icon.textContent = '✓';
+      if (icon) icon.innerHTML = checkSvg;
       if (row2) row2.classList.add('is-active');
     }
     if (ms > 700 && row2 && !row2.classList.contains('is-done')) {
       row2.classList.remove('is-active');
       row2.classList.add('is-done');
       const icon = row2.querySelector('.trace-icon');
-      if (icon) icon.textContent = '✓';
+      if (icon) icon.innerHTML = checkSvg;
       if (row3) row3.classList.add('is-active');
     }
   }, 100);
@@ -5715,14 +5733,14 @@ async function submitAriaMessage() {
     if (durationEl) durationEl.textContent = `${totalSeconds}s`;
     if (thinkingTitle) thinkingTitle.textContent = `Thought for ${totalSeconds}s`;
     if (spinnerIcon) {
-      spinnerIcon.innerHTML = `<span style="font-size: 13px; color: var(--accent);">✨</span>`;
+      spinnerIcon.innerHTML = checkSvg;
     }
     [row1, row2, row3].forEach(r => {
       if (r) {
         r.classList.remove('is-active');
         r.classList.add('is-done');
         const icon = r.querySelector('.trace-icon');
-        if (icon) icon.textContent = '✓';
+        if (icon) icon.innerHTML = checkSvg;
       }
     });
   }

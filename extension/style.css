@@ -5651,52 +5651,7 @@ table#tblquestions input[type="text"]:not([value]) {
 }
 
 .aria-insight-card {
-  padding: 12px 14px !important;
-  background: color-mix(in srgb, var(--surface-sunken) 70%, var(--surface-card)) !important;
-  border-radius: 12px !important;
-  border: 1px solid var(--border-light) !important;
-  border-left: 3px solid var(--accent) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.aria-insight-card.card-danger {
-  border-left-color: var(--danger, #ef4444) !important;
-}
-
-.aria-insight-card.card-success {
-  border-left-color: var(--success, #10b981) !important;
-}
-
-.insight-card-category {
-  font-family: var(--font-mono, monospace) !important;
-  font-size: 9.5px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  color: var(--accent) !important;
-  margin-bottom: 2px !important;
-}
-
-.aria-insight-card.card-danger .insight-card-category {
-  color: var(--danger, #ef4444) !important;
-}
-
-.aria-insight-card.card-success .insight-card-category {
-  color: var(--success, #10b981) !important;
-}
-
-.insight-card-title {
-  font-size: 13px !important;
-  font-weight: 750 !important;
-  color: var(--text-primary) !important;
-  margin-bottom: 3px !important;
-}
-
-.insight-card-body {
-  font-size: 12px !important;
-  color: var(--text-secondary) !important;
-  line-height: 1.45 !important;
+  display: none !important;
 }
 
 /* ── 6. Prompt Chips Shelf (beautifului.dev Chips Row) ── */
@@ -5730,8 +5685,27 @@ table#tblquestions input[type="text"]:not([value]) {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
+  gap: 6px !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+.chip-glyph {
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0 !important;
+  stroke: currentColor !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+.aria-action-chip .chip-glyph,
+.aria-prompt-chip .chip-glyph {
+  color: var(--accent) !important;
+}
+
+.aria-action-chip:hover .chip-glyph,
+.aria-prompt-chip:hover .chip-glyph {
+  color: inherit !important;
 }
 
 .aria-prompt-chip:hover {
