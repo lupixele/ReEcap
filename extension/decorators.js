@@ -3,6 +3,20 @@
 
 var responsiveNavigationController = null;
 
+function isExtensionValid() {
+  try {
+    return typeof chrome !== 'undefined' && Boolean(chrome && chrome.runtime && chrome.runtime.id);
+  } catch (e) {
+    return false;
+  }
+}
+
+function isContextInvalidatedError(e) {
+  if (!e) return false;
+  const msg = (e.message || String(e)).toLowerCase();
+  return msg.includes('extension context invalidated') || msg.includes('context invalidated');
+}
+
 function escapeAttr(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
@@ -51,11 +65,14 @@ function isEmployeeRole() {
 }
 
 function initDecorators() {
+  if (!isExtensionValid() || !chrome.storage || !chrome.storage.sync) return;
   // Prime the cached role before booting the UI
-  chrome.storage.sync.get({ enabled: true, reecapLoginRole: 'rbtStudent' }, (data) => {
-    CURRENT_ROLE = data.reecapLoginRole;
-    console.log('ReEcap: Booting extension. Active role cached as:', CURRENT_ROLE);
-    if (!data.enabled) return;
+  try {
+    chrome.storage.sync.get({ enabled: true, reecapLoginRole: 'rbtStudent' }, (data) => {
+      if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) return;
+      CURRENT_ROLE = data.reecapLoginRole;
+      console.log('ReEcap: Booting extension. Active role cached as:', CURRENT_ROLE);
+      if (!data.enabled) return;
     
     // 0. Iframe Resize Listener
     if (window.location.pathname.toLowerCase().includes('studentmaster.aspx') || window.location.pathname.toLowerCase().includes('main.aspx')) {
@@ -284,6 +301,11 @@ function initDecorators() {
       injectThemeToolbar();
     }
   });
+  } catch (e) {
+    if (!isContextInvalidatedError(e)) {
+      console.warn('ReEcap: Decorator init skipped:', e);
+    }
+  }
 }
 
 function injectThemeToolbar() {
@@ -1479,17 +1501,23 @@ function renderStandaloneFeePage() {
   }
 
   // Load from storage
-  if (chrome && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(['reecapProfileData', 'reecapIdentity'], (data) => {
-      renderView(data?.reecapProfileData, data?.reecapIdentity);
-    });
-
-    if (chrome.storage.onChanged) {
-      chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === 'local' && changes.reecapProfileData && changes.reecapProfileData.newValue) {
-          renderView(changes.reecapProfileData.newValue);
-        }
+  if (isExtensionValid() && chrome.storage && chrome.storage.local) {
+    try {
+      chrome.storage.local.get(['reecapProfileData', 'reecapIdentity'], (data) => {
+        if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) return;
+        renderView(data?.reecapProfileData, data?.reecapIdentity);
       });
+
+      if (chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, area) => {
+          if (!isExtensionValid()) return;
+          if (area === 'local' && changes.reecapProfileData && changes.reecapProfileData.newValue) {
+            renderView(changes.reecapProfileData.newValue);
+          }
+        });
+      }
+    } catch (e) {
+      renderView(null, null);
     }
   } else {
     renderView(null, null);
@@ -1532,7 +1560,7 @@ function renderStandaloneBacklogsPage() {
   container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
   document.body.appendChild(container);
 
-  chrome.storage.local.get(['reecapProfileData', 'reecapAcademicData'], (res) => {
+  const renderBacklogData = (res) => {
     const acad = res?.reecapAcademicData || {};
     const prof = res?.reecapProfileData || {};
     const cgpa = acad.overallStats?.cgpa || prof.cgpa || '7.56';
@@ -1569,7 +1597,24 @@ function renderStandaloneBacklogsPage() {
         </div>
       </div>
     `;
-  });
+  };
+
+  if (!isExtensionValid() || !chrome.storage || !chrome.storage.local) {
+    renderBacklogData(null);
+    return;
+  }
+
+  try {
+    chrome.storage.local.get(['reecapProfileData', 'reecapAcademicData'], (res) => {
+      if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) {
+        renderBacklogData(null);
+        return;
+      }
+      renderBacklogData(res);
+    });
+  } catch (e) {
+    renderBacklogData(null);
+  }
 }
 
 function observeAndRecoverServerError() {
@@ -4171,7 +4216,9 @@ function rebuildMainLayout() {
         }
       }
     } catch (err) {
-      console.warn('ReEcap: Failed to init Aria sidebar:', err);
+      if (!isContextInvalidatedError(err)) {
+        console.warn('ReEcap: Failed to init Aria sidebar:', err);
+      }
     }
   }
 
@@ -4187,18 +4234,26 @@ function rebuildMainLayout() {
 
     if (e.data.type === 'REECAP_PROFILE_DATA') {
       const profileData = { ...e.data.data, lastUpdated: Date.now() };
-      chrome.storage.local.set({ reecapProfileData: profileData });
+      if (isExtensionValid() && chrome.storage && chrome.storage.local) {
+        try {
+          chrome.storage.local.set({ reecapProfileData: profileData });
+        } catch (err) {}
+      }
       if (typeof updateOverviewCards === 'function') {
         updateOverviewCards(profileData);
       }
-      if (typeof window.__reecap_refresh_aria === 'function') {
+      if (isExtensionValid() && typeof window.__reecap_refresh_aria === 'function') {
         window.__reecap_refresh_aria();
       }
     }
 
     if (e.data.type === 'REECAP_ACADEMIC_DATA') {
-      chrome.storage.local.set({ reecapAcademicData: e.data.data });
-      if (typeof window.__reecap_refresh_aria === 'function') {
+      if (isExtensionValid() && chrome.storage && chrome.storage.local) {
+        try {
+          chrome.storage.local.set({ reecapAcademicData: e.data.data });
+        } catch (err) {}
+      }
+      if (isExtensionValid() && typeof window.__reecap_refresh_aria === 'function') {
         window.__reecap_refresh_aria();
       }
     }
@@ -4567,14 +4622,23 @@ function initStatusStrip(targetSlot) {
   stripContainer.appendChild(strip);
 
   updateStatusStrip(strip);
-  setInterval(() => updateStatusStrip(strip), 60000);
-
-  // Listen for instant updates from the iframe (all frames share local storage).
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && (changes.reecapTimetable || changes.reecapIdentity)) {
+  setInterval(() => {
+    if (isExtensionValid()) {
       updateStatusStrip(strip);
     }
-  });
+  }, 60000);
+
+  // Listen for instant updates from the iframe (all frames share local storage).
+  if (isExtensionValid() && chrome.storage && chrome.storage.onChanged) {
+    try {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (!isExtensionValid()) return;
+        if (areaName === 'local' && (changes.reecapTimetable || changes.reecapIdentity)) {
+          updateStatusStrip(strip);
+        }
+      });
+    } catch (e) {}
+  }
 }
 
 function parseTimeRange(timeStr) {
@@ -4604,11 +4668,12 @@ function parseTimeRange(timeStr) {
 }
 
 function updateStatusStrip(strip) {
-  if (!chrome || !chrome.storage || !chrome.storage.local) return;
+  if (!isExtensionValid() || !chrome || !chrome.storage || !chrome.storage.local) return;
   try {
     chrome.storage.local.get(['reecapTimetable', 'reecapIdentity'], (data) => {
-      if (chrome.runtime && chrome.runtime.lastError) return;
-      if (!data) return;
+      try {
+        if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) return;
+        if (!data) return;
     
     const titleEl = strip.querySelector('.status-title');
     const metaEl = strip.querySelector('.status-meta');
@@ -4703,7 +4768,10 @@ function updateStatusStrip(strip) {
        titleEl.textContent = "No more classes today.";
        metaEl.innerHTML = `Enjoy the rest of your day.`;
     }
-  });
+      } catch (innerErr) {
+        if (isContextInvalidatedError(innerErr)) return;
+      }
+    });
   } catch (e) {
     // Ignore context invalidated errors during extension reload
   }
@@ -4728,7 +4796,7 @@ function redesignAttendancePage() {
     window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'ATTENDANCE (PRESENT)' }, '*');
   }
 
-  if (!chrome || !chrome.storage || !chrome.storage.local) {
+  if (!isExtensionValid() || !chrome || !chrome.storage || !chrome.storage.local) {
     wrapper.innerHTML = '<div class="marks-empty">Unable to access storage.</div>';
     return;
   }
@@ -4846,19 +4914,27 @@ function redesignAttendancePage() {
     wrapper.innerHTML = html;
   }
 
-  chrome.storage.local.get(['reecapProfileData'], (data) => {
-    if (chrome.runtime && chrome.runtime.lastError) return;
+  if (isExtensionValid() && chrome.storage && chrome.storage.local) {
+    try {
+      chrome.storage.local.get(['reecapProfileData'], (data) => {
+        if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) return;
+        let prof = data ? data.reecapProfileData : null;
+        renderView(prof);
+      });
 
-    let prof = data ? data.reecapProfileData : null;
-    renderView(prof);
-  });
-
-  if (chrome && chrome.storage && chrome.storage.onChanged) {
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === 'local' && changes.reecapProfileData && changes.reecapProfileData.newValue) {
-        renderView(changes.reecapProfileData.newValue);
+      if (chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+          if (!isExtensionValid()) return;
+          if (areaName === 'local' && changes.reecapProfileData && changes.reecapProfileData.newValue) {
+            renderView(changes.reecapProfileData.newValue);
+          }
+        });
       }
-    });
+    } catch (e) {
+      renderView(null);
+    }
+  } else {
+    renderView(null);
   }
 }
 
@@ -5018,11 +5094,15 @@ function toggleAriaSidebar(forceOpen) {
       sidebar = document.getElementById('reecap-aria-sidebar');
       scrim = document.getElementById('reecap-aria-scrim');
     } catch (e) {
-      console.error('ReEcap: Lazy initAriaSidebar failed:', e);
+      if (!isContextInvalidatedError(e)) {
+        console.error('ReEcap: Lazy initAriaSidebar failed:', e);
+      }
     }
   }
   if (!sidebar) {
-    console.warn('ReEcap: Unable to initialize Aria sidebar');
+    if (isExtensionValid()) {
+      console.warn('ReEcap: Unable to initialize Aria sidebar');
+    }
     return;
   }
 
@@ -5051,19 +5131,22 @@ function toggleAriaSidebar(forceOpen) {
   if (shouldOpen) {
     const input = document.getElementById('aria-input');
     if (input) setTimeout(() => input.focus(), 150);
-    refreshAriaDossier();
+    if (isExtensionValid()) refreshAriaDossier();
   }
 }
 
 async function refreshAriaDossier() {
+  if (!isExtensionValid()) return;
   if (!window.__reecap_aria || typeof window.__reecap_aria.getStudentDossier !== 'function') return;
   try {
     const dossier = await window.__reecap_aria.getStudentDossier();
+    if (!dossier) return;
     ariaDossierCache = dossier;
     updateAriaStrip(dossier);
     updateAriaSuggestions(dossier);
     updateAriaWelcome(dossier);
   } catch (e) {
+    if (isContextInvalidatedError(e)) return;
     console.warn('ReEcap: Failed to refresh Aria dossier:', e);
   }
 }
@@ -5309,28 +5392,32 @@ function initAriaSidebar(layoutWrapper) {
 
   // Initial welcome message
   loadInitialWelcome();
-  refreshAriaDossier();
+  if (isExtensionValid()) refreshAriaDossier();
 }
 
 async function loadInitialWelcome() {
   const container = document.getElementById('aria-messages');
   if (!container || container.children.length > 0) return;
 
-  const dossier = window.__reecap_aria ? await window.__reecap_aria.getStudentDossier() : null;
-  const name = dossier?.identity?.name ? dossier.identity.name.split(' ')[0] : 'there';
-  const cgpa = dossier?.academic?.cgpa !== '--' ? ` (CGPA: **${dossier.academic.cgpa}**)` : '';
-  const att = dossier?.attendance?.overallPercent !== '--' ? ` • Attendance: **${dossier.attendance.overallPercent}%**` : '';
+  const dossier = (window.__reecap_aria && isExtensionValid()) ? await window.__reecap_aria.getStudentDossier() : null;
+  const rawName = dossier?.identity?.name || '';
+  const name = rawName.toUpperCase().includes('RATAN TEJA') ? 'Ratan Teja' : (rawName ? rawName.split(' ')[0] : 'there');
+  const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? ` (CGPA: **${dossier.academic.cgpa}**)` : '';
+  const att = dossier?.attendance?.overallPercent && dossier.attendance.overallPercent !== '--' ? ` • Attendance: **${dossier.attendance.overallPercent}%**` : '';
 
   const welcomeHtml = `
     <div class="aria-msg msg-assistant">
       <h3>👋 Hi ${name}!</h3>
       <p>I'm <strong>Aria</strong>, your intelligent academic co-pilot inside ReEcap${cgpa}${att}.</p>
       <p>I have access to your live grades, subject attendance, and timetable. Ask me for a performance review, calculate your bunkable classes, or tell me where you'd like to go:</p>
-      <div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
+        <button type="button" class="aria-action-chip" data-action="weak_subjects">🎯 Weak Subjects</button>
+        <button type="button" class="aria-action-chip" data-action="target_calc">📈 8.0 Target</button>
+        <button type="button" class="aria-action-chip" data-action="bunk_sim">🏖️ Bunk Simulator</button>
         <button type="button" class="aria-action-chip" data-action="nav:attendance">📊 Attendance</button>
         <button type="button" class="aria-action-chip" data-action="nav:marks">📈 Marks Report</button>
         <button type="button" class="aria-action-chip" data-action="nav:timetable">🕒 Timetable</button>
-        <button type="button" class="aria-action-chip" data-action="nav:fees">💳 Fee Due</button>
+        <button type="button" class="aria-action-chip" data-action="nav:fees">💳 Fee Ledger</button>
       </div>
     </div>
   `;
