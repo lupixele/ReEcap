@@ -581,6 +581,11 @@ function initDecorators() {
 
          // 4. Inject header into DOM before the main layout table
          topContainer.insertBefore(header, mainLayoutTable);
+
+         // Immediately mount and populate the Theme Manager Popout in the top masthead
+         try {
+           injectThemeToolbar();
+         } catch (e) {}
       }
 
       // Setup dynamic tracking for teacher's left menu
@@ -720,8 +725,12 @@ function initDecorators() {
       }, { passive: true });
     }
     
-    // 1. Login Page (Default.aspx)
-    if (window.location.pathname.toLowerCase().includes('default.aspx')) {
+    // 1. Login Page (Default.aspx or containing login controls)
+    const isLogin = window.location.pathname.toLowerCase().includes('default.aspx')
+      || Boolean(document.querySelector('.login_card'))
+      || Boolean(document.getElementById('txtUserId'))
+      || Boolean(document.getElementById('rbtStudent'));
+    if (isLogin) {
       redesignLoginPage();
     }
 
@@ -777,8 +786,8 @@ function initDecorators() {
       observeExamViewer();
     }
     
-    // 7. Inject DOM-integrated Theme Toolbar Sidebar (top-level window only to prevent duplicate icons in iframes)
-    if (window.self === window.top && !window.location.pathname.toLowerCase().includes('default.aspx')) {
+    // 7. Inject DOM-integrated Theme Manager in top masthead (top-level window only)
+    if (window.self === window.top && !document.querySelector('.login_card') && !document.getElementById('txtUserId')) {
       injectThemeToolbar();
     }
   });
@@ -793,23 +802,30 @@ function injectThemeToolbar() {
   if (window.self !== window.top) return;
 
   const themeEngine = window.__reecap_theme;
-  if (!themeEngine) return;
+  if (!themeEngine) {
+    setTimeout(() => {
+      if (window.__reecap_theme) injectThemeToolbar();
+    }, 60);
+    return;
+  }
   const presets = themeEngine.PRESETS;
 
   let toolbar = document.getElementById('reecap-theme-toolbar');
+  const userCluster = document.querySelector('.masthead .user-cluster');
+
   if (!toolbar) {
-    const userCluster = document.querySelector('.masthead .user-cluster');
     if (userCluster) {
       toolbar = document.createElement('div');
       toolbar.id = 'reecap-theme-toolbar';
       toolbar.className = 'reecap-theme-popout-wrap';
-      userCluster.appendChild(toolbar);
+      const profileBadge = userCluster.querySelector('.user-profile-badge');
+      userCluster.insertBefore(toolbar, profileBadge);
     } else {
-      toolbar = document.createElement('div');
-      toolbar.id = 'reecap-theme-toolbar';
-      toolbar.className = 'reecap-theme-popout-wrap';
-      document.body.appendChild(toolbar);
+      return;
     }
+  } else if (userCluster && toolbar.parentElement !== userCluster) {
+    const profileBadge = userCluster.querySelector('.user-profile-badge');
+    userCluster.insertBefore(toolbar, profileBadge);
   }
 
   if (toolbar.dataset.built === 'true') return;
@@ -880,9 +896,8 @@ function injectThemeToolbar() {
        </div>
     </div>
   `;
-  document.body.appendChild(toolbar);
 
-  const wrapper = document.getElementById('reecap-theme-toolbar');
+  const wrapper = toolbar;
   const presetsGrid = wrapper.querySelector('#toolbarPresetsGrid');
   const countLabel = wrapper.querySelector('#toolbarActivePresetCount');
   const radiusSlider = wrapper.querySelector('#toolbarRadiusSlider');
@@ -1083,11 +1098,12 @@ function injectThemeToolbar() {
 
 
 function redesignLoginPage() {
-  const form = document.getElementById('form1');
+  const form = document.getElementById('form1') || document.querySelector('form');
   const loginCard = document.querySelector('.login_card');
   if (!form || !loginCard || loginCard.dataset.reecapLoginReady === 'true') return;
 
   loginCard.dataset.reecapLoginReady = 'true';
+  document.documentElement.classList.add('reecap-login-page');
   document.body.classList.add('reecap-login-page');
 
   // Hide original decorative branding without touching authentication controls.
@@ -7456,6 +7472,10 @@ function redesignAttendancePage() {
   }
 
   function renderView(profileData) {
+    window.__reecap_render_attendance = renderView;
+    if ((!profileData || !profileData.attendanceSubjects || !profileData.attendanceSubjects.length) && window.__reecap_demo_mode?.isActive()) {
+      profileData = window.__reecap_demo_mode.getDemoAttendance();
+    }
     if (!profileData || !profileData.attendanceSubjects || !profileData.attendanceSubjects.length) {
       wrapper.innerHTML = '<div class="marks-empty" style="text-align:center; margin-top: 40px; color: var(--text-secondary);">No attendance data synced yet.<br><br><span style="font-size:12px;opacity:0.7">Loading Profile in the background...</span></div>';
       return;
@@ -7603,6 +7623,12 @@ function redesignAttendancePage() {
 
 function observeExamViewer() {
   document.body.classList.add('reecap-exam-viewer-page');
+
+  if (window.__reecap_demo_mode?.isActive()) {
+    try {
+      window.__reecap_demo_mode.simulateExamScriptViewer();
+    } catch (e) {}
+  }
 
   // Wait for the button container to exist in the DOM
   const waitForContainer = () => {

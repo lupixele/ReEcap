@@ -377,6 +377,14 @@ const ADITYA_ACADEMIC_CALENDAR = {
               }
             }
 
+            if (window.__reecap_demo_mode?.isActive()) {
+              if (overallPercent === '--' || overallPercent === 0 || isNaN(overallPercent)) {
+                overallPercent = 90.4;
+                overallAttended = 282;
+                overallHeld = 312;
+              }
+            }
+
             resolve({
               identity: { rollNo, name, course, branch, semester: sem },
               attendance: {

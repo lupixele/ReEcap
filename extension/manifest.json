@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "𝚁𝚎𝙴𝚌𝚊𝚙\"/",
-    "version": "1.6.0",
+    "version": "2.0.0",
     "description": "A modern reskin for the AEC student portal - cleaner UI, same functionality.",
     "icons": {
         "16": "icons/icon16.png",
@@ -54,6 +54,7 @@
             "js": [
                 "shared/theme.js",
                 "shared/aria.js",
+                "shared/demo-mode.js",
                 "content.js",
                 "decorators.js"
             ],
@@ -67,6 +68,7 @@
                 "shared/interceptor.js",
                 "shared/theme.js",
                 "shared/aria.js",
+                "shared/demo-mode.js",
                 "shared/tokens.css",
                 "style.css",
                 "lib/jspdf.umd.min.js",

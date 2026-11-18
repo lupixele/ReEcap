@@ -9,7 +9,7 @@
   const PRESETS = themeEngine.PRESETS;
   const LEGACY_STORAGE_KEYS = ['nightTabStyle', 'themeFamily', 'themeMode', 'theme'];
 
-  let currentPresetId = 'app';
+  let currentPresetId = 'point';
   let currentRadius = 25;
   let currentShadow = 75;
   let isEnabled = true;
@@ -205,6 +205,25 @@
         });
       }
     });
+
+    const demoToggle = document.getElementById('demoToggle');
+    if (demoToggle && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['reecapDemoMode'], res => {
+        const isDemo = Boolean(res?.reecapDemoMode);
+        demoToggle.classList.toggle('is-active', isDemo);
+      });
+
+      demoToggle.addEventListener('click', () => {
+        const nextState = !demoToggle.classList.contains('is-active');
+        demoToggle.classList.toggle('is-active', nextState);
+        chrome.storage.local.set({ reecapDemoMode: nextState }, () => {
+          sendMessageToPortal({
+            type: 'REECAP_SET_DEMO_MODE',
+            enabled: nextState
+          });
+        });
+      });
+    }
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
