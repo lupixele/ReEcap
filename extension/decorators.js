@@ -4420,70 +4420,6 @@ function buildSidebar() {
     `;
     menu.appendChild(navigationHeading);
 
-    // Beautiful UI: Workspace Switcher Header
-    const workspaceSwitcher = document.createElement('div');
-    workspaceSwitcher.className = 'reecap-workspace-switcher';
-    workspaceSwitcher.innerHTML = `
-      <div class="workspace-chip" id="reecap-workspace-trigger">
-        <div class="workspace-avatar">A</div>
-        <div class="workspace-info">
-          <span class="workspace-name">Aditya University</span>
-          <span class="workspace-plan">ECAP Student Portal</span>
-        </div>
-        <span class="workspace-chevron">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </span>
-      </div>
-      <div class="workspace-dropdown" id="reecap-workspace-dropdown" style="display: none;">
-        <div class="workspace-option is-active" data-action="portal">
-          <span class="option-title">Aditya University ECAP</span>
-          <span class="option-sub">Current Workspace</span>
-        </div>
-        <div class="workspace-option" data-action="profile">
-          <span class="option-title">Student Profile</span>
-          <span class="option-sub">25B11DS190 · lupel</span>
-        </div>
-        <div class="workspace-option" data-action="aria">
-          <span class="option-title">Aria AI Assistant</span>
-          <span class="option-sub">Academic Intelligence</span>
-        </div>
-      </div>
-    `;
-
-    const wsTrigger = workspaceSwitcher.querySelector('#reecap-workspace-trigger');
-    const wsDropdown = workspaceSwitcher.querySelector('#reecap-workspace-dropdown');
-    if (wsTrigger && wsDropdown) {
-      wsTrigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isHidden = wsDropdown.style.display === 'none';
-        wsDropdown.style.display = isHidden ? 'flex' : 'none';
-        wsTrigger.querySelector('.workspace-chevron').style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-      });
-
-      document.addEventListener('click', () => {
-        if (wsDropdown.style.display !== 'none') {
-          wsDropdown.style.display = 'none';
-          const ch = wsTrigger.querySelector('.workspace-chevron');
-          if (ch) ch.style.transform = 'rotate(0deg)';
-        }
-      });
-
-      workspaceSwitcher.querySelectorAll('.workspace-option').forEach(opt => {
-        opt.addEventListener('click', (e) => {
-          e.stopPropagation();
-          wsDropdown.style.display = 'none';
-          const action = opt.dataset.action;
-          if (action === 'profile' && profileItem) {
-            profileItem.link.click();
-          } else if (action === 'aria') {
-            if (typeof toggleAriaSidebar === 'function') toggleAriaSidebar();
-          } else if (action === 'portal') {
-            showOverview();
-          }
-        });
-      });
-    }
-    menu.appendChild(workspaceSwitcher);
 
     // Beautiful UI: Fast Search Bar & Command Palette (Ctrl+K)
     const overviewIcon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg>';
@@ -4665,7 +4601,7 @@ function buildSidebar() {
       menu.appendChild(section);
     }
 
-    // Beautiful UI: Bottom Nav Items (Customize & Logout)
+    // Beautiful UI: Bottom Nav Items (Customize Menu)
     const bottomNav = document.createElement('div');
     bottomNav.className = 'reecap-sidebar-bottom-nav';
     bottomNav.innerHTML = `
@@ -4676,26 +4612,12 @@ function buildSidebar() {
         </div>
         <kbd class="kbd-shortcut">Ctrl+,</kbd>
       </div>
-      <div class="reecap-sidebar-link bottom-link" id="reecap-btn-sidebar-logout" title="Log Out">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          <span class="reecap-sidebar-text">Log Out</span>
-        </div>
-      </div>
     `;
 
     const custBtn = bottomNav.querySelector('#reecap-btn-customize-nav');
     if (custBtn) {
       custBtn.addEventListener('click', () => {
         openNavCustomizeModal(categorized, profileItem);
-      });
-    }
-
-    const logoutBtn = bottomNav.querySelector('#reecap-btn-sidebar-logout');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-        const portalLogout = document.getElementById('lnkLogOut');
-        if (portalLogout) portalLogout.click();
       });
     }
 
@@ -5491,18 +5413,6 @@ function renderScheduleCard(container, timetableData, previousCard = null) {
 
   let rowsHtml = `<div class="schedule-list">`;
 
-  // Check if first class is later in the day (e.g. afternoon start)
-  const firstPeriod = validPeriods[0];
-  const firstTimes = parseTimeRange(firstPeriod.timeRange);
-  if (firstTimes && firstTimes.start >= 720) { // starts at 12:00 PM or later
-    const startText = firstPeriod.timeRange.split(/[-to]/i)[0].trim();
-    rowsHtml += `
-      <div class="schedule-free-banner">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-        <span>Morning Free · First period starts at <strong>${startText}</strong></span>
-      </div>
-    `;
-  }
 
   validPeriods.forEach(period => {
     const times = parseTimeRange(period.timeRange);
