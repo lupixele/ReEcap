@@ -449,88 +449,114 @@ function initDecorators() {
            });
          }
 
-         const userCluster = document.createElement('div');
-         userCluster.className = 'user-cluster';
+          const userCluster = document.createElement('div');
+          userCluster.className = 'user-cluster';
 
-         if (avatarDiv) {
-            const img = avatarDiv.querySelector('img');
-            if (img) {
-               img.className = 'user-avatar';
-               img.removeAttribute('width');
-               img.removeAttribute('height');
-               img.style.removeProperty('width');
-               img.style.removeProperty('height');
-               img.style.removeProperty('border-radius');
-               img.style.objectFit = 'cover';
-               img.style.objectPosition = 'center top';
-               img.decoding = 'async';
-               img.loading = 'eager';
-               img.style.imageRendering = 'smooth';
-               img.style.transform = 'translateZ(0)';
-               img.style.backfaceVisibility = 'hidden';
-               userCluster.appendChild(img);
-            }
-         }
+          // 1. Compute student name
+          let studentDisplayName = 'Student';
+          if (lblUser) {
+             // Clean legacy prefixes ("Hi...", "Welcome," etc.)
+             const inner = lblUser.querySelector('b, strong');
+             const rawUserName = (inner?.textContent || lblUser.textContent || '')
+               .replace(/^(Hi|Welcome)[\.\s,:-]*/i, '')
+               .trim();
 
-         if (lblUser) {
-            // Clean legacy prefixes ("Hi...", "Welcome," etc.)
-            const inner = lblUser.querySelector('b, strong');
-            const rawUserName = (inner?.textContent || lblUser.textContent || '')
-              .replace(/^(Hi|Welcome)[\.\s,:-]*/i, '')
-              .trim();
+             const parts = rawUserName ? rawUserName.split(/\s+/).filter(Boolean) : [];
+             studentDisplayName = parts.length > 0
+               ? parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ')
+               : 'Student';
 
-            const parts = rawUserName ? rawUserName.split(/\s+/).filter(Boolean) : [];
-            const studentDisplayName = parts.length > 0
-              ? parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ')
-              : 'Student';
+             if (rawUserName && isExtensionValid() && chrome?.storage?.local) {
+               chrome.storage.local.get(['reecapIdentity'], (cur) => {
+                 const prev = cur?.reecapIdentity || {};
+                 if (!prev.Name || prev.Name !== studentDisplayName) {
+                   chrome.storage.local.set({
+                     reecapIdentity: { ...prev, Name: studentDisplayName, rawName: rawUserName }
+                   });
+                 }
+               });
+             }
+          }
 
-            if (rawUserName && isExtensionValid() && chrome?.storage?.local) {
-              chrome.storage.local.get(['reecapIdentity'], (cur) => {
-                const prev = cur?.reecapIdentity || {};
-                if (!prev.Name || prev.Name !== studentDisplayName) {
-                  chrome.storage.local.set({
-                    reecapIdentity: { ...prev, Name: studentDisplayName, rawName: rawUserName }
-                  });
-                }
-              });
-            }
+          // 2. Action buttons (Aria AI and Change Password)
+          if (isStudentRole()) {
+             const ariaBtn = document.createElement('button');
+             ariaBtn.type = 'button';
+             ariaBtn.className = 'pill-btn reecap-aria-pill-btn';
+             ariaBtn.id = 'reecap-aria-masthead-btn';
+             ariaBtn.innerHTML = '<svg class="aria-sparkle" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Aria AI</span>';
+             ariaBtn.title = 'Open Aria Academic Co-pilot (Ctrl + /)';
+             const onAriaClick = (e) => {
+               if (e) {
+                 e.preventDefault();
+                 e.stopPropagation();
+               }
+               console.log('ReEcap: Aria pill button clicked');
+               if (typeof toggleAriaSidebar === 'function') {
+                 toggleAriaSidebar();
+               } else if (typeof window.toggleAriaSidebar === 'function') {
+                 window.toggleAriaSidebar();
+               }
+             };
+             ariaBtn.addEventListener('click', onAriaClick);
+             userCluster.appendChild(ariaBtn);
+          }
 
-            lblUser.className = 'user-name';
-            lblUser.innerHTML = `<span class="user-display-name">${escapeAttr(studentDisplayName)}</span>`;
-            userCluster.appendChild(lblUser);
-         }
+          if (changePass) {
+             changePass.className = 'pill-btn';
+             userCluster.appendChild(changePass);
+          }
 
-         if (isStudentRole()) {
-            const ariaBtn = document.createElement('button');
-            ariaBtn.type = 'button';
-            ariaBtn.className = 'pill-btn reecap-aria-pill-btn';
-            ariaBtn.id = 'reecap-aria-masthead-btn';
-            ariaBtn.innerHTML = '<svg class="aria-sparkle" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Aria AI</span>';
-            ariaBtn.title = 'Open Aria Academic Co-pilot (Ctrl + /)';
-            const onAriaClick = (e) => {
-              if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-              console.log('ReEcap: Aria pill button clicked');
-              if (typeof toggleAriaSidebar === 'function') {
-                toggleAriaSidebar();
-              } else if (typeof window.toggleAriaSidebar === 'function') {
-                window.toggleAriaSidebar();
-              }
-            };
-            ariaBtn.addEventListener('click', onAriaClick);
-            userCluster.appendChild(ariaBtn);
-         }
+          // 3. Rightmost Profile Badge: Profile icon on left, vertical grid with Name above and Logout below
+          const profileBadge = document.createElement('div');
+          profileBadge.className = 'user-profile-badge';
 
-         if (changePass) {
-            changePass.className = 'pill-btn';
-            userCluster.appendChild(changePass);
-         }
-         if (logout) {
-            logout.className = 'pill-btn';
-            userCluster.appendChild(logout);
-         }
+          let hasAvatar = false;
+          if (avatarDiv) {
+             const img = avatarDiv.querySelector('img');
+             if (img) {
+                img.className = 'user-avatar';
+                img.removeAttribute('width');
+                img.removeAttribute('height');
+                img.style.removeProperty('width');
+                img.style.removeProperty('height');
+                img.style.removeProperty('border-radius');
+                img.style.objectFit = 'cover';
+                img.style.objectPosition = 'center top';
+                img.decoding = 'async';
+                img.loading = 'eager';
+                img.style.imageRendering = 'smooth';
+                img.style.transform = 'translateZ(0)';
+                img.style.backfaceVisibility = 'hidden';
+                profileBadge.appendChild(img);
+                hasAvatar = true;
+             }
+          }
+
+          if (!hasAvatar) {
+             const placeholder = document.createElement('div');
+             placeholder.className = 'user-avatar-placeholder';
+             placeholder.textContent = studentDisplayName ? studentDisplayName.charAt(0) : 'U';
+             profileBadge.appendChild(placeholder);
+          }
+
+          const userMetaGrid = document.createElement('div');
+          userMetaGrid.className = 'user-meta-grid';
+
+          if (lblUser) {
+             lblUser.className = 'user-name';
+             lblUser.innerHTML = `<span class="user-display-name">${escapeAttr(studentDisplayName)}</span>`;
+             userMetaGrid.appendChild(lblUser);
+          }
+
+          if (logout) {
+             logout.className = 'pill-btn user-logout-btn';
+             userMetaGrid.appendChild(logout);
+          }
+
+          profileBadge.appendChild(userMetaGrid);
+          userCluster.appendChild(profileBadge);
+
 
          header.appendChild(brandBlock);
 

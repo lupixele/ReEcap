@@ -78,9 +78,13 @@
   - Popup `<title>` is `𝚁𝚎𝙴𝚌𝚊𝚙"/ — nightTab Settings`.
   - Master switch button tooltip: `Toggle 𝚁𝚎𝙴𝚌𝚊𝚙"/ Extension`.
   - Extension `manifest.json` declares `"name": "𝚁𝚎𝙴𝚌𝚊𝚙\"/"` and `"default_title": "𝚁𝚎𝙴𝚌𝚊𝚙\"/"`.
-- **Dynamic Student Name Greeting**:
+- **Dynamic Student Name Greeting & Rightmost Profile Card (`.user-profile-badge`)**:
   - Extracts student name dynamically from `#lblUser` or DOM nodes, normalizing uppercase strings into proper Title Case.
   - Omitted the informal "Hi," greeting prefix per user preference.
+  - The profile card is docked at the absolute rightmost position of the masthead (`.user-cluster`).
+  - Left column: The profile avatar photo (`#imgstudent` / `.user-avatar`, or `.user-avatar-placeholder` fallback).
+  - Right column: A dedicated vertical 2-row CSS grid (`.user-meta-grid`) housing the student's name above (`.user-name`) and the logout action directly below (`#lnkLogOut` / `.user-logout-btn`) as a compact nightTab pill button.
+  - Action pills (`Aria AI`, `Change Password`) remain cleanly organized to the left of the profile card.
 
 ---
 

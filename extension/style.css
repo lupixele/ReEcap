@@ -885,6 +885,90 @@ li.is-expanded .reecap-submenu-container {
   gap: 10px; 
 }
 
+/* ==========================================================================
+   User Profile Badge (Rightmost Masthead Profile Card)
+   ========================================================================== */
+.user-profile-badge {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 2px 4px !important;
+  margin-left: 6px !important;
+  flex-shrink: 0 !important;
+}
+
+.user-profile-badge .user-avatar,
+.user-profile-badge #imgstudent,
+.user-profile-badge .user-avatar-placeholder {
+  width: 40px !important;
+  height: 40px !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
+  border-radius: 10px !important;
+  border: 2px solid var(--accent-soft) !important;
+  box-shadow: var(--card-shadow) !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+  aspect-ratio: 1 / 1 !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+  margin: 0 !important;
+}
+
+.user-profile-badge .user-meta-grid {
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  gap: 2px !important;
+  align-items: center !important;
+  justify-items: start !important;
+  min-width: 0 !important;
+}
+
+.user-profile-badge .user-name {
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+.user-profile-badge .user-display-name {
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+}
+
+.user-profile-badge #lnkLogOut,
+.user-profile-badge .user-logout-btn {
+  font-family: var(--font-mono), monospace !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  color: var(--text-secondary) !important;
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.12)) !important;
+  padding: 2px 8px !important;
+  border-radius: 100px !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: fit-content !important;
+  margin: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+.user-profile-badge #lnkLogOut:hover,
+.user-profile-badge .user-logout-btn:hover {
+  color: var(--text-primary) !important;
+  border-color: var(--text-primary) !important;
+  background: hsl(var(--theme-primary-020, 222, 14%, 20%)) !important;
+}
+
 .user-avatar-placeholder {
   width: 40px; height: 40px; border-radius: 10px;
   background: var(--accent-soft);
@@ -4063,8 +4147,14 @@ table.popupTable th a:hover {
   }
 
   .user-name,
-  .user-cluster .pill-btn:not(#lnkLogOut) {
-    display: none;
+  .user-cluster .pill-btn:not(#lnkLogOut):not(.user-logout-btn),
+  .user-profile-badge .user-name {
+    display: none !important;
+  }
+
+  .user-profile-badge {
+    margin-left: 2px !important;
+    gap: 6px !important;
   }
 
   #imgstudent,
