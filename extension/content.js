@@ -5,7 +5,16 @@
 const STYLE_ID = 'reecap-stylesheet';
 const TOKENS_ID = 'reecap-tokens';
 const SKIP_LINK_ID = 'reecap-skip-link';
-const THEME_STORAGE_DEFAULTS = { enabled: true, themeFamily: null, themeMode: null, theme: null };
+const THEME_STORAGE_DEFAULTS = { 
+  enabled: true, 
+  nightTabPreset: 'app', 
+  nightTabStyle: 'dark', 
+  nightTabRadius: 25, 
+  nightTabShadow: 75,
+  themeFamily: null, 
+  themeMode: null, 
+  theme: null 
+};
 
 let reecapEnabled = false;
 
@@ -72,10 +81,17 @@ function applyStoredTheme(data) {
   if (!reecapEnabled) {
     removeStyle();
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-theme-style');
+    document.documentElement.removeAttribute('data-theme-preset');
+    document.documentElement.classList.remove('is-theme-style-dark', 'is-theme-style-light');
     return;
   }
   injectStyle();
-  document.documentElement.setAttribute('data-theme', resolveTheme(mapped.family, mapped.mode));
+  if (reecap.applyTheme) {
+    reecap.applyTheme(mapped.preset, mapped.style, { radius: mapped.radius, shadow: mapped.shadow });
+  } else {
+    document.documentElement.setAttribute('data-theme', resolveTheme(mapped.preset, mapped.style));
+  }
 }
 
 // Apply once on every parent + iframe document. A later storage update will
@@ -87,7 +103,7 @@ chrome.storage.sync.get(THEME_STORAGE_DEFAULTS, applyStoredTheme);
 // but left iframe pages on their previous theme.
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'sync') return;
-  if (!(changes.enabled || changes.themeFamily || changes.themeMode || changes.theme)) return;
+  if (!(changes.enabled || changes.nightTabPreset || changes.nightTabStyle || changes.nightTabRadius || changes.nightTabShadow || changes.themeFamily || changes.themeMode || changes.theme)) return;
   chrome.storage.sync.get(THEME_STORAGE_DEFAULTS, applyStoredTheme);
 });
 
@@ -101,6 +117,13 @@ chrome.runtime.onMessage.addListener((msg) => {
       reecapEnabled = false;
       removeStyle();
       document.documentElement.removeAttribute('data-theme');
+      document.documentElement.removeAttribute('data-theme-style');
+      document.documentElement.removeAttribute('data-theme-preset');
+      document.documentElement.classList.remove('is-theme-style-dark', 'is-theme-style-light');
+    }
+  } else if (msg.type === 'REECAP_NIGHTTAB_PRESET' && reecapEnabled) {
+    if (reecap.applyTheme) {
+      reecap.applyTheme(msg.preset, msg.style, msg.options);
     }
   } else if (msg.type === 'REECAP_THEME' && reecapEnabled) {
     document.documentElement.setAttribute('data-theme', msg.theme);

@@ -1,318 +1,416 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ReEcap settings</title>
+  <title>ReEcap — nightTab Settings</title>
   <link rel="stylesheet" href="shared/tokens.css">
   <style>
-    * { box-sizing: border-box; }
-
-    html {
-      width: min(24rem, 100vw);
-      background: var(--surface-page-glow);
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      min-width: 20rem;
-      width: min(24rem, 100vw);
-      margin: 0;
-      padding: var(--space-lg);
-      background: var(--surface-page-glow);
-      color: var(--text-primary);
-      font-family: var(--font-sans);
-      line-height: 1.45;
+      width: 380px;
+      max-height: 560px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background-color: hsl(var(--theme-primary-010, 222, 14%, 17%));
+      color: hsl(var(--theme-primary-text-010, 0, 0%, 100%));
+      font-family: var(--theme-font-ui-name, "Open Sans"), system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      padding: 16px;
+      user-select: none;
     }
 
-    button { font: inherit; }
-    button:focus-visible,
-    [role="radio"]:focus-visible,
-    [role="switch"]:focus-visible {
-      outline: none;
-      box-shadow: var(--focus-ring);
+    /* Scrollbar */
+    body::-webkit-scrollbar {
+      width: 5px;
+    }
+    body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    body::-webkit-scrollbar-thumb {
+      background: hsl(var(--theme-primary-040, 222, 14%, 32%));
+      border-radius: 9999px;
     }
 
+    /* Header */
     .popup-header {
       display: flex;
       align-items: center;
-      gap: var(--space-md);
-      margin: 0 0 var(--space-lg);
-      padding-bottom: var(--space-md);
-      border-bottom: 1px solid var(--border-subtle);
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid hsl(var(--theme-primary-030, 222, 14%, 27%));
+      margin-bottom: 14px;
     }
 
-    .brand-mark {
-      display: grid;
-      width: 2.5rem;
-      height: 2.5rem;
-      flex: 0 0 auto;
-      place-items: center;
-      border-radius: var(--radius-sm);
-      background: var(--action-primary);
-      box-shadow: var(--ambient-glow);
-      color: var(--text-on-action);
-      font-size: 1.25rem;
-      font-weight: 750;
-      letter-spacing: -0.08em;
-    }
-
-    .brand-copy { min-width: 0; }
-    .brand-copy h1 {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 750;
-      letter-spacing: -0.025em;
-    }
-
-    .brand-copy p,
-    .section-heading,
-    .connection-copy,
-    .footer-version {
-      font-family: var(--font-mono);
-    }
-
-    .brand-copy p {
-      margin: 0.125rem 0 0;
-      color: var(--text-faint);
-      font-size: 0.625rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .settings-panel {
-      display: grid;
-      gap: var(--space-lg);
-      padding: var(--space-lg);
-      border: var(--card-border);
-      border-radius: var(--radius-lg);
-      background: var(--surface-raised);
-      box-shadow: var(--card-shadow);
-    }
-
-    .connection-row,
-    .setting-row {
+    .brand-group {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: var(--space-md);
+      gap: 10px;
     }
 
-    .connection-copy { min-width: 0; }
-    .connection-copy strong {
-      display: block;
-      color: var(--text-primary);
-      font-family: var(--font-sans);
-      font-size: 0.875rem;
-    }
-
-    .connection-copy span {
-      display: block;
-      margin-top: 0.125rem;
-      color: var(--text-secondary);
-      font-size: 0.6875rem;
-    }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      color: var(--status-success);
-      font-size: 0.6875rem;
-      font-weight: 700;
-    }
-
-    .status::before {
-      width: 0.5rem;
-      height: 0.5rem;
-      border-radius: 50%;
-      background: currentColor;
-      content: "";
-    }
-
-    .status[data-state="disabled"],
-    .status[data-state="unavailable"],
-    .status[data-state="error"] { color: var(--text-secondary); }
-    .status[data-state="error"] { color: var(--status-danger); }
-
-    .switch {
-      position: relative;
-      width: 3rem;
-      min-width: 3rem;
-      height: 1.75rem;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-pill);
-      background: var(--surface-sunken);
-      cursor: pointer;
-      transition: background var(--duration-standard) var(--ease-standard), border-color var(--duration-standard) var(--ease-standard);
-    }
-
-    .switch::after {
-      position: absolute;
-      top: 0.1875rem;
-      left: 0.1875rem;
-      width: 1.25rem;
-      height: 1.25rem;
-      border-radius: 50%;
-      background: var(--text-secondary);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      content: "";
-      transition: transform var(--duration-standard) var(--ease-standard), background var(--duration-standard) var(--ease-standard);
-    }
-
-    .switch[aria-checked="true"] {
-      border-color: var(--action-primary);
-      background: var(--action-primary);
-    }
-    .switch[aria-checked="true"]::after {
-      transform: translateX(1.25rem);
-      background: var(--text-on-action);
-    }
-
-    .rule { width: 100%; height: 1px; margin: 0; border: 0; background: var(--border-subtle); }
-
-    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
-    .section-heading {
-      margin-bottom: var(--space-sm);
-      color: var(--text-faint);
-      font-size: 0.625rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .choice-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-xs);
-      padding: var(--space-xs);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      background: var(--surface-sunken);
-    }
-
-    .choice {
-      display: inline-flex;
-      min-height: 2.5rem;
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: calc(var(--theme-radius, 25) * 0.01em);
+      background-color: rgb(var(--theme-accent, 0, 80, 255));
+      color: hsl(var(--theme-accent-text, 0, 0%, 100%));
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.375rem;
-      padding: 0.5rem;
-      border: 1px solid transparent;
-      border-radius: var(--radius-xs);
-      background: transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-family: var(--font-mono);
-      font-size: 0.6875rem;
       font-weight: 700;
-      text-align: center;
-      transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+      font-size: 14px;
+      box-shadow: var(--theme-shadow-bottom-small);
     }
 
-    .choice:hover { background: var(--surface-hover); color: var(--text-primary); }
-    .choice[aria-checked="true"] {
-      border-color: var(--action-primary);
-      background: var(--action-primary);
-      color: var(--text-on-action);
+    .brand-title {
+      font-family: var(--theme-font-display-name, "Fjalla One"), sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: hsl(var(--theme-primary-text-010));
     }
 
-    .choice-dot {
-      width: 0.5rem;
-      height: 0.5rem;
-      flex: 0 0 auto;
+    .brand-subtitle {
+      font-size: 10.5px;
+      color: hsl(var(--theme-primary-text-040));
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* Master Switch */
+    .switch-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .switch-btn {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      background-color: hsl(var(--theme-primary-030));
+      border: 1px solid hsl(var(--theme-primary-040));
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: background-color var(--layout-transition-extra-fast);
+    }
+
+    .switch-btn.is-active {
+      background-color: rgb(var(--theme-accent));
+      border-color: rgb(var(--theme-accent));
+    }
+
+    .switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background-color: #ffffff;
       border-radius: 50%;
-      background: currentColor;
-      opacity: 0.85;
+      transition: transform var(--layout-transition-extra-fast);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
-    .mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .mode-note {
-      margin: var(--space-sm) 0 0;
-      color: var(--text-secondary);
-      font-size: 0.75rem;
+    .switch-btn.is-active .switch-thumb {
+      transform: translateX(18px);
     }
 
-    fieldset[disabled] { opacity: 0.6; }
-    fieldset[disabled] .choice { cursor: not-allowed; }
+    /* Style Mode Segmented Control */
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: hsl(var(--theme-primary-text-040));
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-    .footer {
+    .mode-segment {
+      display: flex;
+      background-color: hsl(var(--theme-primary-020));
+      border: 1px solid hsl(var(--theme-primary-030));
+      border-radius: calc(var(--theme-radius, 25) * 0.01em);
+      padding: 3px;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: hsl(var(--theme-primary-text-030));
+      border-radius: calc(var(--theme-radius, 25) * 0.75 * 0.01em);
+      font-family: inherit;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color var(--layout-transition-extra-fast),
+                  color var(--layout-transition-extra-fast);
+    }
+
+    .mode-btn:hover {
+      color: hsl(var(--theme-primary-text-010));
+    }
+
+    .mode-btn.is-selected {
+      background-color: rgb(var(--theme-accent));
+      color: hsl(var(--theme-accent-text));
+      box-shadow: var(--theme-shadow-bottom-small);
+    }
+
+    /* Category Filter Tabs */
+    .category-shelf {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .category-shelf::-webkit-scrollbar { display: none; }
+
+    .category-pill {
+      white-space: nowrap;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background-color: hsl(var(--theme-primary-020));
+      border: 1px solid hsl(var(--theme-primary-030));
+      color: hsl(var(--theme-primary-text-030));
+      cursor: pointer;
+      transition: all var(--layout-transition-extra-fast);
+    }
+
+    .category-pill:hover {
+      background-color: hsl(var(--theme-primary-030));
+      color: hsl(var(--theme-primary-text-010));
+    }
+
+    .category-pill.is-active {
+      background-color: rgb(var(--theme-accent));
+      border-color: rgb(var(--theme-accent));
+      color: hsl(var(--theme-accent-text));
+      font-weight: 600;
+    }
+
+    /* Presets Grid */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .preset-card {
+      background-color: hsl(var(--theme-primary-020));
+      border: 1px solid hsl(var(--theme-primary-030));
+      border-radius: calc(var(--theme-radius, 25) * 0.01em);
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      transition: transform var(--layout-transition-extra-fast),
+                  border-color var(--layout-transition-extra-fast),
+                  box-shadow var(--layout-transition-extra-fast);
+    }
+
+    .preset-card:hover {
+      transform: translateY(-2px);
+      border-color: hsl(var(--theme-primary-050));
+      box-shadow: var(--theme-shadow-bottom-small);
+    }
+
+    .preset-card.is-selected {
+      border-color: rgb(var(--theme-accent));
+      box-shadow: var(--form-ring-accent);
+    }
+
+    .preset-preview {
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preset-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    }
+
+    .preset-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: hsl(var(--theme-primary-text-010));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Fine Tuning Sliders */
+    .tuning-box {
+      background-color: hsl(var(--theme-primary-020));
+      border: 1px solid hsl(var(--theme-primary-030));
+      border-radius: calc(var(--theme-radius, 25) * 0.01em);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: hsl(var(--theme-primary-text-030));
+    }
+
+    .slider-input {
+      width: 100%;
+      height: 4px;
+      appearance: none;
+      background: hsl(var(--theme-primary-040));
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .slider-input::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgb(var(--theme-accent));
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Footer Status */
+    .popup-footer {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid hsl(var(--theme-primary-030));
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--space-sm);
-      margin-top: var(--space-md);
-      color: var(--text-faint);
-      font-size: 0.625rem;
+      font-size: 10.5px;
+      color: hsl(var(--theme-primary-text-040));
     }
 
-    .footer button {
-      min-height: 2rem;
-      padding: 0.25rem 0.5rem;
-      border: 0;
-      border-radius: var(--radius-xs);
-      background: transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
-      text-decoration: underline;
-      text-underline-offset: 0.2em;
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .footer button:hover { color: var(--text-primary); }
 
-    body.is-disabled .setting-controls { opacity: 0.55; }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #69C68E;
     }
   </style>
 </head>
 <body>
   <header class="popup-header">
-    <div class="brand-mark" aria-hidden="true">R</div>
-    <div class="brand-copy">
-      <h1>ReEcap</h1>
-      <p>Student workspace</p>
+    <div class="brand-group">
+      <div class="brand-icon">NT</div>
+      <div>
+        <div class="brand-title">ReEcap</div>
+        <div class="brand-subtitle">nightTab Design System</div>
+      </div>
+    </div>
+    <div class="switch-wrap">
+      <button type="button" class="switch-btn is-active" id="masterToggle" title="Toggle ReEcap Extension">
+        <span class="switch-thumb"></span>
+      </button>
     </div>
   </header>
 
-  <main class="settings-panel" aria-label="ReEcap settings">
-    <section class="connection-row" aria-labelledby="themeToggleLabel">
-      <div class="connection-copy">
-        <strong id="themeToggleLabel">Use ReEcap on this portal</strong>
-        <span id="statusText" class="status" data-state="active" role="status">Active</span>
+  <!-- Style Mode -->
+  <div class="section-label">
+    <span>Theme Style</span>
+    <span id="activeStyleLabel">Dark Mode</span>
+  </div>
+  <div class="mode-segment" id="modeSegment">
+    <button type="button" class="mode-btn is-selected" data-mode="dark" id="btnModeDark">Dark Style</button>
+    <button type="button" class="mode-btn" data-mode="light" id="btnModeLight">Light Style</button>
+  </div>
+
+  <!-- Category Filter Shelf -->
+  <div class="section-label">
+    <span>nightTab Presets (45)</span>
+    <span id="activePresetCount">45</span>
+  </div>
+  <div class="category-shelf" id="categoryShelf">
+    <button type="button" class="category-pill is-active" data-cat="all">All</button>
+    <button type="button" class="category-pill" data-cat="core">Core</button>
+    <button type="button" class="category-pill" data-cat="minimal">Minimal</button>
+    <button type="button" class="category-pill" data-cat="cyber">Cyber</button>
+    <button type="button" class="category-pill" data-cat="space">Space</button>
+    <button type="button" class="category-pill" data-cat="earth">Earth</button>
+    <button type="button" class="category-pill" data-cat="vivid">Vivid</button>
+  </div>
+
+  <!-- Presets Grid -->
+  <div class="presets-grid" id="presetsGrid"></div>
+
+  <!-- Fine Tuning Controls -->
+  <div class="section-label">
+    <span>Geometry & Elevation</span>
+  </div>
+  <div class="tuning-box">
+    <div class="slider-row">
+      <div class="slider-header">
+        <span>Corner Radius</span>
+        <span id="radiusVal">25px</span>
       </div>
-      <button id="toggleSwitch" class="switch" type="button" role="switch" aria-checked="true" aria-labelledby="themeToggleLabel"></button>
-    </section>
-
-    <div class="setting-controls">
-      <hr class="rule">
-      <fieldset class="theme-row" style="margin-top: var(--space-lg)">
-        <legend class="section-heading">Colour family</legend>
-        <div id="familySwitcher" class="choice-grid" role="radiogroup" aria-label="Colour family">
-          <button class="choice" type="button" data-family="original" role="radio" aria-checked="false"><span class="choice-dot"></span>Classic</button>
-          <button class="choice" type="button" data-family="cappuccino" role="radio" aria-checked="false"><span class="choice-dot"></span>Cappuccino</button>
-          <button class="choice" type="button" data-family="evergreen" role="radio" aria-checked="false"><span class="choice-dot"></span>Evergreen</button>
-          <button class="choice" type="button" data-family="midnight" role="radio" aria-checked="false"><span class="choice-dot"></span>Midnight</button>
-          <button class="choice" type="button" data-family="rosewood" role="radio" aria-checked="false"><span class="choice-dot"></span>Rosewood</button>
-          <button class="choice" type="button" data-family="amoled" role="radio" aria-checked="false"><span class="choice-dot"></span>AMOLED</button>
-        </div>
-      </fieldset>
-
-      <hr class="rule" style="margin-top: var(--space-lg)">
-      <fieldset id="modeRow" class="theme-row" style="margin-top: var(--space-lg)">
-        <legend class="section-heading">Appearance</legend>
-        <div id="modeSwitcher" class="choice-grid mode-grid" role="radiogroup" aria-label="Appearance mode">
-          <button class="choice" type="button" data-mode="light" role="radio" aria-checked="false">Light</button>
-          <button class="choice" type="button" data-mode="dark" role="radio" aria-checked="false">Dark</button>
-        </div>
-        <p id="modeNote" class="mode-note" hidden>AMOLED uses a dedicated dark palette.</p>
-      </fieldset>
+      <input type="range" class="slider-input" id="radiusSlider" min="0" max="100" value="25">
     </div>
-  </main>
+    <div class="slider-row">
+      <div class="slider-header">
+        <span>Elevation Shadows</span>
+        <span id="shadowVal">75%</span>
+      </div>
+      <input type="range" class="slider-input" id="shadowSlider" min="0" max="200" value="75">
+    </div>
+  </div>
 
-  <footer class="footer">
-    <span class="footer-version">v1.0.0</span>
-    <button id="clearCacheButton" type="button">Clear local cache</button>
+  <footer class="popup-footer">
+    <div class="status-indicator">
+      <span class="status-dot"></span>
+      <span id="statusLabel">AEC Portal Synchronized</span>
+    </div>
+    <span>v1.6.0 nightTab</span>
   </footer>
 
   <script src="shared/theme.js"></script>

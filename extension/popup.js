@@ -1,138 +1,189 @@
-// ReEcap popup settings. Theme resolution and migration are defined in shared/theme.js.
+// ReEcap popup.js — nightTab Design System Controller
+// Provides live categorized switching across all 45 nightTab presets,
+// dark/light style toggling, corner radius, and elevation shadow controls.
 
-const reecap = window.__reecap_theme || {};
-const resolveTheme = reecap.resolveTheme || ((family, mode) => (
-  family === 'amoled' ? 'amoled' : (family === 'original' ? (mode || 'light') : `${family}-${mode || 'light'}`)
-));
-const migrateThemeStorage = reecap.migrateThemeStorage || ((data) => ({
-  family: (data && data.themeFamily) || 'original',
-  mode: (data && data.themeMode) || 'light',
-}));
-const FAMILY_META = reecap.FAMILY_META || {};
-const STORAGE_DEFAULTS = { enabled: true, themeFamily: null, themeMode: null, theme: null };
+(function () {
+  'use strict';
 
-function getActivePortalTab() {
-  return chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-    if (!tab || !tab.url || !/^https?:\/\/info\.aec\.edu\.in\//i.test(tab.url)) return null;
-    return tab;
-  });
-}
+  const themeEngine = window.__reecap_theme || {};
+  const PRESETS = themeEngine.PRESETS || {};
 
-function sendMessageToActivePortal(message) {
-  return getActivePortalTab().then((tab) => {
-    if (!tab) return false;
-    return chrome.tabs.sendMessage(tab.id, message).then(() => true).catch(() => false);
-  });
-}
+  let currentPresetId = 'app';
+  let currentStyle = 'dark';
+  let currentRadius = 25;
+  let currentShadow = 75;
+  let isEnabled = true;
+  let activeCategory = 'all';
 
-document.addEventListener('DOMContentLoaded', () => {
-  const toggleSwitch = document.getElementById('toggleSwitch');
-  const statusText = document.getElementById('statusText');
-  const familyButtons = [...document.querySelectorAll('#familySwitcher [role="radio"]')];
-  const modeButtons = [...document.querySelectorAll('#modeSwitcher [role="radio"]')];
-  const modeRow = document.getElementById('modeRow');
-  const modeNote = document.getElementById('modeNote');
-  const cacheButton = document.getElementById('clearCacheButton');
-  const controls = document.querySelector('.setting-controls');
+  // Elements
+  const masterToggle = document.getElementById('masterToggle');
+  const btnModeDark = document.getElementById('btnModeDark');
+  const btnModeLight = document.getElementById('btnModeLight');
+  const activeStyleLabel = document.getElementById('activeStyleLabel');
+  const categoryShelf = document.getElementById('categoryShelf');
+  const presetsGrid = document.getElementById('presetsGrid');
+  const radiusSlider = document.getElementById('radiusSlider');
+  const radiusVal = document.getElementById('radiusVal');
+  const shadowSlider = document.getElementById('shadowSlider');
+  const shadowVal = document.getElementById('shadowVal');
+  const statusLabel = document.getElementById('statusLabel');
 
-  let currentFamily = 'original';
-  let currentMode = 'light';
-
-  familyButtons.forEach((button) => {
-    const meta = FAMILY_META[button.dataset.family];
-    if (!meta) return;
-    button.setAttribute('aria-label', `${meta.label}: ${meta.description}`);
-    const dot = button.querySelector('.choice-dot');
-    if (dot) dot.style.backgroundColor = meta.preview;
-  });
-
-  function announce(message, state = 'active') {
-    statusText.textContent = message;
-    statusText.dataset.state = state;
-  }
-
-  function updateEnabledUI(enabled) {
-    toggleSwitch.setAttribute('aria-checked', String(enabled));
-    document.body.classList.toggle('is-disabled', !enabled);
-    if (controls) controls.inert = !enabled;
-    announce(enabled ? 'Active' : 'Disabled', enabled ? 'active' : 'disabled');
-  }
-
-  function updateThemeUI(family, mode) {
-    familyButtons.forEach((button) => {
-      const selected = button.dataset.family === family;
-      button.setAttribute('aria-checked', String(selected));
+  function getActivePortalTab() {
+    return chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+      if (!tab || !tab.url || !/^https?:\/\/info\.aec\.edu\.in\//i.test(tab.url)) return null;
+      return tab;
     });
-
-    modeButtons.forEach((button) => {
-      const selected = button.dataset.mode === mode;
-      button.setAttribute('aria-checked', String(selected));
-    });
-
-    const isAmoled = family === 'amoled';
-    modeRow.disabled = isAmoled;
-    modeNote.hidden = !isAmoled;
-    document.documentElement.dataset.theme = resolveTheme(family, mode);
   }
 
-  function persist(values, successMessage) {
-    return new Promise((resolve) => {
-      chrome.storage.sync.set(values, () => {
-        const error = chrome.runtime.lastError;
-        if (error) {
-          announce('Could not save settings', 'error');
-          resolve(false);
-          return;
-        }
-        announce(successMessage, 'active');
-        resolve(true);
+  function sendMessageToPortal(msg) {
+    getActivePortalTab().then((tab) => {
+      if (tab) {
+        chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+      }
+    });
+  }
+
+  function applyAndBroadcast() {
+    // Apply locally to popup
+    if (themeEngine.applyTheme) {
+      themeEngine.applyTheme(currentPresetId, currentStyle, {
+        radius: currentRadius,
+        shadow: currentShadow
       });
+    }
+
+    // Persist to storage
+    chrome.storage.sync.set({
+      enabled: isEnabled,
+      nightTabPreset: currentPresetId,
+      nightTabStyle: currentStyle,
+      nightTabRadius: currentRadius,
+      nightTabShadow: currentShadow,
+      // Backward compatibility mappings
+      themeFamily: currentPresetId,
+      themeMode: currentStyle
+    });
+
+    // Broadcast to portal tab
+    sendMessageToPortal({
+      type: 'REECAP_NIGHTTAB_PRESET',
+      preset: currentPresetId,
+      style: currentStyle,
+      options: { radius: currentRadius, shadow: currentShadow }
     });
   }
 
-  async function applyTheme(family, mode) {
-    currentFamily = family;
-    currentMode = family === 'amoled' ? 'dark' : mode;
-    updateThemeUI(currentFamily, currentMode);
-    const saved = await persist({ themeFamily: currentFamily, themeMode: currentMode }, 'Appearance saved');
-    if (saved && toggleSwitch.getAttribute('aria-checked') === 'true') {
-      const delivered = await sendMessageToActivePortal({ type: 'REECAP_THEME', theme: resolveTheme(currentFamily, currentMode) });
-      if (!delivered) announce('Saved — open the AEC portal to apply', 'unavailable');
+  function renderPresets() {
+    presetsGrid.innerHTML = '';
+    const presetEntries = Object.entries(PRESETS);
+
+    const filtered = presetEntries.filter(([id, p]) => {
+      if (activeCategory === 'all') return true;
+      return p.category === activeCategory;
+    });
+
+    for (const [id, preset] of filtered) {
+      const card = document.createElement('div');
+      card.className = 'preset-card' + (id === currentPresetId ? ' is-selected' : '');
+      card.dataset.id = id;
+
+      const pRange = preset.color.range.primary;
+      const bgLightness = currentStyle === 'dark' ? 20 : 85;
+      const previewBg = `hsl(${pRange.h}, ${pRange.s}%, ${bgLightness}%)`;
+      const dotColor = `rgb(${preset.accent.rgb.r}, ${preset.accent.rgb.g}, ${preset.accent.rgb.b})`;
+
+      card.innerHTML = `
+        <div class="preset-preview" style="background-color: ${previewBg};">
+          <div class="preset-dot" style="background-color: ${dotColor};"></div>
+        </div>
+        <div class="preset-name" title="${preset.name}">${preset.name}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        currentPresetId = id;
+        document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('is-selected'));
+        card.classList.add('is-selected');
+        applyAndBroadcast();
+      });
+
+      presetsGrid.appendChild(card);
     }
   }
 
-  chrome.storage.sync.get(STORAGE_DEFAULTS, (data) => {
-    const enabled = data.enabled !== false;
-    const mapped = migrateThemeStorage(data);
-    currentFamily = mapped.family;
-    currentMode = mapped.mode;
-    updateEnabledUI(enabled);
-    updateThemeUI(currentFamily, currentMode);
+  function updateModeUI() {
+    btnModeDark.classList.toggle('is-selected', currentStyle === 'dark');
+    btnModeLight.classList.toggle('is-selected', currentStyle === 'light');
+    activeStyleLabel.textContent = currentStyle === 'dark' ? 'Dark Mode' : 'Light Mode';
+    renderPresets();
+  }
 
-    if (!data.themeFamily) {
-      chrome.storage.sync.set({ themeFamily: currentFamily, themeMode: currentMode, theme: null });
-    }
+  // Event Listeners
+  btnModeDark.addEventListener('click', () => {
+    currentStyle = 'dark';
+    updateModeUI();
+    applyAndBroadcast();
   });
 
-  toggleSwitch.addEventListener('click', async () => {
-    const enabled = toggleSwitch.getAttribute('aria-checked') !== 'true';
-    updateEnabledUI(enabled);
-    const saved = await persist({ enabled }, enabled ? 'Active' : 'Disabled');
-    if (saved) {
-      const delivered = await sendMessageToActivePortal({ type: 'REECAP_TOGGLE', enabled });
-      if (!delivered && enabled) announce('Saved — open the AEC portal to apply', 'unavailable');
-    }
+  btnModeLight.addEventListener('click', () => {
+    currentStyle = 'light';
+    updateModeUI();
+    applyAndBroadcast();
   });
 
-  familyButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.family, currentMode)));
-  modeButtons.forEach((button) => button.addEventListener('click', () => {
-    if (currentFamily !== 'amoled') applyTheme(currentFamily, button.dataset.mode);
-  }));
-
-  cacheButton.addEventListener('click', () => {
-    chrome.storage.local.remove(['reecapTimetable', 'reecapIdentity', 'reecapProfileData'], () => {
-      const error = chrome.runtime.lastError;
-      announce(error ? 'Could not clear local cache' : 'Local cache cleared', error ? 'error' : 'active');
-    });
+  categoryShelf.addEventListener('click', (e) => {
+    const pill = e.target.closest('.category-pill');
+    if (!pill) return;
+    document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('is-active'));
+    pill.classList.add('is-active');
+    activeCategory = pill.dataset.cat || 'all';
+    renderPresets();
   });
-});
+
+  radiusSlider.addEventListener('input', (e) => {
+    currentRadius = parseInt(e.target.value, 10);
+    radiusVal.textContent = currentRadius + 'px';
+    applyAndBroadcast();
+  });
+
+  shadowSlider.addEventListener('input', (e) => {
+    currentShadow = parseInt(e.target.value, 10);
+    shadowVal.textContent = currentShadow + '%';
+    applyAndBroadcast();
+  });
+
+  masterToggle.addEventListener('click', () => {
+    isEnabled = !isEnabled;
+    masterToggle.classList.toggle('is-active', isEnabled);
+    chrome.storage.sync.set({ enabled: isEnabled });
+    sendMessageToPortal({ type: 'REECAP_TOGGLE', enabled: isEnabled });
+    statusLabel.textContent = isEnabled ? 'AEC Portal Synchronized' : 'ReEcap Disabled';
+  });
+
+  // Initialize
+  chrome.storage.sync.get({
+    enabled: true,
+    nightTabPreset: 'app',
+    nightTabStyle: 'dark',
+    nightTabRadius: 25,
+    nightTabShadow: 75,
+    themeFamily: null,
+    themeMode: null,
+    theme: null
+  }, (data) => {
+    const migrated = themeEngine.migrateThemeStorage ? themeEngine.migrateThemeStorage(data) : { preset: 'app', style: 'dark' };
+    isEnabled = data.enabled !== false;
+    currentPresetId = data.nightTabPreset || migrated.preset || 'app';
+    currentStyle = data.nightTabStyle || migrated.style || 'dark';
+    currentRadius = typeof data.nightTabRadius === 'number' ? data.nightTabRadius : 25;
+    currentShadow = typeof data.nightTabShadow === 'number' ? data.nightTabShadow : 75;
+
+    masterToggle.classList.toggle('is-active', isEnabled);
+    radiusSlider.value = currentRadius;
+    radiusVal.textContent = currentRadius + 'px';
+    shadowSlider.value = currentShadow;
+    shadowVal.textContent = currentShadow + '%';
+
+    updateModeUI();
+    applyAndBroadcast();
+  });
+})();

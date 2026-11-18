@@ -356,33 +356,42 @@ function injectThemeToolbar() {
     <div class="reecap-toolbar-menu">
        <!-- Mode Toggles -->
        <div class="toolbar-mode-toggles">
-         <button class="toolbar-mode-btn" data-mode="light" title="Light Mode">${iconLight}</button>
-         <button class="toolbar-mode-btn" data-mode="dark" title="Dark Mode">${iconDark}</button>
-         <button class="toolbar-mode-btn" data-mode="system" title="System Match">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-         </button>
+         <button class="toolbar-mode-btn" data-mode="light" title="Light Style">${iconLight}</button>
+         <button class="toolbar-mode-btn" data-mode="dark" title="Dark Style">${iconDark}</button>
        </div>
        
-       <!-- Theme Families -->
+       <!-- nightTab Theme Presets -->
        <div class="toolbar-family-list">
-         <button class="toolbar-theme-btn" data-family="original">
-            <span class="theme-swatch" style="background:var(--accent);"></span> Original Red
+         <button class="toolbar-theme-btn" data-preset="app">
+            <span class="theme-swatch" style="background:#0050ff;"></span> nightTab App
          </button>
-         <button class="toolbar-theme-btn" data-family="cappuccino">
-            <span class="theme-swatch" style="background:#B67E51;"></span> Cappuccino
+         <button class="toolbar-theme-btn" data-preset="nord">
+            <span class="theme-swatch" style="background:#5e81ac;"></span> Nord
          </button>
-         <button class="toolbar-theme-btn" data-family="evergreen">
-            <span class="theme-swatch" style="background:#2C6656;"></span> Evergreen
+         <button class="toolbar-theme-btn" data-preset="obsidian">
+            <span class="theme-swatch" style="background:#00ffff;"></span> Obsidian
          </button>
-         <button class="toolbar-theme-btn" data-family="midnight">
-            <span class="theme-swatch" style="background:#555CD2;"></span> Midnight
+         <button class="toolbar-theme-btn" data-preset="outrun">
+            <span class="theme-swatch" style="background:#ff00bb;"></span> Outrun
          </button>
-         <button class="toolbar-theme-btn" data-family="rosewood">
-            <span class="theme-swatch" style="background:#9B385D;"></span> Rosewood
+         <button class="toolbar-theme-btn" data-preset="neon">
+            <span class="theme-swatch" style="background:#39ff14;"></span> Neon
+         </button>
+         <button class="toolbar-theme-btn" data-preset="midnight">
+            <span class="theme-swatch" style="background:#0011ff;"></span> Midnight
+         </button>
+         <button class="toolbar-theme-btn" data-preset="mint">
+            <span class="theme-swatch" style="background:#5effe2;"></span> Mint
+         </button>
+         <button class="toolbar-theme-btn" data-preset="sol">
+            <span class="theme-swatch" style="background:#ffb900;"></span> Sol
          </button>
          <div class="toolbar-divider"></div>
-         <button class="toolbar-theme-btn amoled-btn" data-family="amoled">
-            <span class="theme-swatch" style="background:#000; border: 1px solid #333;"></span> True AMOLED
+         <button class="toolbar-theme-btn" data-preset="black">
+            <span class="theme-swatch" style="background:#000; border: 1px solid #333;"></span> Black AMOLED
+         </button>
+         <button class="toolbar-theme-btn" data-preset="white">
+            <span class="theme-swatch" style="background:#fff; border: 1px solid #ccc;"></span> White Daylight
          </button>
        </div>
     </div>
@@ -394,23 +403,21 @@ function injectThemeToolbar() {
   // Storage Fetch and active marking
   try {
     if (chrome && chrome.storage && chrome.storage.sync) {
-       chrome.storage.sync.get(['themeFamily', 'themeMode'], (data) => {
-         // Silently ignore if context was invalidated midway through the request
+       chrome.storage.sync.get(['nightTabPreset', 'nightTabStyle', 'themeFamily', 'themeMode'], (data) => {
          if (chrome.runtime.lastError) return;
-         let mode = data.themeMode || 'system';
-         let fam = data.themeFamily || 'original';
-         if (fam === 'amoled') mode = 'dark';
+         const preset = data.nightTabPreset || (window.__reecap_theme && window.__reecap_theme.migrateThemeStorage(data).preset) || 'app';
+         const style = data.nightTabStyle || data.themeMode || 'dark';
          
          wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => {
-           if(b.dataset.mode === mode) b.classList.add('active');
+           if (b.dataset.mode === style) b.classList.add('active');
          });
          wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => {
-           if(b.dataset.family === fam) b.classList.add('active');
+           if (b.dataset.preset === preset) b.classList.add('active');
          });
        });
     }
   } catch (e) {
-     // Usually means extension was instantly reloaded (context invalidated)
+     // Silently handle context invalidated
   }
 
   // Wiring Clicks to Background script message bus (avoids duplicating logic)
@@ -426,20 +433,18 @@ function injectThemeToolbar() {
     if(!wrapper.contains(e.target)) wrapper.classList.remove('is-open');
   });
 
-  // Handle Mode setting (light/dark/system)
+  // Handle Mode setting (light/dark)
   wrapper.querySelectorAll('.toolbar-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
        const m = btn.dataset.mode;
        try {
-         chrome.storage.sync.get(['themeFamily'], (d) => {
+         chrome.storage.sync.get(['nightTabPreset', 'nightTabStyle'], (d) => {
            if (chrome.runtime.lastError) return;
-           // AMOLED ignores light updates
-           if (d.themeFamily === 'amoled' && m === 'light') return; 
-           chrome.storage.sync.set({ themeMode: m }, () => {
-             if (chrome.runtime.lastError) return;
-             // Let content script react via background update
-             chrome.runtime.sendMessage({ action: 'themeSyncRequested' });
-           });
+           const activePreset = d.nightTabPreset || 'app';
+           if (window.__reecap_theme && window.__reecap_theme.applyTheme) {
+             window.__reecap_theme.applyTheme(activePreset, m);
+           }
+           chrome.storage.sync.set({ nightTabStyle: m, themeMode: m });
          });
        } catch (e) {}
        wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => b.classList.remove('active'));
@@ -447,28 +452,23 @@ function injectThemeToolbar() {
     });
   });
 
-  // Handle Family setting (cappuccino, original, etc)
+  // Handle nightTab Preset setting
   wrapper.querySelectorAll('.toolbar-theme-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-       const f = btn.dataset.family;
-       let pack = { themeFamily: f };
-       if (f === 'amoled') pack.themeMode = 'dark'; // Force dark explicitly
-       
+       const p = btn.dataset.preset;
        try {
-         chrome.storage.sync.set(pack, () => {
+         chrome.storage.sync.get(['nightTabStyle'], (d) => {
            if (chrome.runtime.lastError) return;
-           chrome.runtime.sendMessage({ action: 'themeSyncRequested' });
+           const activeStyle = d.nightTabStyle || 'dark';
+           if (window.__reecap_theme && window.__reecap_theme.applyTheme) {
+             window.__reecap_theme.applyTheme(p, activeStyle);
+           }
+           chrome.storage.sync.set({ nightTabPreset: p, themeFamily: p });
          });
        } catch (e) {}
        
        wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => b.classList.remove('active'));
        btn.classList.add('active');
-       
-       if (f === 'amoled') {
-         wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => b.classList.remove('active'));
-         const dbBtn = wrapper.querySelector('.toolbar-mode-btn[data-mode="dark"]');
-         if(dbBtn) dbBtn.classList.add('active');
-       }
     });
   });
 }
