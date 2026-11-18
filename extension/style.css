@@ -45,16 +45,16 @@
   position: absolute;
   bottom: calc(100% + 12px);
   right: 0;
-  width: 360px;
-  max-height: 540px;
-  background: var(--surface-card);
-  border-radius: var(--radius-lg, 12px);
-  border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25));
-  padding: 14px;
+  width: 380px;
+  max-height: 560px;
+  background: hsl(var(--theme-primary-010, 222, 14%, 17%));
+  border-radius: calc(var(--theme-radius, 25) * 0.01em);
+  border: 1px solid hsl(var(--theme-primary-030, 222, 14%, 27%));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   user-select: none;
   box-sizing: border-box;
   
@@ -63,12 +63,77 @@
   transform: translateY(10px) scale(0.95);
   transform-origin: bottom right;
   transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  z-index: 10000;
 }
 
 .reecap-theme-toolbar.is-open .reecap-toolbar-menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0) scale(1);
+}
+
+.toolbar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid hsl(var(--theme-primary-030, 222, 14%, 27%));
+}
+
+.toolbar-header .brand-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbar-header .brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: calc(var(--theme-radius, 25) * 0.01em);
+  background-color: rgb(var(--theme-accent, 0, 80, 255));
+  color: hsl(var(--theme-accent-text, 0, 0%, 100%));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: var(--theme-shadow-bottom-small);
+}
+
+.toolbar-header .brand-title {
+  font-family: var(--theme-font-display-name, "Fjalla One"), sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: hsl(var(--theme-primary-text-010));
+}
+
+.toolbar-header .brand-subtitle {
+  font-size: 10px;
+  color: hsl(var(--theme-primary-text-040));
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.toolbar-close-btn {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  color: hsl(var(--theme-primary-text-040)) !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.toolbar-close-btn:hover {
+  color: hsl(var(--theme-primary-text-010)) !important;
+  background: hsl(var(--theme-primary-020)) !important;
+  border-color: hsl(var(--theme-primary-040)) !important;
 }
 
 .toolbar-section-label {
@@ -144,9 +209,9 @@
 
 .toolbar-presets-grid {
   display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
+  grid-template-columns: repeat(2, 1fr) !important;
   gap: 8px !important;
-  max-height: 240px !important;
+  max-height: 250px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding-right: 4px !important;
@@ -403,12 +468,15 @@ body[data-reecap-master="true"] .reecap-layout-columns {
   overflow: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
-  transition: grid-template-columns 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 body[data-reecap-master="true"] .reecap-sidebar-col {
   height: 100% !important;
   min-height: 0 !important;
+  width: 248px !important;
+  min-width: 0 !important;
+  max-width: 248px !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
@@ -422,7 +490,12 @@ body[data-reecap-master="true"] .reecap-sidebar-col {
   border-radius: 0 !important;
   box-shadow: none !important;
   box-sizing: border-box !important;
-  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease !important;
 }
 
 body[data-reecap-master="true"] ul.menu {
@@ -439,7 +512,8 @@ body[data-reecap-master="true"] ul.menu {
   margin: 0 !important;
   padding: 12px 10px !important;
   background: transparent !important;
-  width: 100% !important;
+  width: 248px !important;
+  min-width: 248px !important;
   box-sizing: border-box !important;
 }
 
@@ -7759,19 +7833,29 @@ html.reecap-child-frame table {
   }
 }
 
-html.is-sidebar-collapsed .reecap-layout-columns {
+html.is-sidebar-collapsed .reecap-layout-columns,
+html.is-sidebar-collapsed body[data-reecap-master="true"] .reecap-layout-columns {
   grid-template-columns: 0px minmax(0, 1fr) !important;
   gap: 0 !important;
 }
 
-html.is-sidebar-collapsed .reecap-sidebar-col {
-  display: none !important;
+html.is-sidebar-collapsed .reecap-sidebar-col,
+html.is-sidebar-collapsed body[data-reecap-master="true"] .reecap-sidebar-col {
   width: 0 !important;
   min-width: 0 !important;
   max-width: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border-right: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  border-right-color: transparent !important;
+  overflow: hidden !important;
+}
+
+html.is-sidebar-collapsed .reecap-content-col,
+html.is-sidebar-collapsed body[data-reecap-master="true"] .reecap-content-col {
+  min-width: 0 !important;
+  width: 100% !important;
+  grid-column: 2 !important;
 }
 
 html.is-sidebar-collapsed .sidebar-collapse-btn .icon-collapse {

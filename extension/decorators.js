@@ -430,7 +430,22 @@ function initDecorators() {
              try {
                localStorage.setItem('reecap_sidebar_collapsed', isCollapsed ? 'true' : 'false');
              } catch (e) {}
-             window.dispatchEvent(new Event('resize'));
+
+             // Smooth resize notification loop over 320ms animation duration
+             const startTime = performance.now();
+             function notifyResize(now) {
+               window.dispatchEvent(new Event('resize'));
+               try {
+                 const iframe = document.getElementById('capIframeId');
+                 if (iframe && iframe.contentWindow) {
+                   iframe.contentWindow.postMessage({ type: 'REECAP_REQUEST_RESIZE' }, '*');
+                 }
+               } catch (e) {}
+               if (now - startTime < 320) {
+                 requestAnimationFrame(notifyResize);
+               }
+             }
+             requestAnimationFrame(notifyResize);
            });
          }
 
@@ -766,6 +781,19 @@ function injectThemeToolbar() {
        ${iconPalette}
     </button>
     <div class="reecap-toolbar-menu">
+       <div class="toolbar-header">
+         <div class="brand-group">
+           <div class="brand-icon">NT</div>
+           <div>
+             <div class="brand-title">𝚁𝚎𝙴𝚌𝚊𝚙"/</div>
+             <div class="brand-subtitle">nightTab Design System</div>
+           </div>
+         </div>
+         <button type="button" class="toolbar-close-btn" aria-label="Close theme menu">
+           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg>
+         </button>
+       </div>
+
        <div class="toolbar-section-label">
          <span>Appearance Filter</span>
          <span id="toolbarActivePresetCount">45 / 45</span>
@@ -858,9 +886,10 @@ function injectThemeToolbar() {
       if (!matchesAppearance || !matchesSearch) continue;
       totalShown++;
 
-      const card = document.createElement('button');
-      card.type = 'button';
+      const card = document.createElement('div');
       card.className = `preset-card ${id === currentPresetId ? 'is-selected' : ''}`;
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
       card.dataset.preset = id;
       card.dataset.appearance = appearance;
       const dispFont = preset.font?.display?.name || '';
@@ -878,12 +907,23 @@ function injectThemeToolbar() {
         <div class="preset-style-badge">${appearance}</div>
       `;
 
-      card.addEventListener('click', () => {
+      function selectPreset() {
         currentPresetId = id;
         presetsGrid.querySelectorAll('.preset-card').forEach(c => {
           c.classList.toggle('is-selected', c.dataset.preset === id);
         });
         applyAndSave();
+      }
+
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectPreset();
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectPreset();
+        }
       });
 
       presetsGrid.appendChild(card);
@@ -952,6 +992,23 @@ function injectThemeToolbar() {
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value;
       renderGrid();
+    });
+  }
+
+  // Close button listener
+  const closeBtn = wrapper.querySelector('.toolbar-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      wrapper.classList.remove('is-open');
+    });
+  }
+
+  // Prevent clicks inside menu from closing the menu
+  const menuContainer = wrapper.querySelector('.reecap-toolbar-menu');
+  if (menuContainer) {
+    menuContainer.addEventListener('click', (e) => {
+      e.stopPropagation();
     });
   }
 

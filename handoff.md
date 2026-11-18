@@ -41,9 +41,12 @@
 - **Zero-Gap Layout Grid & Spacious Content Area**:
   - `.reecap-layout-columns` removes the previous 28px gap (`gap: 0 !important; grid-template-columns: 248px minmax(0, 1fr) !important;`).
   - `.reecap-content-col` expands to consume all remaining screen width, internally cushioned with `padding: 24px 32px 36px 32px !important;` so cards have ample breathing room.
-- **Collapsible Sidebar Toggle Support**:
+- **Collapsible Sidebar Toggle Support & Smooth 300ms Animation**:
   - Masthead houses `#reecap-sidebar-toggle-btn` which toggles `document.documentElement.classList.toggle('is-sidebar-collapsed')`.
-  - In collapsed state (`html.is-sidebar-collapsed`), `.reecap-layout-columns` collapses the sidebar column to `0px` (`grid-template-columns: 0px minmax(0, 1fr) !important;`) and sets `.reecap-sidebar-col` to `display: none !important; border-right: none !important;`, granting 100% viewport width to the content column.
+  - In collapsed state (`html.is-sidebar-collapsed`), `.reecap-layout-columns` collapses the sidebar track from `248px` to `0px` with a smooth 300ms transition (`transition: grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;`).
+  - **Content Track Pinned**: To prevent CSS Grid track shifting where child #1 was squeezed into the 0px track, `.reecap-sidebar-col` is maintained in track 1 with `width: 0 !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; border-right-color: transparent !important; overflow: hidden !important;` (never `display: none`), while `.reecap-content-col` is explicitly pinned to `grid-column: 2 !important; width: 100% !important; min-width: 0 !important;`.
+  - Inner `ul.menu` is pinned to `min-width: 248px !important;` so menu titles do not wrap or stutter during width interpolation.
+  - A 320ms `requestAnimationFrame` loop dispatches window `resize` events and `REECAP_REQUEST_RESIZE` postMessages to embedded child iframes to synchronize internal layout.
   - Sidebar collapse state is persisted across student portal navigations via `localStorage.getItem('reecap_sidebar_collapsed')`.
 - **Independent Scroll Containers**:
   - **Sidebar Column** (`.reecap-sidebar-col` / `ul.menu`): Isolated vertical scrollbar with custom nightTab styling.
@@ -248,9 +251,13 @@ Short child pages generated blank trailing space due to reading `document.docume
 Ported the complete rich theme customizer from the extension popup directly into the floating theme toolbar icon on every portal page:
 
 ### Capabilities
-- **3-Column Swatch Grid (`.toolbar-presets-grid`)**:
+- **2-Column Swatch Grid (`.toolbar-presets-grid`)**:
+  - Structured strictly as a 2-column grid (`grid-template-columns: repeat(2, 1fr) !important;`) matching the 380px extension popup for optimal card width and typography preview readability.
   - Renders all 45 nightTab presets with live typography swatches (`Aa`) and accent indicator dots.
+  - Cards implemented as accessible `div` elements (`role="button"`, `tabindex="0"`) with keyboard `Enter`/`Space` activation and `e.stopPropagation()` handlers.
   - Highlights the currently active preset with an accent ring.
+- **Brand Header & Controls (`.toolbar-header`)**:
+  - Displays brand icon, brand title `𝚁𝚎𝙴𝚌𝚊𝚙"/`, subtitle `nightTab Design System`, and a dedicated close button (`.toolbar-close-btn`).
 - **Appearance Filter Segment (`.toolbar-mode-segment`)**:
   - Three filter options: `[All]`, `[Dark]`, and `[Light]`.
   - Real-time preset counter displaying visible count (e.g., `45 / 45`, `35 / 45`, `10 / 45`).
@@ -302,7 +309,7 @@ To completely eliminate Chrome Content Security Policy (CSP) violations (`Execut
 | [extension/content.js](file:///p:/Magnanimity/Projects/ReEcap/extension/content.js) | Stylesheet and token injector; theme migration and active preset application (`point` default). |
 | [extension/shared/theme.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/theme.js) | 45 nightTab presets, mathematical color spaces, appearance filters (35 dark, 10 light), semantic CSS token mappings, dynamic Google Fonts loader (`loadPresetFonts`, `loadCatalogFonts`), `point` fallback. |
 | [extension/shared/aria.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/aria.js) | Aria AI copilot client: streaming markdown parser, dossier compilation, quick action chips, message history, stream abortion support, clean academic terminology. |
-| [extension/popup.html](file:///p:/Magnanimity/Projects/ReEcap/extension/popup.html) | Extension popup interface featuring brand title `𝚁𝚎𝙴𝚌𝚊𝚙"/`, appearance filters, 3-column presets grid with font previews, and geometry sliders. |
+| [extension/popup.html](file:///p:/Magnanimity/Projects/ReEcap/extension/popup.html) | Extension popup interface featuring brand title `𝚁𝚎𝙴𝚌𝚊𝚙"/`, appearance filters, 2-column presets grid with font previews, and geometry sliders. |
 | [extension/popup.js](file:///p:/Magnanimity/Projects/ReEcap/extension/popup.js) | Popup interaction logic, sync storage management, Google Fonts catalog loader, and real-time preset switching (`point` default). |
 | [tests/alert-interceptor.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/alert-interceptor.test.js) | Regression test suite verifying 401 XHTML detection, alert suppression, exam route differentiation, and recovery card rendering. |
 | [tests/aria-composer.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/aria-composer.test.js) | Test suite validating streamlined composer layout, stop button state machine, helper card dismissal, and fee ledger navigation. |
