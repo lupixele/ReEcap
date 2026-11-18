@@ -74,7 +74,7 @@
     ```
   - Role selection radio buttons default smoothly to "Student" with persistent role selection memory in `chrome.storage.sync`.
 - **Portal Masthead & Extension Popup**:
-  - Renders `<h1 class="brand-title">𝚁𝚎𝙴𝚌𝚊𝚙"/</h1>`.
+  - In the masthead, renders a unified brand title `<h1 class="brand-title"><span class="brand-title-main">𝚁𝚎𝙴𝚌𝚊𝚙"/</span> <span class="brand-title-sub">ー 𝚊𝚗 𝚄𝚗𝚘𝚏𝚏𝚒𝚌𝚒𝚊𝚕 𝚁𝚎𝚍𝚎𝚜𝚒𝚐𝚗 𝚘𝚏 𝙰𝚍𝚒𝚝𝚢𝚊 𝚄𝚗𝚒𝚟𝚎𝚛𝚜𝚒𝚝𝚢 𝙴𝚌𝚊𝚙 𝚂𝚝𝚞𝚍𝚎𝚗𝚝 𝙿𝚘𝚛𝚝𝚊𝚕</span></h1>`, eliminating the previous separate small eyebrow and styling the tagline in `var(--accent)` (the exact accent color previously applied to the eyebrow).
   - Popup `<title>` is `𝚁𝚎𝙴𝚌𝚊𝚙"/ — nightTab Settings`.
   - Master switch button tooltip: `Toggle 𝚁𝚎𝙴𝚌𝚊𝚙"/ Extension`.
   - Extension `manifest.json` declares `"name": "𝚁𝚎𝙴𝚌𝚊𝚙\"/"` and `"default_title": "𝚁𝚎𝙴𝚌𝚊𝚙\"/"`.

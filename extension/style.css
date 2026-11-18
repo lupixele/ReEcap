@@ -857,8 +857,38 @@ li.is-expanded .reecap-submenu-container {
 
 .brand-identity {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  min-width: 0;
+}
+
+.brand-title {
+  margin: 0;
+  font-family: var(--font-mono), monospace, system-ui, sans-serif;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.brand-title-main {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.brand-title-sub {
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--accent); /* Exact same accent color as previous student portal text */
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
 }
 
 .eyebrow {
@@ -868,15 +898,6 @@ li.is-expanded .reecap-submenu-container {
   text-transform: uppercase;
   color: var(--accent);
   font-weight: 600;
-}
-
-.brand-title {
-  margin: 0;
-  font-family: var(--font-mono), monospace, system-ui, sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
 }
 
 .user-cluster { 
@@ -4158,6 +4179,10 @@ table.popupTable th a:hover {
 
   .brand-title {
     font-size: 26px;
+  }
+
+  .brand-title-sub {
+    display: none !important;
   }
 
   .user-cluster {

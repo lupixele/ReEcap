@@ -398,7 +398,9 @@ function initDecorators() {
          const header = document.createElement('header');
          header.className = 'masthead';
 
-         const titleEyebrow = isEmployeeRole() ? 'Teacher Portal' : 'Student Portal';
+         const brandTagline = isEmployeeRole()
+           ? 'ー 𝚊𝚗 𝚄𝚗𝚘𝚏𝚏𝚒𝚌𝚒𝚊𝚕 𝚁𝚎𝚍𝚎𝚜𝚒𝚐𝚗 𝚘𝚏 𝙰𝚍𝚒𝚝𝚢𝚊 𝚄𝚗𝚒𝚟𝚎𝚛𝚜𝚒𝚝𝚢 𝙴𝚌𝚊𝚙 𝚃𝚎𝚊𝚌𝚑𝚎𝚛 𝙿𝚘𝚛𝚝𝚊𝚕'
+           : 'ー 𝚊𝚗 𝚄𝚗𝚘𝚏𝚏𝚒𝚌𝚒𝚊𝚕 𝚁𝚎𝚍𝚎𝚜𝚒𝚐𝚗 𝚘𝚏 𝙰𝚍𝚒𝚝𝚢𝚊 𝚄𝚗𝚒𝚟𝚎𝚛𝚜𝚒𝚝𝚢 𝙴𝚌𝚊𝚙 𝚂𝚝𝚞𝚍𝚎𝚗𝚝 𝙿𝚘𝚛𝚝𝚊𝚕';
          const brandBlock = document.createElement('div');
          brandBlock.className = 'brand-block';
          brandBlock.innerHTML = `
@@ -412,8 +414,10 @@ function initDecorators() {
              <svg class="icon-expand" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" style="display:none;"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path><path d="m11 9 3 3-3 3"></path></svg>
            </button>
            <div class="brand-identity">
-             <div class="eyebrow">${titleEyebrow}</div>
-             <h1 class="brand-title">𝚁𝚎𝙴𝚌𝚊𝚙"/</h1>
+             <h1 class="brand-title">
+               <span class="brand-title-main">𝚁𝚎𝙴𝚌𝚊𝚙"/</span>
+               <span class="brand-title-sub">${brandTagline}</span>
+             </h1>
            </div>
          `;
 
