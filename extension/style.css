@@ -2941,33 +2941,47 @@ tr:has(td[height="1000"]) {
   opacity: 0.7;
 }
 
-/* Tactile Subject Card inside timetable cell */
+/* Tactile Subject Card inside timetable cell — nightTab Solid Shading System */
 .tt-class {
   --palette-hue: calc(var(--palette, 0) * 30);
-  --palette-color: hsl(var(--palette-hue), 60%, 42%);
-  --palette-soft: hsl(var(--palette-hue), 55%, 96%);
-  --palette-border: hsl(var(--palette-hue), 42%, 82%);
+  --palette-color: hsl(var(--palette-hue), 72%, 40%);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
   text-align: left;
-  background:
-    linear-gradient(145deg,
-      color-mix(in srgb, var(--palette-soft) 86%, #ffffff) 0%,
-      var(--palette-soft) 100%);
+  background: var(--surface-card) !important;
   color: var(--text-primary);
-  border: 1px solid var(--palette-border);
-  border-left: 3px solid var(--palette-color);
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--palette-color) 8%, transparent);
+  border: 1px solid var(--border-light) !important;
+  border-left: 4px solid var(--palette-color) !important;
+  border-radius: var(--radius);
+  box-shadow: var(--theme-shadow-bottom-small);
   overflow: visible;
   min-height: 94px;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: transform var(--layout-transition-extra-fast) cubic-bezier(0.2, 0, 0, 1),
+              box-shadow var(--layout-transition-extra-fast) cubic-bezier(0.2, 0, 0, 1),
+              border-color var(--layout-transition-extra-fast) cubic-bezier(0.2, 0, 0, 1),
+              background var(--layout-transition-extra-fast) cubic-bezier(0.2, 0, 0, 1);
 }
 
 .tt-class > * { position: relative; z-index: 1; }
 
+/* Palette 0 anchors directly into the active theme accent */
+.tt-class[style*="--palette: 0"] { --palette-color: rgb(var(--theme-accent)); }
+.tt-class[style*="--palette: 1"] { --palette-color: hsl(212, 85%, 44%); }
+.tt-class[style*="--palette: 2"] { --palette-color: hsl(152, 75%, 36%); }
+.tt-class[style*="--palette: 3"] { --palette-color: hsl(36, 92%, 40%); }
+.tt-class[style*="--palette: 4"] { --palette-color: hsl(268, 70%, 50%); }
+.tt-class[style*="--palette: 5"] { --palette-color: hsl(348, 78%, 46%); }
+.tt-class[style*="--palette: 6"] { --palette-color: hsl(182, 80%, 36%); }
+.tt-class[style*="--palette: 7"] { --palette-color: hsl(235, 75%, 52%); }
+.tt-class[style*="--palette: 8"] { --palette-color: hsl(14, 85%, 46%); }
+.tt-class[style*="--palette: 9"] { --palette-color: hsl(165, 75%, 36%); }
+.tt-class[style*="--palette: 10"] { --palette-color: hsl(46, 90%, 38%); }
+.tt-class[style*="--palette: 11"] { --palette-color: hsl(290, 68%, 46%); }
+
+/* Dark Themes: Solid card surface with rich jewel accents matching the theme */
 html.is-theme-style-dark .tt-class,
 html[data-theme-style="dark"] .tt-class,
 html[data-theme="dark"] .tt-class,
@@ -2976,14 +2990,57 @@ html[data-theme="cappuccino-dark"] .tt-class,
 html[data-theme="evergreen-dark"] .tt-class,
 html[data-theme="midnight-dark"] .tt-class,
 html[data-theme="rosewood-dark"] .tt-class {
-  --palette-color: hsl(var(--palette-hue), 65%, 68%);
-  --palette-soft: color-mix(in srgb, hsl(var(--palette-hue), 58%, 45%) 20%, var(--surface-card));
-  --palette-border: color-mix(in srgb, hsl(var(--palette-hue), 58%, 62%) 38%, var(--border-light));
-  background:
-    linear-gradient(145deg,
-      color-mix(in srgb, var(--palette-soft) 92%, rgba(255,255,255,0.04)) 0%,
-      var(--palette-soft) 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --palette-color: hsl(var(--palette-hue), 75%, 68%);
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border-light) !important;
+  border-left: 4px solid var(--palette-color) !important;
+  box-shadow: var(--theme-shadow-bottom-small);
+}
+
+html.is-theme-style-dark .tt-class[style*="--palette: 0"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 0"],
+html[data-theme="dark"] .tt-class[style*="--palette: 0"] { --palette-color: rgb(var(--theme-accent)); }
+html.is-theme-style-dark .tt-class[style*="--palette: 1"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 1"],
+html[data-theme="dark"] .tt-class[style*="--palette: 1"] { --palette-color: hsl(212, 85%, 68%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 2"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 2"],
+html[data-theme="dark"] .tt-class[style*="--palette: 2"] { --palette-color: hsl(152, 70%, 65%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 3"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 3"],
+html[data-theme="dark"] .tt-class[style*="--palette: 3"] { --palette-color: hsl(38, 92%, 66%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 4"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 4"],
+html[data-theme="dark"] .tt-class[style*="--palette: 4"] { --palette-color: hsl(268, 80%, 74%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 5"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 5"],
+html[data-theme="dark"] .tt-class[style*="--palette: 5"] { --palette-color: hsl(348, 85%, 72%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 6"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 6"],
+html[data-theme="dark"] .tt-class[style*="--palette: 6"] { --palette-color: hsl(182, 80%, 65%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 7"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 7"],
+html[data-theme="dark"] .tt-class[style*="--palette: 7"] { --palette-color: hsl(235, 80%, 75%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 8"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 8"],
+html[data-theme="dark"] .tt-class[style*="--palette: 8"] { --palette-color: hsl(14, 88%, 68%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 9"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 9"],
+html[data-theme="dark"] .tt-class[style*="--palette: 9"] { --palette-color: hsl(165, 75%, 64%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 10"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 10"],
+html[data-theme="dark"] .tt-class[style*="--palette: 10"] { --palette-color: hsl(46, 92%, 65%); }
+html.is-theme-style-dark .tt-class[style*="--palette: 11"],
+html[data-theme-style="dark"] .tt-class[style*="--palette: 11"],
+html[data-theme="dark"] .tt-class[style*="--palette: 11"] { --palette-color: hsl(290, 75%, 72%); }
+
+.tt-class:hover,
+.tt-class:focus-within {
+  transform: translateY(-2px);
+  background: var(--surface-elevated) !important;
+  border-color: var(--palette-color) !important;
+  box-shadow: var(--theme-shadow-bottom-medium) !important;
+  z-index: 20;
 }
 
 .subject-card__top {
@@ -3038,9 +3095,10 @@ html[data-theme="rosewood-dark"] .tt-class {
 
 .tt-class:hover,
 .tt-class:focus-within {
-  transform: translateY(-2px) scale(1.02);
-  border-color: var(--palette-color);
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--palette-color) 20%, transparent);
+  transform: translateY(-2px);
+  background: var(--surface-elevated) !important;
+  border-color: var(--palette-color) !important;
+  box-shadow: var(--theme-shadow-bottom-medium) !important;
   z-index: 20;
 }
 
@@ -3378,17 +3436,13 @@ html[data-theme="rosewood-dark"] .legend-item {
 
   .subject-card--compact {
     --palette-hue: calc(var(--palette, 0) * 30);
-    --palette-color: hsl(var(--palette-hue), 60%, 42%);
-    --palette-soft: hsl(var(--palette-hue), 55%, 96%);
-    --palette-border: hsl(var(--palette-hue), 42%, 82%);
-    padding: 14px 16px;
-    border: 1px solid var(--palette-border);
-    border-left: 4px solid var(--palette-color);
+    --palette-color: hsl(var(--palette-hue), 72%, 40%);
+    padding: 12px 14px;
+    border: 1px solid var(--border-light) !important;
+    border-left: 4px solid var(--palette-color) !important;
     border-radius: var(--radius);
-    background:
-      linear-gradient(145deg,
-        color-mix(in srgb, var(--palette-soft) 86%, #ffffff) 0%,
-        var(--palette-soft) 100%);
+    background: var(--surface-card) !important;
+    box-shadow: var(--theme-shadow-bottom-small);
   }
 
   html.is-theme-style-dark .subject-card--compact,
@@ -3399,13 +3453,11 @@ html[data-theme="rosewood-dark"] .legend-item {
   html[data-theme="evergreen-dark"] .subject-card--compact,
   html[data-theme="midnight-dark"] .subject-card--compact,
   html[data-theme="rosewood-dark"] .subject-card--compact {
-    --palette-color: hsl(var(--palette-hue), 65%, 68%);
-    --palette-soft: color-mix(in srgb, hsl(var(--palette-hue), 58%, 45%) 20%, var(--surface-card));
-    --palette-border: color-mix(in srgb, hsl(var(--palette-hue), 58%, 62%) 38%, var(--border-light));
-    background:
-      linear-gradient(145deg,
-        color-mix(in srgb, var(--palette-soft) 92%, rgba(255,255,255,0.04)) 0%,
-        var(--palette-soft) 100%);
+    --palette-color: hsl(var(--palette-hue), 75%, 68%);
+    background: var(--surface-card) !important;
+    border: 1px solid var(--border-light) !important;
+    border-left: 4px solid var(--palette-color) !important;
+    box-shadow: var(--theme-shadow-bottom-small);
   }
 
   .subject-card__meta-row {
@@ -8785,6 +8837,46 @@ button:focus:not(.search-clear):not(.menu-close):not(.chat-bubble-btn):not(.prom
   color: hsl(var(--theme-accent-text)) !important;
   font-weight: 600 !important;
   box-shadow: var(--theme-shadow-bottom-small) !important;
+}
+
+.reecap-sidebar-link.active .reecap-sidebar-icon,
+.sidebar-nav-item.active .reecap-sidebar-icon {
+  opacity: 1 !important;
+  color: hsl(var(--theme-accent-text)) !important;
+}
+
+.reecap-sidebar-link.active .reecap-sidebar-icon svg,
+.sidebar-nav-item.active .reecap-sidebar-icon svg {
+  stroke: hsl(var(--theme-accent-text)) !important;
+  fill: none !important;
+}
+
+.reecap-sidebar-link.active .reecap-sidebar-text,
+.sidebar-nav-item.active .reecap-sidebar-text {
+  color: hsl(var(--theme-accent-text)) !important;
+  font-weight: 700 !important;
+}
+
+/* Sidebar category group headers must never receive option highlights */
+.reecap-sidebar-group,
+.reecap-sidebar-group.active {
+  background: transparent !important;
+  color: var(--text-faint) !important;
+  box-shadow: none !important;
+}
+
+.reecap-sidebar-group:before,
+.reecap-sidebar-group.active:before {
+  display: none !important;
+}
+
+/* Hide stray or redundant outer page title for pages that render their own hero header */
+[data-active-route="timetable"] #reecap-page-title,
+[data-active-route="overview"] #reecap-page-title,
+[data-active-route="calendar"] #reecap-page-title,
+[data-overview-active="true"] #reecap-page-title,
+[data-calendar-active="true"] #reecap-page-title {
+  display: none !important;
 }
 
 /* 6. Today's Schedule & Period Rows */

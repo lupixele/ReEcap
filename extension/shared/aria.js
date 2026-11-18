@@ -1391,13 +1391,20 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
    */
   function executePortalAction(actionKey) {
     if (!actionKey) return;
-    const [domain, verb, target] = actionKey.split(':');
+    const cleanKey = String(actionKey).trim();
+    const lowerKey = cleanKey.toLowerCase();
 
     // Reliable prompt submission helper
     function submitPrompt(text) {
+      if (!text) return;
       const input = document.getElementById('aria-input');
       if (input) {
         input.value = text;
+        if (typeof root.stopAriaGeneration === 'function') {
+          root.stopAriaGeneration();
+        } else if (typeof window !== 'undefined' && typeof window.stopAriaGeneration === 'function') {
+          window.stopAriaGeneration();
+        }
         if (typeof root.submitAriaMessage === 'function') {
           root.submitAriaMessage();
         } else if (typeof window !== 'undefined' && typeof window.submitAriaMessage === 'function') {
@@ -1409,113 +1416,132 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       }
     }
 
-    if (domain === 'nav') {
-      const iframe = document.getElementById('capIframeId');
-      const overview = document.getElementById('reecap-overview');
-      const pageTitle = document.getElementById('reecap-page-title');
-
-      if (verb === 'overview') {
-        if (typeof root.showOverview === 'function') root.showOverview();
-        else if (typeof window !== 'undefined' && typeof window.showOverview === 'function') window.showOverview();
-        return;
-      }
-
-      if (verb === 'fees' || verb === 'feedetails' || actionKey === 'nav:fees' || actionKey === 'nav:feedetails') {
-        if (typeof root.navigateToFeeDetails === 'function') {
-          root.navigateToFeeDetails();
-          return;
-        } else if (typeof window !== 'undefined' && typeof window.navigateToFeeDetails === 'function') {
-          window.navigateToFeeDetails();
-          return;
-        }
-        // Direct navigation fallback to fee details with view=fee
-        if (typeof root.showIframe === 'function') root.showIframe();
-        else if (typeof window !== 'undefined' && typeof window.showIframe === 'function') window.showIframe();
-        if (iframe) {
-          const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
-          if (curSrc.includes('studentprofile.aspx')) {
-            try {
-              iframe.contentWindow?.postMessage({ type: 'REECAP_SWITCH_TAB', tabId: 'divProfile_Fees' }, '*');
-            } catch (e) {}
-          } else {
-            iframe.src = `${getPortalBaseUrl()}Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees`;
-          }
-          if (pageTitle) pageTitle.textContent = 'FEE DETAILS';
-        }
-        return;
-      }
-
-      const routeMap = {
-        attendance: { url: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', title: 'ATTENDANCE' },
-        marks: { url: 'Academics/StudentMarksReport.aspx?scrid=15', title: 'MARKS REPORT' },
-        timetable: { url: 'Academics/studenttimetableoption.aspx', title: 'TIMETABLE' },
-        fees: { url: 'Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees', title: 'FEE DETAILS' },
-        feedetails: { url: 'Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees', title: 'FEE DETAILS' },
-        receipts: { url: 'FeePayments/studentreceipts.aspx?scrid=28', title: 'RECEIPTS' },
-        backlogs: { url: 'Academics/studentbacklogs.aspx?scrid=4', title: 'BACKLOGS REPORT' },
-        examviewer: { url: 'Examinations/RevalutionScriptViewer.aspx', title: 'VIEW ANSWER SHEET' },
-        calendar: { url: 'Academics/AcademicCalenderReport.aspx?scrid=1', title: 'SEMESTER CALENDAR' },
-        transactions: { url: 'feepayments/optransactions.aspx', title: 'ONLINE TRANSACTIONS' }
-      };
-
-      const route = routeMap[verb];
-      if (route && iframe) {
-        if (typeof root.showIframe === 'function') {
-          root.showIframe();
-        } else if (typeof window !== 'undefined' && typeof window.showIframe === 'function') {
-          window.showIframe();
-        } else {
-          if (overview) overview.style.setProperty('display', 'none', 'important');
-          iframe.style.removeProperty('display');
-          document.documentElement.setAttribute('data-overview-active', 'false');
-        }
-
-        const fullUrl = `${getPortalBaseUrl()}${route.url}`;
-        iframe.src = fullUrl;
-        if (pageTitle) pageTitle.textContent = route.title;
-
-        // Sync sidebar active class
-        const links = document.querySelectorAll('a.reecap-sidebar-link');
-        links.forEach(l => {
-          const href = (l.getAttribute('href') || '').toLowerCase();
-          l.classList.toggle('active', href.includes(route.url.toLowerCase()));
-        });
-      }
+    // Check prompt/query prefixes
+    if (/^(prompt|ask|query):/i.test(cleanKey)) {
+      submitPrompt(cleanKey.replace(/^(prompt|ask|query):/i, '').trim());
       return;
     }
 
-    if (domain === 'fee_ledger' || verb === 'fee_ledger' || actionKey === 'fee_ledger') {
-      submitPrompt("What is my current tuition fee balance, dues breakdown, and payment status?");
-      return;
-    }
+    // Strip leading action: or goto: or open:
+    const key = lowerKey.replace(/^(action|goto|open):/i, '');
 
-    if (domain === 'live_attendance' || verb === 'live_attendance' || actionKey === 'live_attendance') {
-      submitPrompt("Can you give me a live attendance summary across all my subjects with my attendance buffer?");
-      return;
-    }
-
-    if (domain === 'detailed_grades' || verb === 'detailed_grades' || actionKey === 'detailed_grades') {
-      submitPrompt("Can you summarize my academic grades, SGPA, credits, and overall progress?");
-      return;
-    }
-
-    if (domain === 'bunk_sim' || verb === 'bunk_sim' || domain === 'skip_sim' || verb === 'skip_sim') {
-      submitPrompt("How is my attendance in each subject, and how many classes can I safely skip?");
-      return;
-    }
-
-    if (domain === 'target_calc' || verb === 'target_calc') {
-      submitPrompt("What SGPA do I need in Semester 3 to achieve an overall 8.0 CGPA?");
-      return;
-    }
-
-    if (domain === 'weak_subjects' || verb === 'weak_subjects') {
+    // Analytical and conversational prompt actions
+    if (key === 'weak_subjects' || key === 'weak' || key.includes('weak_subject')) {
       submitPrompt("What are my weak subjects and where do I need to improve?");
       return;
     }
-
-    if (domain === 'export_dossier' || verb === 'export_dossier') {
+    if (key === 'target_calc' || key === 'sgpa_calc' || key === 'target_sgpa') {
+      submitPrompt("What SGPA do I need in Semester 3 to achieve an overall 8.0 CGPA?");
+      return;
+    }
+    if (key === 'bunk_sim' || key === 'skip_sim' || key === 'attendance_buffer' || key.includes('skip')) {
+      submitPrompt("How is my attendance in each subject, and how many classes can I safely skip?");
+      return;
+    }
+    if (key === 'live_attendance' || key === 'attendance_summary') {
+      submitPrompt("Can you give me a live attendance summary across all my subjects with my attendance buffer?");
+      return;
+    }
+    if (key === 'detailed_grades' || key === 'grade_summary' || key === 'academic_summary') {
+      submitPrompt("Can you summarize my academic grades, SGPA, credits, and overall progress?");
+      return;
+    }
+    if (key === 'fee_ledger' || key === 'fee_status' || key === 'financial_ledger') {
+      submitPrompt("What is my current tuition fee balance, dues breakdown, and payment status?");
+      return;
+    }
+    if (key === 'export_dossier' || key === 'print') {
       window.print();
+      return;
+    }
+
+    // Normalize nav target
+    const navTarget = key.replace(/^nav:/, '');
+
+    if (navTarget === 'overview' || navTarget === 'dashboard' || navTarget === 'home') {
+      if (typeof root.showOverview === 'function') root.showOverview();
+      else if (typeof window !== 'undefined' && typeof window.showOverview === 'function') window.showOverview();
+      return;
+    }
+
+    if (navTarget === 'calendar' || navTarget === 'academic_calendar' || navTarget === 'calender') {
+      if (typeof root.showAcademicCalendar === 'function') root.showAcademicCalendar();
+      else if (typeof window !== 'undefined' && typeof window.showAcademicCalendar === 'function') window.showAcademicCalendar();
+      return;
+    }
+
+    if (actionKey === 'nav:fees' || actionKey === 'nav:feedetails' || ['fees', 'feedetails', 'fee', 'tuition', 'ledger', 'college_fee'].includes(navTarget)) {
+      if (typeof root.navigateToFeeDetails === 'function') {
+        root.navigateToFeeDetails();
+        return;
+      } else if (typeof window !== 'undefined' && typeof window.navigateToFeeDetails === 'function') {
+        window.navigateToFeeDetails();
+        return;
+      }
+      if (typeof root.showIframe === 'function') root.showIframe();
+      else if (typeof window !== 'undefined' && typeof window.showIframe === 'function') window.showIframe();
+      const iframe = document.getElementById('capIframeId');
+      if (iframe) {
+        const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
+        if (curSrc.includes('studentprofile.aspx')) {
+          try {
+            iframe.contentWindow?.postMessage({ type: 'REECAP_SWITCH_TAB', tabId: 'divProfile_Fees' }, '*');
+          } catch (e) {}
+        } else {
+          iframe.src = `${getPortalBaseUrl()}Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees`;
+        }
+      }
+      document.documentElement.removeAttribute('data-active-route');
+      const pageTitle = document.getElementById('reecap-page-title');
+      if (pageTitle) {
+        pageTitle.style.removeProperty('display');
+        pageTitle.textContent = 'FEE DETAILS';
+      }
+      if (typeof root.setActiveSidebarLink === 'function') root.setActiveSidebarLink('FEE DETAILS');
+      else if (typeof window !== 'undefined' && typeof window.setActiveSidebarLink === 'function') window.setActiveSidebarLink('FEE DETAILS');
+      return;
+    }
+
+    if (['timetable', 'schedule', 'classes', 'classtimetable'].includes(navTarget)) {
+      if (typeof root.showIframe === 'function') root.showIframe();
+      else if (typeof window !== 'undefined' && typeof window.showIframe === 'function') window.showIframe();
+      const iframe = document.getElementById('capIframeId');
+      if (iframe) {
+        iframe.src = `${getPortalBaseUrl()}Academics/studenttimetableoption.aspx`;
+      }
+      document.documentElement.setAttribute('data-active-route', 'timetable');
+      const pageTitle = document.getElementById('reecap-page-title');
+      if (pageTitle) pageTitle.style.display = 'none';
+      if (typeof root.setActiveSidebarLink === 'function') root.setActiveSidebarLink('TIMETABLE');
+      else if (typeof window !== 'undefined' && typeof window.setActiveSidebarLink === 'function') window.setActiveSidebarLink('TIMETABLE');
+      return;
+    }
+
+    const routeMap = {
+      attendance: { url: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', title: 'ATTENDANCE', navKey: 'ATTENDANCE' },
+      marks: { url: 'Academics/StudentMarksReport.aspx?scrid=15', title: 'MARKS REPORT', navKey: 'MARKS REPORT' },
+      receipts: { url: 'FeePayments/studentreceipts.aspx?scrid=28', title: 'RECEIPTS', navKey: 'RECEIPTS' },
+      backlogs: { url: 'Academics/studentbacklogs.aspx?scrid=4', title: 'BACKLOGS REPORT', navKey: 'BACKLOGS' },
+      examviewer: { url: 'Examinations/RevalutionScriptViewer.aspx', title: 'VIEW ANSWER SHEET', navKey: 'EXAMS DETAILS' },
+      transactions: { url: 'feepayments/optransactions.aspx', title: 'ONLINE TRANSACTIONS', navKey: 'ONLINE TRANSACTIONS' }
+    };
+
+    const route = routeMap[navTarget] || Object.values(routeMap).find(r => r.navKey.toLowerCase() === navTarget);
+    if (route) {
+      if (typeof root.showIframe === 'function') root.showIframe();
+      else if (typeof window !== 'undefined' && typeof window.showIframe === 'function') window.showIframe();
+      const iframe = document.getElementById('capIframeId');
+      if (iframe) {
+        iframe.src = `${getPortalBaseUrl()}${route.url}`;
+      }
+      document.documentElement.removeAttribute('data-active-route');
+      const pageTitle = document.getElementById('reecap-page-title');
+      if (pageTitle) {
+        pageTitle.style.removeProperty('display');
+        pageTitle.textContent = route.title;
+      }
+      if (typeof root.setActiveSidebarLink === 'function') root.setActiveSidebarLink(route.navKey);
+      else if (typeof window !== 'undefined' && typeof window.setActiveSidebarLink === 'function') window.setActiveSidebarLink(route.navKey);
       return;
     }
   }

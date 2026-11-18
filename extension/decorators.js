@@ -2993,6 +2993,12 @@ function buildTimetableDashboard(tbl) {
   const rows = Array.from(tbl.querySelectorAll('tr'));
   if (rows.length < 2) return;
 
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'TIMETABLE' }, '*');
+    }
+  } catch (e) {}
+
   // The supported StudentTimetableOption table carries a period number in the
   // header and the authoritative time range inside every occupied day cell.
   // Keep the header strictly as a period label; never substitute it for a
@@ -5692,6 +5698,21 @@ function buildSidebar() {
         const isProfileSubTab = Boolean(item.tabId);
         a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>`;
         a.addEventListener('click', (e) => {
+          if (typeof setActiveSidebarLink === 'function') setActiveSidebarLink(a);
+          const pageTitle = document.getElementById('reecap-page-title');
+          const isTimetable = item.text.trim().toUpperCase() === 'TIMETABLE' || (a.getAttribute('href') || '').toLowerCase().includes('studenttimetableoption');
+
+          if (isTimetable) {
+            document.documentElement.setAttribute('data-active-route', 'timetable');
+            if (pageTitle) pageTitle.style.display = 'none';
+          } else if (!isCal) {
+            document.documentElement.removeAttribute('data-active-route');
+            if (pageTitle) {
+              pageTitle.style.removeProperty('display');
+              pageTitle.textContent = item.text.trim().toUpperCase();
+            }
+          }
+
           if (isCal) {
             e.preventDefault();
             showAcademicCalendar();
@@ -5799,17 +5820,122 @@ function buildSidebar() {
   });
 }
 
+function setActiveSidebarLink(target) {
+  if (!target) return;
+  if (target instanceof Element && target.classList.contains('reecap-sidebar-group')) return;
+  const links = Array.from(document.querySelectorAll('.reecap-sidebar-link'));
+  if (!links.length) return;
+
+  links.forEach(l => l.classList.remove('active'));
+
+  let activeEl = null;
+  if (target instanceof Element) {
+    activeEl = target.classList.contains('reecap-sidebar-link') ? target : target.closest('.reecap-sidebar-link');
+  } else if (typeof target === 'string') {
+    const raw = target.trim();
+    const term = raw.toLowerCase();
+
+    // 1. Check data-route-key
+    activeEl = links.find(l => (l.getAttribute('data-route-key') || '').toLowerCase() === term);
+
+    // 2. Check exact or partial textContent
+    if (!activeEl) {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        return txt === term || txt.includes(term) || term.includes(txt);
+      });
+    }
+
+    // 3. Check href
+    if (!activeEl) {
+      activeEl = links.find(l => {
+        const href = (l.getAttribute('href') || '').toLowerCase();
+        return href && (href.includes(term) || term.includes(href));
+      });
+    }
+  }
+
+  if (activeEl && activeEl.classList.contains('reecap-sidebar-link')) {
+    activeEl.classList.add('active');
+    // Ensure parent group is expanded so user sees active state
+    const section = activeEl.closest('.reecap-sidebar-section');
+    if (section && section.classList.contains('is-collapsed')) {
+      section.classList.remove('is-collapsed');
+      section.setAttribute('aria-hidden', 'false');
+      const inner = section.querySelector('.reecap-sidebar-section-inner');
+      if (inner) inner.inert = false;
+      const grpBtn = document.querySelector(`button[aria-controls="${section.id}"]`);
+      if (grpBtn) {
+        grpBtn.classList.remove('is-collapsed');
+        grpBtn.setAttribute('aria-expanded', 'true');
+      }
+    }
+  }
+}
+
+function syncSidebarActiveState(pathOrUrl) {
+  if (!pathOrUrl) return;
+  const p = String(pathOrUrl).toLowerCase();
+  const pageTitle = document.getElementById('reecap-page-title');
+
+  if (p.includes('studenttimetableoption.aspx')) {
+    document.documentElement.setAttribute('data-active-route', 'timetable');
+    if (pageTitle) pageTitle.style.display = 'none';
+    setActiveSidebarLink('TIMETABLE');
+    return;
+  }
+
+  document.documentElement.removeAttribute('data-active-route');
+  if (pageTitle) pageTitle.style.removeProperty('display');
+
+  if (p.includes('studentattendance.aspx')) {
+    setActiveSidebarLink('ATTENDANCE');
+    if (pageTitle) pageTitle.textContent = 'ATTENDANCE';
+  } else if (p.includes('studentmarksreport.aspx')) {
+    setActiveSidebarLink('MARKS REPORT');
+    if (pageTitle) pageTitle.textContent = 'MARKS REPORT';
+  } else if (p.includes('studentbacklogs.aspx')) {
+    setActiveSidebarLink('BACKLOGS');
+    if (pageTitle) pageTitle.textContent = 'BACKLOGS';
+  } else if (p.includes('studentreceipts.aspx') || p.includes('studentfeereceipt.aspx')) {
+    setActiveSidebarLink('RECEIPTS');
+    if (pageTitle) pageTitle.textContent = 'RECEIPTS';
+  } else if (p.includes('studentprofile.aspx')) {
+    if (p.includes('view=fee') || p.includes('#divprofile_fees') || p.includes('fee')) {
+      setActiveSidebarLink('FEE DETAILS');
+      if (pageTitle) pageTitle.textContent = 'FEE DETAILS';
+    } else {
+      setActiveSidebarLink('BIO-DATA');
+      if (pageTitle) pageTitle.textContent = 'BIO-DATA';
+    }
+  } else if (p.includes('academiccalenderreport.aspx') || p.includes('academiccalendar')) {
+    setActiveSidebarLink('ACADEMIC CALENDER');
+    if (pageTitle) pageTitle.textContent = 'ACADEMIC CALENDAR';
+  } else if (p.includes('revalutionscriptviewer.aspx')) {
+    setActiveSidebarLink('EXAMS DETAILS');
+    if (pageTitle) pageTitle.textContent = 'EXAMS DETAILS';
+  } else if (p.includes('optransactions.aspx')) {
+    setActiveSidebarLink('ONLINE TRANSACTIONS');
+    if (pageTitle) pageTitle.textContent = 'ONLINE TRANSACTIONS';
+  }
+}
+
+window.setActiveSidebarLink = setActiveSidebarLink;
+window.syncSidebarActiveState = syncSidebarActiveState;
+
 function navigateToProfileTab(tabId, title) {
   if (typeof showIframe === 'function') showIframe();
   const iframe = document.getElementById('capIframeId');
   if (!iframe) return;
 
+  document.documentElement.removeAttribute('data-active-route');
   const pageTitle = document.getElementById('reecap-page-title');
-  if (pageTitle && title) pageTitle.textContent = title;
+  if (pageTitle && title) {
+    pageTitle.style.removeProperty('display');
+    pageTitle.textContent = title;
+  }
 
-  document.querySelectorAll('.reecap-sidebar-link').forEach(link => {
-    link.classList.toggle('active', link.textContent.trim().toUpperCase() === title.trim().toUpperCase());
-  });
+  setActiveSidebarLink(title);
 
   const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
   if (curSrc.includes('studentprofile.aspx')) {
@@ -5826,16 +5952,14 @@ function navigateToFeeDetails() {
   const iframe = document.getElementById('capIframeId');
   if (!iframe) return;
 
+  document.documentElement.removeAttribute('data-active-route');
   const pageTitle = document.getElementById('reecap-page-title');
-  if (pageTitle) pageTitle.textContent = 'FEE DETAILS';
+  if (pageTitle) {
+    pageTitle.style.removeProperty('display');
+    pageTitle.textContent = 'FEE DETAILS';
+  }
 
-  document.querySelectorAll('.reecap-sidebar-link').forEach(link => {
-    if (link.textContent.trim().toUpperCase() === 'FEE DETAILS') {
-      link.classList.add('active');
-    } else {
-      link.classList.remove('active');
-    }
-  });
+  setActiveSidebarLink('FEE DETAILS');
 
   const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
   if (curSrc.includes('studentprofile.aspx')) {
@@ -6142,17 +6266,18 @@ function showOverview() {
      }
   });
 
-  if (pageTitle) pageTitle.textContent = 'OVERVIEW';
+  if (pageTitle) {
+    pageTitle.textContent = 'OVERVIEW';
+    pageTitle.style.display = 'none';
+  }
 
   document.documentElement.setAttribute('data-overview-active', 'true');
+  document.documentElement.setAttribute('data-active-route', 'overview');
 
-  document.querySelectorAll('a.reecap-sidebar-link').forEach(link => {
-    if (link.classList.contains('reecap-sidebar-overview')) {
-      link.classList.add('active');
-    } else {
-      link.classList.remove('active');
-    }
-  });
+  const overviewLink = document.querySelector('.reecap-sidebar-overview');
+  if (overviewLink && typeof setActiveSidebarLink === 'function') {
+    setActiveSidebarLink(overviewLink);
+  }
 }
 
 function showIframe() {
@@ -6186,9 +6311,6 @@ function showIframe() {
 
   document.documentElement.setAttribute('data-overview-active', 'false');
   document.documentElement.setAttribute('data-calendar-active', 'false');
-
-  const overviewLink = document.querySelector('.reecap-sidebar-overview');
-  if (overviewLink) overviewLink.classList.remove('active');
 
   if (typeof syncSidebarActiveState === 'function' && iframe && iframe.contentWindow) {
     try {
@@ -6235,19 +6357,18 @@ function showAcademicCalendar() {
     renderAcademicCalendarHub(calendarView);
   }
 
-  if (pageTitle) pageTitle.textContent = 'ACADEMIC CALENDAR';
+  if (pageTitle) {
+    pageTitle.textContent = 'ACADEMIC CALENDAR';
+    pageTitle.style.display = 'none';
+  }
 
   document.documentElement.setAttribute('data-overview-active', 'false');
   document.documentElement.setAttribute('data-calendar-active', 'true');
+  document.documentElement.setAttribute('data-active-route', 'calendar');
 
-  document.querySelectorAll('a.reecap-sidebar-link').forEach(link => {
-    const text = (link.textContent || '').toUpperCase();
-    if (text.includes('CALENDAR') || text.includes('CALENDER')) {
-      link.classList.add('active');
-    } else {
-      link.classList.remove('active');
-    }
-  });
+  if (typeof setActiveSidebarLink === 'function') {
+    setActiveSidebarLink('CALENDAR');
+  }
 
   if (typeof closeResponsiveNavigation === 'function') {
     closeResponsiveNavigation();
@@ -6386,6 +6507,12 @@ function rebuildMainLayout() {
       try {
         iframe.contentWindow?.postMessage({ type: 'REECAP_REQUEST_RESIZE' }, '*');
       } catch (e) {}
+      try {
+        const curSrc = iframe.contentWindow?.location?.href || iframe.getAttribute('src') || '';
+        if (typeof syncSidebarActiveState === 'function') {
+          syncSidebarActiveState(curSrc);
+        }
+      } catch (e) {}
     }
   });
 
@@ -6441,7 +6568,18 @@ function rebuildMainLayout() {
 
     if (e.data.type === 'REECAP_SET_TITLE') {
       if (document.documentElement.getAttribute('data-overview-active') !== 'true') {
-        pageTitle.textContent = e.data.title;
+        if (e.data.title === 'TIMETABLE') {
+          document.documentElement.setAttribute('data-active-route', 'timetable');
+          if (pageTitle) pageTitle.style.display = 'none';
+          if (typeof setActiveSidebarLink === 'function') setActiveSidebarLink('TIMETABLE');
+        } else {
+          document.documentElement.removeAttribute('data-active-route');
+          if (pageTitle) {
+            pageTitle.style.removeProperty('display');
+            pageTitle.textContent = e.data.title;
+          }
+          if (typeof setActiveSidebarLink === 'function') setActiveSidebarLink(e.data.title);
+        }
       }
     }
 
@@ -7677,12 +7815,13 @@ function initAriaSidebar(layoutWrapper) {
     }
   });
 
-  // Delegated clicks in sidebar (chips, action buttons, thinking toggles)
+  // Delegated clicks in sidebar (chips, action buttons, thinking toggles, links)
   sidebar.addEventListener('click', (e) => {
     const chip = e.target.closest('.aria-prompt-chip');
     if (chip && chip.dataset.prompt) {
       const input = document.getElementById('aria-input');
       if (input) {
+        if (isAriaGenerating) stopAriaGeneration();
         input.value = chip.dataset.prompt;
         submitAriaMessage();
       }
@@ -7692,40 +7831,35 @@ function initAriaSidebar(layoutWrapper) {
     const actionChip = e.target.closest('.aria-action-chip');
     if (actionChip && actionChip.dataset.action) {
       const act = actionChip.dataset.action;
-      const isFromPromptCard = !!actionChip.closest('#aria-welcome-card, .aria-action-chips-scroll, #aria-suggestions-panel');
-
-      if (isFromPromptCard) {
-        if (act === 'fee_ledger' || act === 'nav:fees' || act === 'nav:feedetails') {
-          if (typeof navigateToFeeDetails === 'function') navigateToFeeDetails();
-          if (window.__reecap_aria && window.__reecap_aria.executePortalAction) {
-            window.__reecap_aria.executePortalAction('fee_ledger');
-          }
-          return;
-        }
-        if (act === 'live_attendance' || act === 'nav:attendance') {
-          if (window.__reecap_aria && window.__reecap_aria.executePortalAction) {
-            window.__reecap_aria.executePortalAction('live_attendance');
-          }
-          return;
-        }
-        if (act === 'detailed_grades' || act === 'nav:marks') {
-          if (window.__reecap_aria && window.__reecap_aria.executePortalAction) {
-            window.__reecap_aria.executePortalAction('detailed_grades');
-          }
-          return;
-        }
-      }
-
-      if (act === 'nav:fees' || act === 'nav:feedetails') {
-        if (typeof navigateToFeeDetails === 'function') {
-          navigateToFeeDetails();
-          return;
-        }
+      if (isAriaGenerating) stopAriaGeneration();
+      if (act === 'fee_ledger' || act === 'nav:fees' || act === 'nav:feedetails') {
+        if (typeof navigateToFeeDetails === 'function') navigateToFeeDetails();
       }
       if (window.__reecap_aria && window.__reecap_aria.executePortalAction) {
         window.__reecap_aria.executePortalAction(act);
       }
       return;
+    }
+
+    const ariaLink = e.target.closest('.aria-msg a');
+    if (ariaLink) {
+      const href = ariaLink.getAttribute('href') || '';
+      if (href.startsWith('action:')) {
+        e.preventDefault();
+        const act = href.replace(/^action:/, '');
+        if (isAriaGenerating) stopAriaGeneration();
+        if (window.__reecap_aria && window.__reecap_aria.executePortalAction) {
+          window.__reecap_aria.executePortalAction(act);
+        }
+        return;
+      }
+      if (!href.startsWith('http') && !href.startsWith('#') && !href.startsWith('javascript:')) {
+        e.preventDefault();
+        if (typeof showIframe === 'function') showIframe();
+        const iframe = document.getElementById('capIframeId');
+        if (iframe) iframe.src = href;
+        return;
+      }
     }
 
     const thinkingToggle = e.target.closest('.thinking-header');
@@ -8251,3 +8385,5 @@ window.showAcademicCalendar = showAcademicCalendar;
 window.navigateToProfileTab = navigateToProfileTab;
 window.setAriaGeneratingState = setAriaGeneratingState;
 window.stopAriaGeneration = stopAriaGeneration;
+window.setActiveSidebarLink = setActiveSidebarLink;
+window.syncSidebarActiveState = syncSidebarActiveState;
