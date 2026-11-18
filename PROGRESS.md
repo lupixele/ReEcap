@@ -1,38 +1,47 @@
 ## Current State
-- Active working branch on `main` with latest commits pushed to `origin/main`.
+- Active working branch on `main` with all latest changes validated.
+- Experimental Flush Sidebar & Masthead Docking: Docked `.reecap-sidebar-col` flush against the left wall (`left: 0 !important; margin: 0 !important; padding: 0 !important; border-radius: 0 !important; border-right: 1px solid var(--border-light) !important;`) and flush under `.masthead` (`margin: 0 !important; border-radius: 0 !important; border-bottom: 1px solid var(--border-light) !important; padding: 8px 24px !important;`). The master layout container expands full-bleed (`width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important;`), and column gap is eliminated (`gap: 0 !important;`). The content column (`.reecap-content-col`) gains maximum screen width with cushioned internal padding (`24px 32px 36px 32px !important;`).
+- Collapsible Sidebar Support & State Persistence: The masthead collapse toggle (`#reecap-sidebar-toggle-btn`) cleanly collapses the sidebar to `0px` (`grid-template-columns: 0px minmax(0, 1fr) !important;`) and sets `.reecap-sidebar-col` to `display: none !important; border-right: none !important;`, granting 100% viewport width to content. Sidebar state is remembered across page navigations via `localStorage.getItem('reecap_sidebar_collapsed')`.
+- Dynamic Google Fonts Pipeline: Built dynamic Google Fonts CSS2 font loader in `extension/shared/theme.js` (`loadPresetFonts`, `loadCatalogFonts`). Automatically requests and applies the exact Google Fonts specified across all 45 nightTab presets (59 unique fonts including `Klee One`, `Titillium Web`, `Fjalla One`, `Oswald`, `Fredericka the Great`, `Bungee Hairline`, `Monoton`, `Megrim`) with preconnect hints in `<head>`, rendering font styles in top-level documents, embedded iframes, and theme picker preview cards.
+- Permanent CSP Resolution via MV3 Main World Content Script: Created `extension/shared/interceptor.js` and registered it directly in `extension/manifest.json` under `content_scripts` with `"world": "MAIN"`. Chrome executes the main-world alert and AJAX interceptor directly without injecting `<script>` tags into the DOM, permanently eliminating inline script CSP violations.
+- Brand Name Standardization: The brand name is strictly styled everywhere in user-facing UI as `𝚁𝚎𝙴𝚌𝚊𝚙"/` (login page `default.aspx`, portal masthead, extension popup title, toggle button tooltip, and Aria AI welcome messages).
+- Login Page Redesign: Redesigned `default.aspx` with a modern nightTab login card displaying `<h1 class="reecap-login-wordmark">𝚁𝚎𝙴𝚌𝚊𝚙"/</h1>` and accessible hidden heading `𝚁𝚎𝙴𝚌𝚊𝚙"/ sign in`.
+- Aria Send & Stop Button Architecture: Fixed the send button styling defect. Enforced high-specificity CSS exemptions from greedy `button:not(...)` rules. Renders as a crisp 32px circular pill with white SVG send arrow (`.icon-send`) and white SVG stop square (`.icon-stop`) on red background (`var(--error, #ef4444)`) with instant stream cancellation.
+- Aria Header Icons Repaired: Cleaned up top-right header actions by removing the redundant "Refresh Telemetry" button. Maintained two clean controls: Clear Chat (trash can) and Close (X), both styled with transparent backgrounds, no borders, and visible SVG strokes.
+- Purged "Bunk" Terminology: Completely purged "bunk", "bunking", "bunk buffer", and "bunk simulator" across the entire codebase, UI chips, prompt chips, system prompts, thinking trace, and Aria assistant text. Replaced exclusively with "skipping classes", "attendance buffer", "class margin", and "skipping classes margin".
+- Console Errors Resolution:
+  1. Fixed Chrome inline script CSP violation permanently by moving main-world alert interceptor to `manifest.json` `content_scripts[].world: "MAIN"`.
+  2. Fixed `Uncaught ReferenceError: root is not defined` in `extension/shared/aria.js` by passing `root` into `factory(root)`.
+  3. Fixed `Uncaught (in promise) ReferenceError: isCloud is not defined` in `extension/shared/aria.js` by declaring `isCloud = false` in `buildSystemPrompt()`.
+- Rich Floating Theme Toolbar: Ported the rich 3-column swatch card UI, search box, appearance filter segment (`[All] [Dark] [Light]`), live preset counter, and Corner Radius & Elevation Shadows range sliders to `reecap-theme-toolbar` in the content section.
+- Default Theme Preset Changed: Changed the system default preset from `app` to `point` (Point — Dark) across `theme.js`, `content.js`, `popup.js`, and `decorators.js`.
 - Streamlined Aria Composer & Stop Button: Stripped out all composer UI clutter ("Aura Super" model badge, "ERP Live" context pill, and keyboard shortcut footer hints). Single minimalist flex container housing the auto-resizing input textarea and an adaptive Send/Stop action pill.
-- Adaptive Send / Stop Button State Machine: During Aria token streaming or thinking trace execution, the send button morphs into a red stop button (`.prompt-send-pill.is-stop`). Clicking Stop or hitting Enter aborts active edge fetch streams via `AbortController` and settles thinking traces without trigger-happy fallback errors.
-- Helper Card Auto-Dismissal Lifecycle: The "Academic Co-Pilot Ready" welcome hero card and prompt suggestions shelf disappear automatically upon submitting the first prompt (or clicking any prompt chip), maintaining a focused chat view. Restored cleanly when clearing chat via the relocated header action button (`#aria-clear-chat`).
-- Tuition Fee Ledger Navigation Repaired: Fixed action chip routing for `nav:fees` / `nav:feedetails` to invoke `navigateToFeeDetails()` and activate `#divProfile_Fees` with `&view=fee`. Exported all navigation and composer control primitives (`navigateToFeeDetails`, `submitAriaMessage`, `showIframe`, `showOverview`, `showAcademicCalendar`, `navigateToProfileTab`, `setAriaGeneratingState`, `stopAriaGeneration`) onto `window`.
-- ReEcap Brand Identity: Replaced masthead and extension popup brand title text and styling with exact mathematical monospace `"𝚁𝚎𝙴𝚌𝚊𝚙"/"` glyph string.
-- Universal Alert Interceptor & In-UI Error Cards: Overrode `window.alert` in both Main World and isolated content script contexts and hooked ASP.NET AJAX `PageRequestManager.endRequest` to suppress raw HTML error popups (such as IIS 401 Unauthorized pages on Exam Details). Renders an elegant in-UI nightTab error hero card with clear status badges, context explanations, and one-click actions (Reload View, Academic Calendar, Return to Overview).
-- Universal Portal Server Error Recovery: Extended `observeAndRecoverServerError()` to detect 401 Unauthorized, 403 Forbidden, and 500 Internal Server Error pages directly loaded in child iframes or top-level windows, replacing raw server error traces with responsive nightTab error recovery cards.
-- Sidebar Profile Section: Restructured Profile into a dedicated sidebar section (`Profile` group) containing unique sub-items (Bio-Data, Performance - Present, Performance - Past, Outings, Counseling, Disciplinary Action). Non-duplicate policy strictly enforced (no duplicate Backlogs or Fee Details under Profile).
-- In-Content Profile Tabs Removed: The horizontal tab bar `#reecap-profile-dashboard` is completely hidden when embedded in the shell, keeping the content area clean and focused.
-- Dedicated Fee Details View: Opens directly into `#divProfile_Fees` with `data-fee-only-view="true"`, cleanly suppressing student bio data and tabs.
-- Timetable Tooltip Border Cutoff: Solved upward popover cutoff on top rows (Monday/Tuesday) with downward orientation (`.tt-class.tt-tooltip-below`) and dynamic mouseenter/focusin collision detection against `.tt-grid-wrap`.
-- Receipts Page Theming Sanitized: Injected runtime `<style id="reecap-receipts-aggressive-override">` and runtime sanitizer `sanitizeReceiptsTheme()` stripping cyan/blue gradient leaks (`#70b4e6`, `#5dade2`) and borders from AjaxControlToolkit TabContainer.
-- Empty Scroll Elimination: Repaired `getTrueContentHeight()` and child auto-resizers to measure exact physical bounding boxes of visible content elements instead of `docEl.scrollHeight`, eliminating hundreds of pixels of blank/empty scroll on timetable, bio-data, receipts, etc.
-- Master shell layout on `data-reecap-master="true"` locks `html` and `body` to `100vh` on desktop with `overflow: hidden`, giving `.reecap-sidebar-col` and `.reecap-content-col` independent scroll containers with `overscroll-behavior: contain`.
+- Helper Card Auto-Dismissal Lifecycle: The "Academic Co-Pilot Ready" welcome hero card and prompt suggestions shelf disappear automatically upon submitting the first prompt (or clicking any prompt chip), maintaining a focused chat view. Restored cleanly when clearing chat via the header action button (`#aria-clear-chat`).
+- Tuition Fee Ledger Navigation: Fixed action chip routing for `nav:fees` / `nav:feedetails` to invoke `navigateToFeeDetails()` and activate `#divProfile_Fees` with `&view=fee`. Exported all navigation and composer control primitives onto `window`.
+- Universal Alert Interceptor & In-UI Error Cards: Overrode `window.alert` in Main World and content script contexts and hooked ASP.NET AJAX `PageRequestManager.endRequest` to suppress raw HTML error popups (such as IIS 401 Unauthorized pages on Exam Details). Renders an elegant in-UI nightTab error hero card with one-click actions.
+- Universal Portal Server Error Recovery: Extended `observeAndRecoverServerError()` to detect 401 Unauthorized, 403 Forbidden, and 500 Internal Server Error pages directly loaded in child iframes or top-level windows.
+- Sidebar Navigation Structure: Distinct sections for `Academics`, `Finance`, `Profile`, and `Account` with strict non-duplication policy.
+- Receipts Page Theming Sanitized: Neutralized persistent ASP.NET WebResource cyan/blue gradient backgrounds and borders from AjaxControlToolkit TabContainer.
+- Empty Scroll Elimination: Repaired `getTrueContentHeight()` and child auto-resizers to measure exact physical bounding boxes of visible content elements instead of `docEl.scrollHeight`.
 
 ## Recent Decisions
-- Streamlined Aria prompt composer into a distraction-free single input bar. Moved the Clear Chat button to the sidebar header alongside Refresh and Close.
-- Added full `AbortController` cancellation to Aria streaming, enabling students to cancel in-flight queries and stop generation immediately with the stop button.
-- Automatically dismiss the academic welcome hero card upon the first student prompt to keep conversational history uncluttered.
-- Route "Tuition Fee Ledger" action chips to `navigateToFeeDetails()` and `#divProfile_Fees` with `&view=fee`.
-- Intercept browser `window.alert` modal dialogs in the Main World before ASP.NET Ajax and jQuery error handlers execute, suppressing raw IIS XHTML error dumps and routing them to ReEcap in-UI state cards.
-- Restructured sidebar navigation into distinct sections: `Academics`, `Finance`, `Profile`, and `Account`. Profile now contains unique profile views (Bio-Data, Performance, Past Performance, Outings, Counseling, Disciplinary Action) without duplicating Backlogs (in Academics) or Fee Details (in Finance).
-- Sub-item navigation in Profile and Finance utilizes `REECAP_SWITCH_TAB` postMessage for instant view switching without iframe reloads when `StudentProfile.aspx` is active.
-- Universal iframe content height reporting calculates the maximum physical bottom boundary of visible content elements (`rect.bottom + window.scrollY`), bypassing inflated `docEl.scrollHeight` values that previously created massive trailing blank space.
-- Timetable tooltip popovers in top rows orient downward with flipped arrows, reinforced by dynamic geometry checks during hover and focus.
-- Receipts page employs aggressive injected CSS and mutation observer sanitation to neutralize persistent ASP.NET WebResource cyan/blue gradient backgrounds.
+- Styled brand name across login page, popup, masthead, and Aria strictly as `𝚁𝚎𝙴𝚌𝚊𝚙"/`.
+- Docked sidebar flush to the left wall and masthead, eliminating outer margins and gap, expanding content area for maximum workspace.
+- Implemented Google Fonts dynamic loading so all 45 presets reflect their intended typography.
+- Eliminated DOM inline script injection by registering `shared/interceptor.js` via Chrome MV3 `content_scripts[].world: "MAIN"`.
+- Exempted all Aria controls (`.prompt-send-pill`, `.aria-header-btn`, `.aria-close-btn`, chips) from global nightTab button styles (`button:not(...)`) to guarantee perfect circular pill dimensions and visible SVG strokes.
+- Removed redundant telemetry refresh button from Aria header, leaving only Clear Chat and Close.
+- Strictly prohibited the word "bunk" in user-facing UI and assistant responses; standardized on "skipping classes", "attendance buffer", and "class margin".
+- Ported the rich 3-column swatch grid and geometry/shadow sliders to the floating theme toolbar icon on every page.
+- Set default preset to `point` instead of `app`.
 
 ## Verification
 - `node --check extension/decorators.js`: PASS
 - `node --check extension/shared/aria.js`: PASS
+- `node --check extension/shared/theme.js`: PASS
+- `node --check extension/shared/interceptor.js`: PASS
+- `node tests/alert-interceptor.test.js`: PASS
 - `node tests/aria-composer.test.js`: PASS
 - `node tests/aria-markdown.test.js`: PASS (45 checks)
-- `node tests/theme-architecture.test.js`: PASS
-- `node tests/alert-interceptor.test.js`: PASS
-- `tests/iframe-navigation.html`: PASS (100% checks)
+- `node tests/theme-architecture.test.js`: PASS (45 presets & Point default)
 - Privacy audit: 0 personal records in `extension/` and `tests/`.

@@ -2139,18 +2139,26 @@
     root.style.setProperty('--radius-pill', '9999px');
     root.style.setProperty('--ambient-glow', `0 0 24px rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.14)`);
 
-    // 6. Inject Display & UI Fonts
+    // 6. Inject Display & UI Fonts & Load Remote WebFonts
     if (preset.font && preset.font.display && preset.font.display.name) {
       root.style.setProperty('--theme-font-display-name', `"${preset.font.display.name}", "Fjalla One", "Rubik", system-ui, sans-serif`);
+      root.style.setProperty('--theme-font-display-weight', preset.font.display.weight || 600);
+      root.style.setProperty('--theme-font-display-style', preset.font.display.style || 'normal');
     } else {
       root.style.setProperty('--theme-font-display-name', `"Fjalla One", "Rubik", "Outfit", system-ui, sans-serif`);
     }
 
     if (preset.font && preset.font.ui && preset.font.ui.name) {
       root.style.setProperty('--theme-font-ui-name', `"${preset.font.ui.name}", "Open Sans", "Inter", system-ui, sans-serif`);
+      root.style.setProperty('--theme-font-ui-weight', preset.font.ui.weight || 400);
+      root.style.setProperty('--theme-font-ui-style', preset.font.ui.style || 'normal');
     } else {
       root.style.setProperty('--theme-font-ui-name', `"Open Sans", "Inter", system-ui, -apple-system, sans-serif`);
     }
+
+    try {
+      loadPresetFonts(preset);
+    } catch (e) {}
 
     // 7. Expose both the original scale direction and derived appearance.
     root.classList.remove('is-theme-style-dark', 'is-theme-style-light');
@@ -2192,7 +2200,7 @@
     if (!presetId) {
       const legacyKey = source.themeFamily || source.theme;
       const mappedPreset = LEGACY_PRESET_MAP[legacyKey];
-      presetId = PRESETS[mappedPreset] ? mappedPreset : 'app';
+      presetId = PRESETS[mappedPreset] ? mappedPreset : 'point';
     }
 
     const preset = PRESETS[presetId];
@@ -2276,6 +2284,109 @@
     }
   }
 
+  // ─── Google Fonts Dynamic Loader ────────────────────────────────────────
+
+  /**
+   * Dynamically loads Google Fonts for the active preset.
+   * Injects preconnect hints and an asynchronous stylesheet into document.head.
+   */
+  function loadPresetFonts(presetOrId) {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
+    const preset = typeof presetOrId === 'string' ? PRESETS[presetOrId] : presetOrId;
+    if (!preset || !preset.font) return;
+
+    const fontNames = [];
+    if (preset.font.display && preset.font.display.name) {
+      const dName = preset.font.display.name.trim();
+      if (dName && !fontNames.includes(dName)) fontNames.push(dName);
+    }
+    if (preset.font.ui && preset.font.ui.name) {
+      const uName = preset.font.ui.name.trim();
+      if (uName && !fontNames.includes(uName)) fontNames.push(uName);
+    }
+
+    if (fontNames.length === 0) return;
+
+    const target = document.head || document.documentElement;
+    if (!target) return;
+
+    if (typeof document.getElementById === 'function' && !document.getElementById('reecap-font-preconnect-1')) {
+      const pc1 = document.createElement('link');
+      pc1.id = 'reecap-font-preconnect-1';
+      pc1.rel = 'preconnect';
+      pc1.href = 'https://fonts.googleapis.com';
+      target.appendChild(pc1);
+    }
+    if (typeof document.getElementById === 'function' && !document.getElementById('reecap-font-preconnect-2')) {
+      const pc2 = document.createElement('link');
+      pc2.id = 'reecap-font-preconnect-2';
+      pc2.rel = 'preconnect';
+      pc2.href = 'https://fonts.gstatic.com';
+      pc2.crossOrigin = 'anonymous';
+      target.appendChild(pc2);
+    }
+
+    const query = fontNames.map(f => 'family=' + f.replace(/\s+/g, '+')).join('&') + '&display=swap';
+    const href = `https://fonts.googleapis.com/css2?${query}`;
+
+    let link = typeof document.getElementById === 'function' ? document.getElementById('reecap-google-fonts') : null;
+    if (!link) {
+      link = document.createElement('link');
+      link.id = 'reecap-google-fonts';
+      link.rel = 'stylesheet';
+      target.appendChild(link);
+    }
+    if (link && link.getAttribute('href') !== href) {
+      link.setAttribute('href', href);
+    }
+  }
+
+  /**
+   * Preloads all fonts in the nightTab catalog for live preview in theme selectors.
+   */
+  function loadCatalogFonts() {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
+    const fontNames = new Set();
+    for (const p of Object.values(PRESETS)) {
+      if (p.font) {
+        if (p.font.display && p.font.display.name) fontNames.add(p.font.display.name.trim());
+        if (p.font.ui && p.font.ui.name) fontNames.add(p.font.ui.name.trim());
+      }
+    }
+    const target = document.head || document.documentElement;
+    if (!target) return;
+
+    if (typeof document.getElementById === 'function' && !document.getElementById('reecap-font-preconnect-1')) {
+      const pc1 = document.createElement('link');
+      pc1.id = 'reecap-font-preconnect-1';
+      pc1.rel = 'preconnect';
+      pc1.href = 'https://fonts.googleapis.com';
+      target.appendChild(pc1);
+    }
+    if (typeof document.getElementById === 'function' && !document.getElementById('reecap-font-preconnect-2')) {
+      const pc2 = document.createElement('link');
+      pc2.id = 'reecap-font-preconnect-2';
+      pc2.rel = 'preconnect';
+      pc2.href = 'https://fonts.gstatic.com';
+      pc2.crossOrigin = 'anonymous';
+      target.appendChild(pc2);
+    }
+
+    const query = Array.from(fontNames).map(f => 'family=' + f.replace(/\s+/g, '+')).join('&') + '&display=swap';
+    const href = `https://fonts.googleapis.com/css2?${query}`;
+
+    let link = typeof document.getElementById === 'function' ? document.getElementById('reecap-catalog-fonts') : null;
+    if (!link) {
+      link = document.createElement('link');
+      link.id = 'reecap-catalog-fonts';
+      link.rel = 'stylesheet';
+      target.appendChild(link);
+    }
+    if (link && link.getAttribute('href') !== href) {
+      link.setAttribute('href', href);
+    }
+  }
+
   // ─── Public API Exposure ─────────────────────────────────────────────────
 
   const themeAPI = {
@@ -2283,6 +2394,8 @@
     CATEGORIES,
     applyTheme,
     migrateThemeStorage,
+    loadPresetFonts,
+    loadCatalogFonts,
     getPresetStyle,
     getPresetBackground,
     getPresetAppearance,

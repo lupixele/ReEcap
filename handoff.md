@@ -1,57 +1,82 @@
-# ReEcap — Comprehensive Developer Handoff
+# 𝚁𝚎𝙴𝚌𝚊𝚙"/ — Comprehensive Developer Handoff
 
 > **Last Updated:** 2026-11-18  
 > **Active Branch:** `main`  
 > **Remote Repository:** `https://github.com/lupixele/ReEcap.git`  
-> **Latest Commit:** `74fe123` (`origin/main`)
+> **Brand Name:** `𝚁𝚎𝙴𝚌𝚊𝚙"/`  
+> **Default Theme Preset:** `point` (Point — Dark)
 
 ---
 
 ## 1. Executive Summary & Invariants
 
-ReEcap is a Manifest V3 Chrome extension that redesigns and modernizes the Aditya University ECAP ERP student portal (`https://info.aec.edu.in/aus/`) using the nightTab design system aesthetic.
+**𝚁𝚎𝙴𝚌𝚊𝚙"/** is a Manifest V3 Chrome extension that modernizes and redesigns the Aditya University ECAP ERP student portal (`https://info.aec.edu.in/aus/`) using the nightTab design system aesthetic.
 
 ### Core Engineering Invariants
-- **Strictly Client-Side Enhancement**: All modifications run in the browser without modifying backend ASP.NET WebForms architecture.
+- **Strictly Client-Side Enhancement**: All modifications execute in the browser without modifying backend ASP.NET WebForms architecture.
 - **Native Postback & State Integrity**: Never break or bypass ASP.NET `__VIEWSTATE`, `__EVENTVALIDATION`, form actions, or AJAX UpdatePanels.
 - **Data Integrity & Non-Fabrication**: Never invent, guess, mock, or fabricate financial ledgers, grades, attendance figures, or academic records. If a native module is unavailable, present clear in-UI status cards while keeping native fallback paths operable.
-- **nightTab Design System Fidelity**: Use the official nightTab presets, mathematical color spaces, and semantic design tokens (`--surface-elevated`, `--surface-card`, `--surface-sunken`, `--text-primary`, `--text-secondary`, `--border-subtle`, `--accent`, `--radius-*`, `--shadow-*`). Do not invent synthetic light/dark variations.
+- **nightTab Design System Fidelity**: Use the official 45 nightTab presets, mathematical color spaces, and semantic design tokens (`--surface-elevated`, `--surface-card`, `--surface-sunken`, `--text-primary`, `--text-secondary`, `--border-subtle`, `--accent`, `--radius-*`, `--shadow-*`). Do not invent synthetic light/dark variations.
+- **Default Theme 'Point'**: The system defaults to the `point` preset (Point — Dark with vivid purple/blue accent) instead of nightTab's generic `app`.
 - **Zero Hardcoded Personal Identifiers**: Extract student names and roll numbers dynamically at runtime; scrub all personal data from version-controlled files, commit histories, fixtures, and tests.
-- **Icon Assets & Typography**: Use clean inline SVG icons rather than Unicode emojis across the UI, code comments, and documentation. Use monospace typography for technical data and the brand identity.
+- **Zero Unicode Emojis**: Use clean inline SVG icons rather than Unicode emojis across the UI, code comments, and documentation.
+- **Brand Consistency**: The brand name is strictly styled everywhere in user-facing UI as `𝚁𝚎𝙴𝚌𝚊𝚙"/` (Mathematical Monospace string `\u{1D681}\u{1D68E}\u{1D674}\u{1D68C}\u{1D68A}\u{1D699}"/`).
+- **Standardized Academic Terminology**: Colloquial terms such as "bunk", "bunking", "bunk buffer", or "bunk simulator" are strictly forbidden. The system exclusively uses "skipping classes", "attendance buffer", "class margin", and "skipping classes margin".
 
 ---
 
 ## 2. Shell & Viewport Architecture
 
-### Independent Dual-Pane Desktop Layout
-- Applied via `data-reecap-master="true"` on `StudentMaster.aspx` and `main.aspx`.
-- The desktop viewport locks `html` and `body` to `100vh` with `overflow: hidden`, pinning the masthead to the top (`flex-shrink: 0`).
+### Flush Sidebar Wall & Top-Bar Docking Architecture
+- **Zero-Margin Shell Container**:
+  - `body[data-reecap-master="true"] > form > center > div` expanded from max 1536px box with 24px padding to full-bleed `width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important;`.
+- **Flush Top Bar Masthead**:
+  - `.masthead` sits directly at the top with `margin: 0 !important; border-radius: 0 !important; border-bottom: 1px solid var(--border-light) !important; padding: 8px 24px !important;`.
+  - Zero vertical gap exists between the bottom of the masthead and the top of the sidebar and content columns.
+- **Wall-Docked Sidebar Column (`.reecap-sidebar-col`)**:
+  - Docks flush to the left wall (`left: 0 !important; margin: 0 !important; padding: 0 !important; border-radius: 0 !important;`).
+  - Styled with `border-right: 1px solid var(--border-light) !important; background-color: hsl(var(--theme-primary-010)) !important;`.
+  - The inner `ul.menu` is stripped of floating card borders, rounded corners, and card drop-shadows (`border: none !important; border-radius: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 12px 10px !important; background: transparent !important;`).
+- **Zero-Gap Layout Grid & Spacious Content Area**:
+  - `.reecap-layout-columns` removes the previous 28px gap (`gap: 0 !important; grid-template-columns: 248px minmax(0, 1fr) !important;`).
+  - `.reecap-content-col` expands to consume all remaining screen width, internally cushioned with `padding: 24px 32px 36px 32px !important;` so cards have ample breathing room.
+- **Collapsible Sidebar Toggle Support**:
+  - Masthead houses `#reecap-sidebar-toggle-btn` which toggles `document.documentElement.classList.toggle('is-sidebar-collapsed')`.
+  - In collapsed state (`html.is-sidebar-collapsed`), `.reecap-layout-columns` collapses the sidebar column to `0px` (`grid-template-columns: 0px minmax(0, 1fr) !important;`) and sets `.reecap-sidebar-col` to `display: none !important; border-right: none !important;`, granting 100% viewport width to the content column.
+  - Sidebar collapse state is persisted across student portal navigations via `localStorage.getItem('reecap_sidebar_collapsed')`.
 - **Independent Scroll Containers**:
-  - **Sidebar Column** (`.reecap-sidebar-col` / `ul.menu`): Features its own isolated vertical scrollbar with custom nightTab styling.
+  - **Sidebar Column** (`.reecap-sidebar-col` / `ul.menu`): Isolated vertical scrollbar with custom nightTab styling.
   - **Content Column** (`.reecap-content-col`): Dedicated content scroll container fitted with `overscroll-behavior: contain`.
-  - Hovering and scrolling inside either container moves that container exclusively without window jitter or viewport displacement.
+  - Hovering and scrolling inside either container moves that container exclusively without window jitter.
 - **Child Iframe Wheel Forwarding**:
-  - When the cursor hovers over child iframes (`#capIframeId`), child documents capture wheel events and forward them via `window.parent.postMessage({ type: 'REECAP_CONTENT_WHEEL', deltaY, deltaMode }, '*')`.
-  - The parent content column applies the forwarded delta, ensuring seamless scrolling across embedded iframe pages.
-- **Mobile Responsiveness**: Viewports `<= 900px` revert smoothly to document-level touch scrolling with an off-canvas drawer navigation.
+  - Embedded iframes forward wheel deltas via `window.parent.postMessage({ type: 'REECAP_CONTENT_WHEEL', deltaY, deltaMode }, '*')` for smooth unified scrolling.
+- **Mobile Responsiveness**: Viewports `<= 1199px` revert smoothly to an off-canvas drawer navigation.
 
 ---
 
-## 3. Brand Identity & Masthead Design
+## 3. Brand Identity & Login Page Redesign
 
-- **Mathematical Monospace Brand Title**:
-  - The brand title in both the masthead ([extension/decorators.js](file:///p:/Magnanimity/Projects/ReEcap/extension/decorators.js)) and the extension popup ([extension/popup.html](file:///p:/Magnanimity/Projects/ReEcap/extension/popup.html)) renders the exact mathematical monospace string:
+### Mathematical Monospace Brand Title (`𝚁𝚎𝙴𝚌𝚊𝚙"/`)
+- **Login Page (`default.aspx`)**:
+  - The generic ECAP login header and decorative art are hidden, replaced by a centered, modern nightTab card.
+  - Displays the brand wordmark:
     ```html
-    <h1 class="brand-title">𝚁𝚎𝙴𝚌𝚊𝚙"/</h1>
+    <h1 class="reecap-login-wordmark">𝚁𝚎𝙴𝚌𝚊𝚙"/</h1>
     ```
-  - Styled with `.brand-title { font-family: var(--font-mono), monospace, system-ui, sans-serif; font-size: 21px; font-weight: 700; letter-spacing: -0.02em; }`.
-  - Removed decorative underline artifacts (`.masthead::after`) for a clean, distraction-free header.
-- **Dynamic Full Name Greeting**:
+  - Formatted with `font-family: var(--font-mono, monospace), system-ui, sans-serif !important; font-size: 28px !important; letter-spacing: 0.02em !important;`.
+  - Screen readers are provided an accessible hidden heading:
+    ```html
+    <h1 class="visually-hidden-head">𝚁𝚎𝙴𝚌𝚊𝚙"/ sign in</h1>
+    ```
+  - Role selection radio buttons default smoothly to "Student" with persistent role selection memory in `chrome.storage.sync`.
+- **Portal Masthead & Extension Popup**:
+  - Renders `<h1 class="brand-title">𝚁𝚎𝙴𝚌𝚊𝚙"/</h1>`.
+  - Popup `<title>` is `𝚁𝚎𝙴𝚌𝚊𝚙"/ — nightTab Settings`.
+  - Master switch button tooltip: `Toggle 𝚁𝚎𝙴𝚌𝚊𝚙"/ Extension`.
+  - Extension `manifest.json` declares `"name": "𝚁𝚎𝙴𝚌𝚊𝚙\"/"` and `"default_title": "𝚁𝚎𝙴𝚌𝚊𝚙\"/"`.
+- **Dynamic Student Name Greeting**:
   - Extracts student name dynamically from `#lblUser` or DOM nodes, normalizing uppercase strings into proper Title Case.
-  - Removed the informal "Hi," greeting prefix per user preference.
-- **Quick Controls**:
-  - Mobile hamburger toggle, desktop sidebar collapse toggle (`#reecap-sidebar-toggle-btn`), Aria AI launcher pill, theme customizer trigger, and native sign-out link.
-  - Removed `Ctrl+K` and `Ctrl+,` keyboard shortcut badges and global keydown listeners. Search remains accessible via direct click on the command bar.
+  - Omitted the informal "Hi," greeting prefix per user preference.
 
 ---
 
@@ -82,12 +107,12 @@ Navigation
 │   ├── Online Transactions
 │   └── Receipts (Sanitized student receipts)
 ├── Profile
-│   ├── Bio-Data (`#divProfile_BioData`)
-│   ├── Performance (`#divProfile_Present`)
-│   ├── Past Performance (`#divProfile_Past`)
-│   ├── Outings (`#divProfile_Outings`)
-│   ├── Counseling (`#divProfile_Counseling`)
-│   └── Disciplinary Action (`#divProfile_DisciplinaryAction`)
+│   ├── Bio-Data (#divProfile_BioData)
+│   ├── Performance (#divProfile_Present)
+│   ├── Past Performance (#divProfile_Past)
+│   ├── Outings (#divProfile_Outings)
+│   ├── Counseling (#divProfile_Counseling)
+│   └── Disciplinary Action (#divProfile_DisciplinaryAction)
 └── Account
     ├── Hostel Room Booking
     ├── Library Books
@@ -104,13 +129,13 @@ Navigation
 ## 5. Standalone Views & Dedicated Routing
 
 ### Dedicated Fee Details View (`data-fee-only-view="true"`)
-- Navigating to Fee Details from the sidebar or Overview opens `Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees`.
+- Navigating to Fee Details from the sidebar, Overview, or Aria action chips opens `Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees`.
 - The child document activates `data-fee-only-view="true"`, completely suppressing student bio data, personal information tables, and profile tab headers.
 - Displays exclusively the student fee ledger, active term hero meter, semester fee breakdown cards, and official online payment gateway triggers.
 
 ### Standalone Backlogs View
 - Navigating to Backlogs loads `Academics/studentbacklogs.aspx`.
-- If the student has zero backlogs or the portal renders an empty table/error state, ReEcap renders the "Clean Academic Record" dashboard displaying passing statistics and zero arrears.
+- If the student has zero backlogs or the portal renders an empty table/error state, 𝚁𝚎𝙴𝚌𝚊𝚙"/ renders the "Clean Academic Record" dashboard displaying passing statistics and zero arrears.
 
 ### Academic Calendar Hub
 - Live milestone dashboard featuring semester start dates, Mid-Term (Internal) Examinations I & II, fee payment windows, and Semester End Examinations (SEE Theory and Lab) for the 2025–2029 batch.
@@ -131,6 +156,7 @@ Vanilla ECAP and ASP.NET AJAX (`Sys.WebForms.PageRequestManager`) caught this re
 ### Solution Architecture
 1. **Main World Alert Interceptor**:
    - Injected synchronously at `document_start` into `document.documentElement` before any page scripts or ASP.NET AJAX libraries parse.
+   - Bypasses injection on `default.aspx` to prevent Chrome inline script CSP violations.
    - Overrides `window.alert(...)` in the Main World. If the message matches `<!DOCTYPE`, `<html`, `401 - Unauthorized`, `Access is denied`, `Server Error`, or `Sys.WebForms`, the native dialog is suppressed and a custom DOM event (`REECAP_SUPPRESSED_ALERT`) is dispatched.
 2. **ASP.NET AJAX Hook**:
    - Hooks into `Sys.WebForms.PageRequestManager.getInstance().add_endRequest()`. If an asynchronous postback error contains raw HTML error strings, calls `args.set_errorHandled(true)` to prevent ASP.NET from alerting.
@@ -142,12 +168,7 @@ Vanilla ECAP and ASP.NET AJAX (`Sys.WebForms.PageRequestManager`) caught this re
      - **Title**: `Exam Details Temporarily Restricted`.
      - **Explanation**: Explains that student login credentials are valid, but access to this endpoint is restricted by the university exam cell until official publication windows open.
      - **Info Callout**: Explains that examination schedules and fee windows are accessible in the Academic Calendar.
-     - **Action Buttons**:
-       - **Reload View**: Triggers frame reload.
-       - **Academic Calendar**: Direct one-click switch to the Academic Calendar.
-       - **Return to Overview**: Instant return to the student dashboard.
-5. **Universal Server Error Observer** (`observeAndRecoverServerError`):
-   - Expanded to detect 401 Unauthorized, 403 Forbidden, and 500 Internal Server Error pages loaded directly inside child frames or the shell, automatically rendering the in-UI recovery card.
+     - **Action Buttons**: Reload View, Academic Calendar, and Return to Overview.
 
 ---
 
@@ -180,14 +201,13 @@ Hovering or focusing subjects in the top two rows of the timetable (Monday and T
 ## 9. Accurate Content Height & Empty Scroll Elimination
 
 ### Problem
-Short child pages (compact bio-data, receipts, timetable) generated hundreds of pixels of blank trailing space.
-Root cause: Child height resizers previously read `document.documentElement.scrollHeight`. Inside Chrome iframes, reading `scrollHeight` on a document styled with `height: 100%` returns the iframe's outer height, preventing the iframe from ever shrinking and causing height ratcheting.
+Short child pages generated blank trailing space due to reading `document.documentElement.scrollHeight` inside iframes styled with `height: 100%`, causing height ratcheting.
 
 ### Solution
 - Re-architected `getTrueContentHeight()` in [extension/decorators.js](file:///p:/Magnanimity/Projects/ReEcap/extension/decorators.js):
   - Scans visible content elements (`.reecap-timetable`, `#reecap-profile-dashboard`, `.card`, `table`, `.reecap-receipt-clean-table`, `form`).
-  - Computes the true physical bottom boundary using `rect.bottom + window.scrollY`.
-  - Ignores legacy ASP.NET 1000px/2000px spacer elements (`td[style*="1000px"]`, `td[height="1000"]`).
+  - Computes true physical bottom boundary using `rect.bottom + window.scrollY`.
+  - Ignores legacy ASP.NET 1000px/2000px spacer elements.
   - Sends exact content heights via `REECAP_RESIZE` postMessage, eliminating trailing blank scroll space across all pages.
 
 ---
@@ -196,45 +216,103 @@ Root cause: Child height resizers previously read `document.documentElement.scro
 
 - **Dossier Extraction**: Silently scans and compiles student attendance rates, internal marks, backlogs, and term timelines into an in-memory academic dossier.
 - **Sidecar Panel**: Accessible via the masthead pill or theme toolbar, opening a dedicated side-panel assistant with conversational chat.
+- **Header Actions Restructuring**:
+  - Eliminated the redundant "Refresh Telemetry" button.
+  - Header houses strictly two crystal-clear controls:
+    1. `#aria-clear-chat`: Clear conversation (Trash icon) with tooltip `Clear conversation`.
+    2. `.aria-close-btn`: Close Aria (X icon) with tooltip `Close Aria`.
+  - Fixed icon clipping and borders: all header buttons have transparent backgrounds, no borders, and visible SVG strokes.
 - **Streamlined Minimalist Composer**:
-  - Eliminated UI clutter from the prompt composer: stripped out the "Aura Super" model badge, "ERP Live" context pill, and keyboard shortcut footer hints.
+  - Eliminated UI clutter: removed "Aura Super" model badge, "ERP Live" context pill, and keyboard shortcut footer hints.
   - Composer is structured as a single clean row container (`.prompt-bar-container`) housing exclusively the auto-resizing prompt textarea and a unified Send/Stop button.
 - **Adaptive Send / Stop Button State Machine**:
-  - **Idle State**: Displays the upward arrow send icon (`.icon-send`). Disabled when textarea is empty; becomes active and styled with `--accent` when text is input.
-  - **Generating State**: Morphs smoothly into a Stop button (`.prompt-send-pill.is-stop`) with error accent (`var(--error, #ef4444)`), displaying a solid square stop icon (`.icon-stop`).
-  - **Instant Cancellation**: Clicking Stop (or pressing Enter while generating) triggers `stopAriaGeneration()`, passing an abort signal to `AbortController`, cancelling the reader stream, settling active thinking traces, and keeping any partial text intact.
+  - **Idle State**: Circular 32px pill displaying white SVG send arrow (`.icon-send`). Disabled when empty; active with `--accent` when text is input.
+  - **Generating State**: Morphs into a Stop button (`.prompt-send-pill.is-stop`) with error accent (`var(--error, #ef4444)`), displaying a solid white SVG stop square (`.icon-stop`).
+  - **Instant Cancellation**: Clicking Stop triggers `stopAriaGeneration()`, passing an abort signal to `AbortController`, cancelling the reader stream, settling active thinking traces, and keeping any partial text intact.
+  - **CSS Specificity Lock**: Button is explicitly exempted from greedy global nightTab button styles (`button:not(...)`), ensuring a perfect 32px circular pill without orange borders or squashed SVGs.
 - **Helper Card Auto-Dismissal Lifecycle**:
   - The "Academic Co-Pilot Ready" hero card displays initial student metrics (CGPA, attendance, backlogs) on an empty conversation.
-  - Upon submitting the first prompt (either via input or clicking a prompt chip), all welcome card DOM nodes (`.aria-welcome-hero`, `.aria-welcome-card`) and the suggestions panel are immediately dismissed from the chat thread.
-  - Clearing the chat via `#aria-clear-chat` (relocated to `.aria-header-actions` in the sidebar header) restores the initial welcome card and suggestion shelf.
-- **Tuition Fee Ledger & Action Routing**:
-  - Fixed action chip routing for "Tuition Fee Ledger" (`data-action="nav:fees"` / `data-action="nav:feedetails"`) to invoke `navigateToFeeDetails()` and activate `#divProfile_Fees` with `&view=fee`.
-  - Global navigation and composer primitives (`navigateToFeeDetails`, `submitAriaMessage`, `showIframe`, `showOverview`, `showAcademicCalendar`, `navigateToProfileTab`, `setAriaGeneratingState`, `stopAriaGeneration`) are exported to `window` for reliable execution.
+  - Upon submitting the first prompt, all welcome card DOM nodes (`.aria-welcome-hero`, `.aria-welcome-card`) and suggestions are immediately dismissed from the chat thread.
+  - Clearing the chat via `#aria-clear-chat` restores the initial welcome card and suggestion shelf.
+- **Action Routing & Safe Terminology**:
+  - Action chip for attendance margin is `data-action="skip_sim"` (`<span class="chip-label">Skipping Classes Margin</span>`).
+  - Both `skip_sim` and `bunk_sim` triggers are supported internally and submit `"How is my attendance in each subject, and how many classes can I safely skip?"`.
+  - Fee ledger routing (`data-action="nav:fees"`) invokes `navigateToFeeDetails()` and activates `#divProfile_Fees` with `&view=fee`.
 - **Markdown & Math Rendering**: Full streaming markdown parser in [extension/shared/aria.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/aria.js) supporting headings, nested lists, task lists, tables, fenced code blocks with copy actions, LaTeX KaTeX formulas, and interactive action chips.
 
 ---
 
-## 11. Core Files & Responsibilities
+## 11. Rich Floating Theme Toolbar (`reecap-theme-toolbar`)
+
+Ported the complete rich theme customizer from the extension popup directly into the floating theme toolbar icon on every portal page:
+
+### Capabilities
+- **3-Column Swatch Grid (`.toolbar-presets-grid`)**:
+  - Renders all 45 nightTab presets with live typography swatches (`Aa`) and accent indicator dots.
+  - Highlights the currently active preset with an accent ring.
+- **Appearance Filter Segment (`.toolbar-mode-segment`)**:
+  - Three filter options: `[All]`, `[Dark]`, and `[Light]`.
+  - Real-time preset counter displaying visible count (e.g., `45 / 45`, `35 / 45`, `10 / 45`).
+- **Live Preset Search (`.toolbar-theme-search`)**:
+  - Real-time instant search across preset names and IDs with immediate grid filtering.
+- **Geometry & Elevation Sliders (`.toolbar-tuning-box`)**:
+  - **Corner Radius**: `0px` to `100px` range slider with real-time value readout.
+  - **Elevation Shadows**: `0%` to `200%` range slider with real-time percentage readout.
+  - Sliders immediately invoke `themeEngine.applyTheme()` and persist values to `chrome.storage.sync` (`nightTabRadius`, `nightTabShadow`), broadcasting changes to active child iframes.
+- **Default Preset**: Defaults to `point` (Point — Dark).
+
+---
+
+## 12. Dynamic Google Fonts Pipeline for 45 nightTab Presets
+
+To ensure the fonts specified in all 45 nightTab presets (e.g. `Klee One`, `Titillium Web`, `Fjalla One`, `Oswald`, `Fredericka the Great`, `Bungee Hairline`, `Monoton`, `Megrim`, etc.) render correctly instead of falling back to system generic sans-serif:
+- **Automatic Head Injection**:
+  - `loadPresetFonts(presetOrId)` in [extension/shared/theme.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/theme.js) extracts the display and UI fonts for any preset.
+  - Injects preconnect links to `https://fonts.googleapis.com` and `https://fonts.gstatic.com` alongside `<link id="reecap-google-fonts" rel="stylesheet" href="...">` formatted with Google Fonts CSS2 API.
+  - Automatically called inside `applyTheme()`, ensuring font files are downloaded and rendered in both top-level documents and child iframes.
+- **Batch Catalog Font Loading**:
+  - `loadCatalogFonts()` dynamically requests all 59 unique font families across all 45 nightTab presets in a single 12.9 KB compressed batch query.
+  - Triggered automatically whenever the user opens the extension popup or the floating theme toolbar, ensuring font preview cards display true typographic styles.
+- **Permissions**:
+  - `extension/manifest.json` grants host permissions to `"https://fonts.googleapis.com/*"` and `"https://fonts.gstatic.com/*"`.
+
+---
+
+## 13. Main-World Alert & CSP Architecture
+
+To completely eliminate Chrome Content Security Policy (CSP) violations (`Executing inline script violates directive 'script-src ...'`):
+- **Native MV3 Main-World Content Script**:
+  - [extension/shared/interceptor.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/interceptor.js) is registered directly in [extension/manifest.json](file:///p:/Magnanimity/Projects/ReEcap/extension/manifest.json) with `"world": "MAIN"`, `"matches": ["*://info.aec.edu.in/*"]`, `"run_at": "document_start"`, `"all_frames": true`.
+  - Chrome itself executes the interceptor in the main world without creating any inline `<script>` tags in the DOM, guaranteeing zero CSP warnings or blocks.
+- **Interception Scope**:
+  - Suppresses unhandled ASP.NET AJAX raw HTML modal errors and 401 Unauthorized dumps.
+  - Hooks `Sys.WebForms.PageRequestManager` `endRequest` errors and dispatches `REECAP_SUPPRESSED_ALERT` to render in-UI recovery cards.
+
+---
+
+## 14. Core Files & Responsibilities
 
 | File | Primary Responsibilities |
 | :--- | :--- |
-| [extension/manifest.json](file:///p:/Magnanimity/Projects/ReEcap/extension/manifest.json) | Manifest V3 specification; matches `info.aec.edu.in`; declares permissions (`storage`, `activeTab`) and web accessible resources. |
-| [extension/decorators.js](file:///p:/Magnanimity/Projects/ReEcap/extension/decorators.js) | Core UI enhancement engine: Main World alert interceptor, sidebar categorization, dual-pane layout, height auto-resizers, timetable tooltips, receipts sanitization, fee standalone view, error cards, Aria composer & stop button. |
-| [extension/style.css](file:///p:/Magnanimity/Projects/ReEcap/extension/style.css) | nightTab CSS architecture: layout grid, independent scrollbars, masthead, cards, timetable, receipts override, error state components, streamlined composer, stop button styles, responsive breakpoints. |
-| [extension/content.js](file:///p:/Magnanimity/Projects/ReEcap/extension/content.js) | Stylesheet and token injector; theme migration and active preset application. |
-| [extension/shared/theme.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/theme.js) | 45 nightTab presets, mathematical color spaces, appearance filters (35 dark, 10 light), semantic CSS token mappings. |
-| [extension/shared/aria.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/aria.js) | Aria AI copilot client: streaming markdown parser, dossier compilation, quick action chips, message history, stream abortion support. |
-| [extension/popup.html](file:///p:/Magnanimity/Projects/ReEcap/extension/popup.html) | Extension popup interface featuring brand title `"𝚁𝚎𝙴𝚌𝚊𝚙"/"`, appearance filters, and theme preset picker. |
+| [extension/manifest.json](file:///p:/Magnanimity/Projects/ReEcap/extension/manifest.json) | Manifest V3 specification; matches `info.aec.edu.in`; declares permissions (`storage`, `activeTab`, Google Fonts hosts), brand title `𝚁𝚎𝙴𝚌𝚊𝚙"/`, and MV3 main-world interceptor. |
+| [extension/shared/interceptor.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/interceptor.js) | Main World alert and AJAX interceptor executed by Chrome MV3 with zero DOM inline scripts or CSP violations. |
+| [extension/decorators.js](file:///p:/Magnanimity/Projects/ReEcap/extension/decorators.js) | Core UI enhancement engine: sidebar categorization, dual-pane layout, flush dock layout, timetable tooltips, receipts sanitization, fee standalone view, error cards, rich theme toolbar, Aria composer & stop button. |
+| [extension/style.css](file:///p:/Magnanimity/Projects/ReEcap/extension/style.css) | nightTab CSS architecture: flush sidebar and masthead docking, zero-gap layout grid, independent scrollbars, cards, timetable, receipts override, error state components, streamlined composer, stop button specificity lock, rich floating theme toolbar styles. |
+| [extension/content.js](file:///p:/Magnanimity/Projects/ReEcap/extension/content.js) | Stylesheet and token injector; theme migration and active preset application (`point` default). |
+| [extension/shared/theme.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/theme.js) | 45 nightTab presets, mathematical color spaces, appearance filters (35 dark, 10 light), semantic CSS token mappings, dynamic Google Fonts loader (`loadPresetFonts`, `loadCatalogFonts`), `point` fallback. |
+| [extension/shared/aria.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/aria.js) | Aria AI copilot client: streaming markdown parser, dossier compilation, quick action chips, message history, stream abortion support, clean academic terminology. |
+| [extension/popup.html](file:///p:/Magnanimity/Projects/ReEcap/extension/popup.html) | Extension popup interface featuring brand title `𝚁𝚎𝙴𝚌𝚊𝚙"/`, appearance filters, 3-column presets grid with font previews, and geometry sliders. |
+| [extension/popup.js](file:///p:/Magnanimity/Projects/ReEcap/extension/popup.js) | Popup interaction logic, sync storage management, Google Fonts catalog loader, and real-time preset switching (`point` default). |
 | [tests/alert-interceptor.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/alert-interceptor.test.js) | Regression test suite verifying 401 XHTML detection, alert suppression, exam route differentiation, and recovery card rendering. |
 | [tests/aria-composer.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/aria-composer.test.js) | Test suite validating streamlined composer layout, stop button state machine, helper card dismissal, and fee ledger navigation. |
 | [tests/aria-markdown.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/aria-markdown.test.js) | 45-point test suite validating Aria markdown formatting, XSS sanitization, and streaming buffers. |
-| [tests/theme-architecture.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/theme-architecture.test.js) | Test suite verifying 45 presets, token filters, and theme migration logic. |
+| [tests/theme-architecture.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/theme-architecture.test.js) | Test suite verifying 45 presets, token filters, Google Fonts loading API, and theme migration logic with `point` default. |
 | [PROGRESS.md](file:///p:/Magnanimity/Projects/ReEcap/PROGRESS.md) | Ongoing development log, architectural decisions, and current implementation status. |
 | [handoff.md](file:///p:/Magnanimity/Projects/ReEcap/handoff.md) | Authoritative reference document for developer handoff and documentation authoring. |
 
 ---
 
-## 12. Verification & Validation Commands
+## 13. Verification & Validation Commands
 
 All test suites and syntax validations execute clean with zero errors:
 
@@ -252,7 +330,7 @@ node tests/aria-composer.test.js
 # 4. Aria Markdown Parser Suite (45 checks)
 node tests/aria-markdown.test.js
 
-# 5. Theme & Token Architecture Suite
+# 5. Theme & Token Architecture Suite (45 Presets & Point Default)
 node tests/theme-architecture.test.js
 
 # 6. Iframe Navigation Test

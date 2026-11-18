@@ -58,109 +58,8 @@ function isRawHtmlOrServerError(msg) {
          text.includes('Sorry, error while accessing page');
 }
 
-(function installMainWorldAlertInterceptor() {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return;
-
-  function doInject() {
-    if (document.getElementById('reecap-alert-interceptor')) return;
-    const script = document.createElement('script');
-    script.id = 'reecap-alert-interceptor';
-    script.textContent = `(${function() {
-      if (window.__reecap_alert_intercepted) return;
-      window.__reecap_alert_intercepted = true;
-
-      function isRawHtmlOrServerError(msg) {
-        if (!msg) return false;
-        let text = '';
-        if (typeof msg === 'string') {
-          text = msg;
-        } else if (msg instanceof Error) {
-          text = (msg.message || '') + ' ' + (msg.stack || '');
-        } else {
-          try { text = String(msg); } catch (e) { return false; }
-        }
-        return text.includes('<!DOCTYPE') ||
-               text.includes('<html') ||
-               text.includes('<title>401') ||
-               text.includes('401 - Unauthorized') ||
-               text.includes('401 Unauthorized') ||
-               text.includes('Access is denied due to invalid credentials') ||
-               text.includes('You do not have permission to view this directory') ||
-               text.includes('403 - Forbidden') ||
-               text.includes('500 - Internal Server Error') ||
-               text.includes('Server Error in') ||
-               text.includes('Runtime Error') ||
-               text.includes('Sys.WebForms.PageRequestManager') ||
-               text.includes('Sorry, error while accessing page');
-      }
-
-      const _nativeAlert = window.alert;
-      window.alert = function(msg) {
-        if (isRawHtmlOrServerError(msg)) {
-          console.warn('ReEcap suppressed raw HTML alert modal:', typeof msg === 'string' ? msg.slice(0, 160) : msg);
-          window.dispatchEvent(new CustomEvent('REECAP_SUPPRESSED_ALERT', {
-            detail: { message: typeof msg === 'string' ? msg : String(msg) }
-          }));
-          return;
-        }
-        return _nativeAlert.apply(this, arguments);
-      };
-
-      function hookPrm() {
-        if (window.Sys && window.Sys.WebForms && window.Sys.WebForms.PageRequestManager) {
-          try {
-            const prm = window.Sys.WebForms.PageRequestManager.getInstance();
-            if (prm && !prm.__reecap_hooked) {
-              prm.__reecap_hooked = true;
-              prm.add_endRequest(function(sender, args) {
-                if (args && args.get_error()) {
-                  const err = args.get_error();
-                  const m = err.message || '';
-                  if (isRawHtmlOrServerError(m)) {
-                    args.set_errorHandled(true);
-                    console.warn('ReEcap handled PageRequestManager error:', m.slice(0, 160));
-                    window.dispatchEvent(new CustomEvent('REECAP_SUPPRESSED_ALERT', {
-                      detail: { message: m }
-                    }));
-                  }
-                }
-              });
-            }
-          } catch (e) {}
-        }
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', hookPrm);
-      } else {
-        hookPrm();
-      }
-
-      let attempts = 0;
-      const prmTimer = setInterval(function() {
-        attempts++;
-        hookPrm();
-        if (attempts > 20 || (window.Sys && window.Sys.WebForms && window.Sys.WebForms.PageRequestManager)) {
-          clearInterval(prmTimer);
-        }
-      }, 300);
-    }})();`;
-
-    try {
-      const target = document.head || document.documentElement;
-      if (target) {
-        target.appendChild(script);
-        script.remove();
-      }
-    } catch (e) {}
-  }
-
-  if (document.documentElement || document.head) {
-    doInject();
-  } else {
-    document.addEventListener('DOMContentLoaded', doInject, { once: true });
-  }
-})();
+// Note: Main-world alert interception is handled directly via manifest content_scripts world: "MAIN" (shared/interceptor.js)
+// to avoid any inline script DOM injection and prevent CSP violations.
 
 // Isolated world alert interception
 const _nativeIsolatedAlert = window.alert;
@@ -495,8 +394,18 @@ function initDecorators() {
 
          const sidebarToggleBtn = brandBlock.querySelector('#reecap-sidebar-toggle-btn');
          if (sidebarToggleBtn) {
+           try {
+             if (localStorage.getItem('reecap_sidebar_collapsed') === 'true') {
+               document.documentElement.classList.add('is-sidebar-collapsed');
+             }
+           } catch (e) {}
+
            sidebarToggleBtn.addEventListener('click', () => {
-             document.documentElement.classList.toggle('is-sidebar-collapsed');
+             const isCollapsed = document.documentElement.classList.toggle('is-sidebar-collapsed');
+             try {
+               localStorage.setItem('reecap_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+             } catch (e) {}
+             window.dispatchEvent(new Event('resize'));
            });
          }
 
@@ -821,112 +730,64 @@ function injectThemeToolbar() {
   if (!themeEngine) return;
   const presets = themeEngine.PRESETS;
 
-  let buttonsHtml = '';
-  for (const [id, preset] of Object.entries(presets)) {
-    const appearance = themeEngine.getPresetAppearance(preset);
-    const swatch = themeEngine.getPresetSwatch(preset);
-    buttonsHtml += `
-      <button type="button" class="toolbar-theme-btn" data-preset="${id}" data-appearance="${appearance}" title="${preset.name}: ${appearance}">
-        <span class="theme-swatch" style="background: ${swatch.background}; box-shadow: inset 0 -3px 0 ${swatch.accent};"></span>
-        <span class="theme-name">${preset.name}</span>
-        <span class="toolbar-theme-cat">${appearance}</span>
-      </button>
-    `;
-  }
+  let currentPresetId = 'point';
+  let currentRadius = 25;
+  let currentShadow = 75;
+  let activeAppearanceFilter = 'all';
+  let searchQuery = '';
 
   toolbar.innerHTML = `
-    <button class="reecap-toolbar-trigger" aria-label="Theme Settings">
+    <button class="reecap-toolbar-trigger" aria-label="Theme Settings" title="Theme Settings">
        ${iconPalette}
     </button>
     <div class="reecap-toolbar-menu">
-       <div class="toolbar-mode-toggles" aria-label="Filter original presets by appearance">
-         <button type="button" class="toolbar-mode-btn active" data-appearance="all">All</button>
+       <div class="toolbar-section-label">
+         <span>Appearance Filter</span>
+         <span id="toolbarActivePresetCount">45 / 45</span>
+       </div>
+       <div class="toolbar-mode-segment" id="toolbarAppearanceSegment">
+         <button type="button" class="toolbar-mode-btn is-selected" data-appearance="all">All</button>
          <button type="button" class="toolbar-mode-btn" data-appearance="dark">Dark</button>
          <button type="button" class="toolbar-mode-btn" data-appearance="light">Light</button>
        </div>
 
        <div class="toolbar-search-wrap">
-         <input type="text" class="toolbar-theme-search" id="toolbar-theme-search" placeholder="Search 45 original nightTab themes..." />
+         <input type="text" class="toolbar-theme-search" id="toolbar-theme-search" placeholder="Search original presets..." />
        </div>
 
-       <div class="toolbar-family-list">
-         ${buttonsHtml}
+       <div class="toolbar-presets-grid" id="toolbarPresetsGrid"></div>
+
+       <div class="toolbar-section-label" style="margin-top: 8px;">
+         <span>Geometry & Elevation</span>
+       </div>
+       <div class="toolbar-tuning-box">
+         <div class="toolbar-slider-row">
+           <div class="toolbar-slider-header">
+             <span>Corner Radius</span>
+             <span id="toolbarRadiusVal">25px</span>
+           </div>
+           <input type="range" class="toolbar-slider-input" id="toolbarRadiusSlider" min="0" max="100" value="25">
+         </div>
+         <div class="toolbar-slider-row">
+           <div class="toolbar-slider-header">
+             <span>Elevation Shadows</span>
+             <span id="toolbarShadowVal">75%</span>
+           </div>
+           <input type="range" class="toolbar-slider-input" id="toolbarShadowSlider" min="0" max="200" value="75">
+         </div>
        </div>
     </div>
   `;
   document.body.appendChild(toolbar);
 
   const wrapper = document.getElementById('reecap-theme-toolbar');
-  
-  function markActivePreset(presetId) {
-    wrapper.querySelectorAll('.toolbar-theme-btn').forEach(button => {
-      button.classList.toggle('active', button.dataset.preset === presetId);
-    });
-  }
-
-  try {
-    if (chrome && chrome.storage && chrome.storage.sync) {
-      chrome.storage.sync.get(['nightTabPreset'], (data) => {
-        if (chrome.runtime.lastError) return;
-        markActivePreset(data.nightTabPreset || 'app');
-      });
-    }
-  } catch (e) {
-    // Silently handle context invalidated
-  }
-
-  // Toggle Open/Close
-  const menuBtn = wrapper.querySelector('.reecap-toolbar-trigger');
-  menuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = wrapper.classList.toggle('is-open');
-    if (isOpen) {
-      const activeBtn = wrapper.querySelector('.toolbar-theme-btn.active');
-      if (activeBtn) {
-        activeBtn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-      const searchBox = wrapper.querySelector('#toolbar-theme-search');
-      if (searchBox) searchBox.focus();
-    }
-  });
-  
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) wrapper.classList.remove('is-open');
-  });
-
-  // Filter the original catalog without mutating the selected preset.
-  let activeAppearanceFilter = 'all';
-  let searchQuery = '';
-
-  function filterThemeList() {
-    const query = searchQuery.toLowerCase().trim();
-    wrapper.querySelectorAll('.toolbar-theme-btn').forEach(button => {
-      const preset = presets[button.dataset.preset];
-      const name = preset ? preset.name.toLowerCase() : '';
-      const matchesAppearance = activeAppearanceFilter === 'all'
-        || button.dataset.appearance === activeAppearanceFilter;
-      const matchesSearch = !query || name.includes(query) || button.dataset.preset.includes(query);
-      button.style.display = matchesAppearance && matchesSearch ? 'flex' : 'none';
-    });
-  }
-
-  wrapper.querySelectorAll('.toolbar-mode-btn').forEach(button => {
-    button.addEventListener('click', () => {
-      activeAppearanceFilter = button.dataset.appearance || 'all';
-      wrapper.querySelectorAll('.toolbar-mode-btn').forEach(item => {
-        item.classList.toggle('active', item === button);
-      });
-      filterThemeList();
-    });
-  });
-
+  const presetsGrid = wrapper.querySelector('#toolbarPresetsGrid');
+  const countLabel = wrapper.querySelector('#toolbarActivePresetCount');
+  const radiusSlider = wrapper.querySelector('#toolbarRadiusSlider');
+  const radiusVal = wrapper.querySelector('#toolbarRadiusVal');
+  const shadowSlider = wrapper.querySelector('#toolbarShadowSlider');
+  const shadowVal = wrapper.querySelector('#toolbarShadowVal');
   const searchInput = wrapper.querySelector('#toolbar-theme-search');
-  if (searchInput) {
-    searchInput.addEventListener('input', (event) => {
-      searchQuery = event.target.value;
-      filterThemeList();
-    });
-  }
 
   function notifyActiveIframe(preset, options) {
     try {
@@ -941,24 +802,151 @@ function injectThemeToolbar() {
     } catch (e) {}
   }
 
-  // Selecting a preset never changes its original appearance or saved options.
-  wrapper.querySelectorAll('.toolbar-theme-btn').forEach(button => {
-    button.addEventListener('click', () => {
-      const presetId = button.dataset.preset;
-      try {
-        chrome.storage.sync.get(['nightTabRadius', 'nightTabShadow'], (data) => {
-          if (chrome.runtime.lastError) return;
-          const options = {
-            radius: typeof data.nightTabRadius === 'number' ? data.nightTabRadius : undefined,
-            shadow: typeof data.nightTabShadow === 'number' ? data.nightTabShadow : undefined
-          };
-          themeEngine.applyTheme(presetId, options);
-          chrome.storage.sync.set({ nightTabPreset: presetId });
-          notifyActiveIframe(presetId, options);
+  function applyAndSave() {
+    const options = { radius: currentRadius, shadow: currentShadow };
+    themeEngine.applyTheme(currentPresetId, options);
+    try {
+      if (chrome && chrome.storage && chrome.storage.sync) {
+        chrome.storage.sync.set({
+          nightTabPreset: currentPresetId,
+          nightTabRadius: currentRadius,
+          nightTabShadow: currentShadow
         });
-      } catch (e) {}
-      markActivePreset(presetId);
+      }
+    } catch (e) {}
+    notifyActiveIframe(currentPresetId, options);
+  }
+
+  function renderGrid() {
+    presetsGrid.innerHTML = '';
+    const query = searchQuery.toLowerCase().trim();
+    let totalShown = 0;
+
+    for (const [id, preset] of Object.entries(presets)) {
+      const appearance = themeEngine.getPresetAppearance(preset);
+      const swatch = themeEngine.getPresetSwatch(preset);
+      const name = preset.name.toLowerCase();
+
+      const matchesAppearance = activeAppearanceFilter === 'all' || appearance === activeAppearanceFilter;
+      const matchesSearch = !query || name.includes(query) || id.includes(query);
+
+      if (!matchesAppearance || !matchesSearch) continue;
+      totalShown++;
+
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `preset-card ${id === currentPresetId ? 'is-selected' : ''}`;
+      card.dataset.preset = id;
+      card.dataset.appearance = appearance;
+      const dispFont = preset.font?.display?.name || '';
+      const uiFont = preset.font?.ui?.name || '';
+      const fontLabel = dispFont === uiFont ? dispFont : `${dispFont} / ${uiFont}`;
+
+      card.title = `${preset.name} (${appearance})\nDisplay: ${dispFont}\nUI: ${uiFont}`;
+      card.innerHTML = `
+        <div class="preset-swatch" style="--swatch-bg: ${swatch.background}; --swatch-fg: ${swatch.foreground}; font-family: '${dispFont}', '${uiFont}', sans-serif;">
+          <span>Aa</span>
+          <span class="preset-accent-dot" style="--swatch-accent: ${swatch.accent};"></span>
+        </div>
+        <div class="preset-name">${preset.name}</div>
+        <div class="preset-font-name" title="Display: ${dispFont} • UI: ${uiFont}">${fontLabel}</div>
+        <div class="preset-style-badge">${appearance}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        currentPresetId = id;
+        presetsGrid.querySelectorAll('.preset-card').forEach(c => {
+          c.classList.toggle('is-selected', c.dataset.preset === id);
+        });
+        applyAndSave();
+      });
+
+      presetsGrid.appendChild(card);
+    }
+
+    if (countLabel) {
+      countLabel.textContent = `${totalShown} / 45`;
+    }
+  }
+
+  // Load Initial Storage
+  try {
+    if (chrome && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.get(['nightTabPreset', 'nightTabRadius', 'nightTabShadow'], (data) => {
+        if (chrome.runtime.lastError) return;
+        if (data.nightTabPreset && presets[data.nightTabPreset]) currentPresetId = data.nightTabPreset;
+        if (typeof data.nightTabRadius === 'number') {
+          currentRadius = data.nightTabRadius;
+          if (radiusSlider) radiusSlider.value = currentRadius;
+          if (radiusVal) radiusVal.textContent = `${currentRadius}px`;
+        }
+        if (typeof data.nightTabShadow === 'number') {
+          currentShadow = data.nightTabShadow;
+          if (shadowSlider) shadowSlider.value = currentShadow;
+          if (shadowVal) shadowVal.textContent = `${currentShadow}%`;
+        }
+        renderGrid();
+      });
+    } else {
+      renderGrid();
+    }
+  } catch (e) {
+    renderGrid();
+  }
+
+  // Sliders input listeners
+  if (radiusSlider) {
+    radiusSlider.addEventListener('input', (e) => {
+      currentRadius = Number(e.target.value);
+      if (radiusVal) radiusVal.textContent = `${currentRadius}px`;
+      applyAndSave();
     });
+  }
+
+  if (shadowSlider) {
+    shadowSlider.addEventListener('input', (e) => {
+      currentShadow = Number(e.target.value);
+      if (shadowVal) shadowVal.textContent = `${currentShadow}%`;
+      applyAndSave();
+    });
+  }
+
+  // Appearance segment buttons
+  wrapper.querySelectorAll('.toolbar-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeAppearanceFilter = btn.dataset.appearance || 'all';
+      wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => {
+        b.classList.toggle('is-selected', b === btn);
+      });
+      renderGrid();
+    });
+  });
+
+  // Search input
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderGrid();
+    });
+  }
+
+  // Toggle open / close
+  const trigger = wrapper.querySelector('.reecap-toolbar-trigger');
+  if (trigger) {
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = wrapper.classList.toggle('is-open');
+      if (isOpen) {
+        try { if (themeEngine.loadCatalogFonts) themeEngine.loadCatalogFonts(); } catch (err) {}
+        const activeCard = presetsGrid.querySelector('.preset-card.is-selected');
+        if (activeCard) activeCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (searchInput) searchInput.focus();
+      }
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) wrapper.classList.remove('is-open');
   });
 }
 
@@ -1007,7 +995,7 @@ function redesignLoginPage() {
         </svg>
         <div>
           <div class="reecap-login-eyebrow">Student Portal</div>
-          <h1 class="reecap-login-wordmark">ReEcap</h1>
+          <h1 class="reecap-login-wordmark">𝚁𝚎𝙴𝚌𝚊𝚙"/</h1>
         </div>
       </div>
       <p class="reecap-login-subtitle">A cleaner way back into your academic workspace.</p>
@@ -1019,7 +1007,7 @@ function redesignLoginPage() {
   if (titleWrap && !titleWrap.querySelector('h1.visually-hidden-head')) {
     const hidden = document.createElement('h1');
     hidden.className = 'visually-hidden-head';
-    hidden.textContent = 'ReEcap sign in';
+    hidden.textContent = '𝚁𝚎𝙴𝚌𝚊𝚙"/ sign in';
     hidden.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;';
     titleWrap.appendChild(hidden);
   }
@@ -7423,7 +7411,7 @@ function updateAriaWelcome(dossier) {
       <div style="display: flex; flex-wrap: wrap; gap: 6px;">
         <button type="button" class="aria-action-chip" data-action="weak_subjects"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg><span class="chip-label">Weak Subjects Audit</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         <button type="button" class="aria-action-chip" data-action="target_calc"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg><span class="chip-label">8.0 SGPA Calculator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-        <button type="button" class="aria-action-chip" data-action="bunk_sim"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg><span class="chip-label">Bunk Simulator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <button type="button" class="aria-action-chip" data-action="skip_sim"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg><span class="chip-label">Skipping Classes Margin</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         <button type="button" class="aria-action-chip" data-action="nav:attendance"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg><span class="chip-label">Live Attendance</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         <button type="button" class="aria-action-chip" data-action="nav:marks"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg><span class="chip-label">Detailed Grades</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         <button type="button" class="aria-action-chip" data-action="nav:fees"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg><span class="chip-label">Tuition Fee Ledger</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -7446,9 +7434,9 @@ function updateAriaSuggestions(dossier) {
         <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
         <span>8.0 Target</span>
       </button>
-      <button type="button" class="aria-prompt-chip" data-prompt="How is my attendance in each subject, and how many classes can I safely bunk?">
+      <button type="button" class="aria-prompt-chip" data-prompt="How is my attendance in each subject, and how many classes can I safely skip?">
         <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg>
-        <span>Attendance & Bunks</span>
+        <span>Attendance & Margin</span>
       </button>
       <button type="button" class="aria-prompt-chip" data-prompt="Show my fee payment status, official receipts, and semester dues.">
         <svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
@@ -7508,13 +7496,10 @@ function initAriaSidebar(layoutWrapper) {
       </div>
       <div class="aria-header-actions">
         <button type="button" class="aria-header-btn" id="aria-clear-chat" title="Clear conversation" aria-label="Clear chat">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
         </button>
-        <button type="button" class="aria-header-btn" id="aria-refresh-dossier-btn" title="Refresh Academic Telemetry" aria-label="Refresh data">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-        </button>
-        <button type="button" class="aria-close-btn" aria-label="Close Aria">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <button type="button" class="aria-close-btn" id="aria-close-btn" title="Close Aria" aria-label="Close Aria">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
     </div>
@@ -7548,16 +7533,6 @@ function initAriaSidebar(layoutWrapper) {
   // Close button
   const closeBtn = sidebar.querySelector('.aria-close-btn');
   if (closeBtn) closeBtn.addEventListener('click', () => toggleAriaSidebar(false));
-
-  // Refresh dossier button
-  const refreshBtn = sidebar.querySelector('#aria-refresh-dossier-btn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', async () => {
-      refreshBtn.querySelector('svg')?.classList.add('spinning-svg');
-      await refreshAriaDossier();
-      setTimeout(() => refreshBtn.querySelector('svg')?.classList.remove('spinning-svg'), 600);
-    });
-  }
 
   // Clear chat button
   const clearBtn = sidebar.querySelector('#aria-clear-chat');
@@ -7699,7 +7674,7 @@ async function loadInitialWelcome() {
         <div style="display: flex; flex-wrap: wrap; gap: 6px;">
           <button type="button" class="aria-action-chip" data-action="weak_subjects"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg><span class="chip-label">Weak Subjects Audit</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
           <button type="button" class="aria-action-chip" data-action="target_calc"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg><span class="chip-label">8.0 SGPA Calculator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-          <button type="button" class="aria-action-chip" data-action="bunk_sim"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg><span class="chip-label">Bunk Simulator</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <button type="button" class="aria-action-chip" data-action="skip_sim"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg><span class="chip-label">Skipping Classes Margin</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
           <button type="button" class="aria-action-chip" data-action="nav:attendance"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg><span class="chip-label">Live Attendance</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
           <button type="button" class="aria-action-chip" data-action="nav:marks"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg><span class="chip-label">Detailed Grades</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
           <button type="button" class="aria-action-chip" data-action="nav:fees"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg><span class="chip-label">Tuition Fee Ledger</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -8008,7 +7983,7 @@ async function submitAriaMessage() {
         </div>
         <div class="trace-row trace-row-2">
           <span class="trace-icon"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"></circle></svg></span>
-          <span class="trace-text">Simulating attendance cutoff & 75% bunk buffer</span>
+          <span class="trace-text">Simulating attendance cutoff & 75% attendance buffer</span>
         </div>
         <div class="trace-row trace-row-3">
           <span class="trace-icon"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"></circle></svg></span>

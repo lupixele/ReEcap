@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ReEcap — nightTab Settings</title>
+  <title>𝚁𝚎𝙴𝚌𝚊𝚙"/ — nightTab Settings</title>
   <link rel="stylesheet" href="shared/tokens.css">
   <style>
     * {
@@ -277,6 +277,24 @@
       text-overflow: ellipsis;
     }
 
+    .preset-font-name {
+      font-size: 9px;
+      color: hsl(var(--theme-primary-text-040));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .preset-card:hover .preset-font-name {
+      color: hsl(var(--theme-primary-text-020));
+    }
+
+    .preset-card.is-selected .preset-font-name {
+      color: rgb(var(--theme-accent));
+      font-weight: 600;
+    }
+
     /* Fine Tuning Sliders */
     .tuning-box {
       background-color: hsl(var(--theme-primary-020));
@@ -356,7 +374,7 @@
       </div>
     </div>
     <div class="switch-wrap">
-      <button type="button" class="switch-btn is-active" id="masterToggle" title="Toggle ReEcap Extension">
+      <button type="button" class="switch-btn is-active" id="masterToggle" title="Toggle 𝚁𝚎𝙴𝚌𝚊𝚙&quot;/ Extension">
         <span class="switch-thumb"></span>
       </button>
     </div>

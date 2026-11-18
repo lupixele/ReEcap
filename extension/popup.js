@@ -84,6 +84,11 @@
       const swatchElement = document.createElement('div');
       swatchElement.className = 'preset-swatch';
       swatchElement.textContent = 'Aa';
+      const dispFont = preset.font?.display?.name || '';
+      const uiFont = preset.font?.ui?.name || '';
+      if (dispFont) {
+        swatchElement.style.fontFamily = `"${dispFont}", "${uiFont}", sans-serif`;
+      }
 
       const accentDot = document.createElement('div');
       accentDot.className = 'preset-accent-dot';
@@ -93,11 +98,17 @@
       name.className = 'preset-name';
       name.textContent = preset.name;
 
+      const fontBadge = document.createElement('span');
+      fontBadge.className = 'preset-font-name';
+      const fontLabel = dispFont === uiFont ? dispFont : `${dispFont} / ${uiFont}`;
+      fontBadge.textContent = fontLabel;
+      fontBadge.title = `Display Font: ${dispFont} • UI Font: ${uiFont}`;
+
       const badge = document.createElement('span');
       badge.className = 'preset-style-badge';
       badge.textContent = appearance === 'light' ? 'Light' : 'Dark';
 
-      card.append(swatchElement, name, badge);
+      card.append(swatchElement, name, fontBadge, badge);
       card.addEventListener('click', () => {
         currentPresetId = preset.id;
         applyAndBroadcast();
@@ -161,6 +172,10 @@
   }
 
   function loadInitialState() {
+    try {
+      if (themeEngine.loadCatalogFonts) themeEngine.loadCatalogFonts();
+    } catch (e) {}
+
     chrome.storage.sync.get({
       enabled: true,
       nightTabPreset: null,
@@ -199,11 +214,11 @@
 
     chrome.storage.sync.get({
       enabled: true,
-      nightTabPreset: 'app',
+      nightTabPreset: 'point',
       nightTabRadius: 25,
       nightTabShadow: 75
     }, data => {
-      currentPresetId = PRESETS[data.nightTabPreset] ? data.nightTabPreset : 'app';
+      currentPresetId = PRESETS[data.nightTabPreset] ? data.nightTabPreset : 'point';
       currentRadius = data.nightTabRadius;
       currentShadow = data.nightTabShadow;
       isEnabled = data.enabled !== false;

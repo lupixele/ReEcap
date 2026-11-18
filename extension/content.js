@@ -21,7 +21,7 @@ let reecapEnabled = false;
 
 const reecap = window.__reecap_theme || {};
 const migrateThemeStorage_ = reecap.migrateThemeStorage || (() => ({
-  preset: 'app', style: 'dark', appearance: 'dark', radius: 25, shadow: 75
+  preset: 'point', style: 'dark', appearance: 'dark', radius: 25, shadow: 75
 }));
 const matchActivePage = reecap.matchActivePage || (() => null);
 

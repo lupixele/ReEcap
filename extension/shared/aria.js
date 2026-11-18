@@ -5,12 +5,13 @@
 
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
+    module.exports = factory(root);
   } else {
-    root.__reecap_aria = factory();
+    root.__reecap_aria = factory(root);
   }
-})(typeof self !== 'undefined' ? self : this, function () {
+})(typeof self !== 'undefined' ? self : (typeof window !== 'undefined' ? window : this), function (root) {
   'use strict';
+  root = root || (typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {}));
 
   const ARIA_CHAT_ENDPOINT = 'https://aria.lupixele.online/api/chat';
   const ARIA_DEFAULT_MODEL = 'lupixele/aura-super';
@@ -445,12 +446,12 @@ const ADITYA_ACADEMIC_CALENDAR = {
         action: { label: 'View Attendance', actionKey: 'nav:attendance' }
       });
     } else if (safeSubjects.length > 0) {
-      const topBunks = safeSubjects.slice(0, 2).map(s => `${s.name}: ${s.bunks} bunk(s)`).join(', ');
+      const topSkips = safeSubjects.slice(0, 2).map(s => `${s.name}: ${s.bunks} skippable`).join(', ');
       suggestions.push({
         type: 'success',
         category: 'Attendance',
         title: 'Attendance In Safe Zone',
-        message: `Your overall attendance is **${overallAtt || '75+'}%**. Available bunk buffer: ${topBunks}.`
+        message: `Your overall attendance is **${overallAtt || '75+'}%**. Available margin: ${topSkips}.`
       });
     }
 
@@ -944,11 +945,11 @@ const ADITYA_ACADEMIC_CALENDAR = {
   /**
    * Constructs the specialized system prompt embedding the student's live records.
    */
-  function buildSystemPrompt(dossier) {
+  function buildSystemPrompt(dossier, isCloud = false) {
     const id = dossier.identity || {};
     const att = dossier.attendance || {};
     const acad = dossier.academic || {};
-    const subList = att.subjects?.map(s => `- ${s.name}: ${s.percent}% (Held: ${s.held}, Attended: ${s.attended}, Bunks: ${s.bunks}, Needed: ${s.needed})`).join('\n') || 'None recorded';
+    const subList = att.subjects?.map(s => `- ${s.name}: ${s.percent}% (Held: ${s.held}, Attended: ${s.attended}, Margin: ${s.bunks}, Needed: ${s.needed})`).join('\n') || 'None recorded';
     
     let gradesSummary = '';
     const sems = (acad.semesters && acad.semesters.length > 0) ? acad.semesters : (dossier.academic?.semesters || []);
@@ -982,7 +983,7 @@ const ADITYA_ACADEMIC_CALENDAR = {
       .map(e => `- ${e.description}: ${e.from}${e.to && e.to !== e.from ? ' to ' + e.to : ''}`)
       .join('\n');
 
-    return `You are Aria, an intelligent academic co-pilot and portal assistant embedded directly into ReEcap for Aditya University students.
+    return `You are Aria, an intelligent academic co-pilot and portal assistant embedded directly into 𝚁𝚎𝙴𝚌𝚊𝚙"/ for Aditya University students.
 You are built to guide students through their academics, analyze their performance, and help them navigate their student portal.
 
 [CURRENT STUDENT DOSSIER]:
@@ -1014,8 +1015,8 @@ ${calList || '- Semester End Theory Exams: 16.11.2026 to 28.11.2026\n- Results: 
 
 [YOUR CORE ROLES]:
 1. ACADEMIC ADVISOR: Always refer to the student strictly as "${studentDisplayName}" (never use any other surname). Analyze grades, identify weak subjects (courses with Grade B or below), evaluate internal test patterns, and suggest practical study strategies. Never dismiss the student or say you cannot identify weak subjects.
-2. ATTENDANCE STRATEGIST: Calculate precise bunk allowances or mandatory attendance targets using the 75% formula.
-3. PORTAL NAVIGATOR: Guide the student to the exact sections of ReEcap.
+2. ATTENDANCE STRATEGIST: Calculate precise class skip allowances or mandatory attendance targets using the 75% formula. Always use respectful phrases such as "skipping classes", "attendance buffer", or "class margin", never "bunk".
+3. PORTAL NAVIGATOR: Guide the student to the exact sections of 𝚁𝚎𝙴𝚌𝚊𝚙"/.
 
 [ACTION CHIP FORMAT]:
 When advising the student to view, verify, or pay something in the portal, embed interactive action tags in your text:
@@ -1285,14 +1286,14 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         `[action:nav:marks|Open Detailed Marks Report]`;
     }
 
-    if (q.includes('attendance') || q.includes('bunk') || q.includes('shortage') || q.includes('miss') || q.includes('skip')) {
+    if (q.includes('attendance') || q.includes('bunk') || q.includes('shortage') || q.includes('miss') || q.includes('skip') || q.includes('margin')) {
       const overall = att.overallPercent || '--';
       const subjects = att.subjects || [];
       const critical = subjects.filter(s => s.status === 'critical');
       const safe = subjects.filter(s => s.status === 'safe' && s.bunks > 0);
 
-      const bunkMatch = q.match(/(\d+)\s*(?:class|classes|lecture|lectures|period|periods)?/);
-      const bunkCount = bunkMatch ? parseInt(bunkMatch[1], 10) : null;
+      const countMatch = q.match(/(\d+)\s*(?:class|classes|lecture|lectures|period|periods)?/);
+      const skipCount = countMatch ? parseInt(countMatch[1], 10) : null;
 
       const matchedSubject = subjects.find(s => {
         const sLower = s.name.toLowerCase();
@@ -1300,38 +1301,38 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         return words.some(w => q.includes(w));
       });
 
-      if (matchedSubject && bunkCount !== null) {
+      if (matchedSubject && skipCount !== null) {
         const curHeld = matchedSubject.held || 0;
         const curAtt = matchedSubject.attended || 0;
-        const newHeld = curHeld + bunkCount;
+        const newHeld = curHeld + skipCount;
         const newPct = newHeld > 0 ? Number(((curAtt / newHeld) * 100).toFixed(1)) : 0;
-        const maxBunks = matchedSubject.bunks || 0;
+        const maxSkips = matchedSubject.bunks || 0;
 
-        let resp = `### Bunk Simulation: ${matchedSubject.name}\n\n`;
+        let resp = `### Class Margin Analysis: ${matchedSubject.name}\n\n`;
         resp += `- **Current Standing:** ${curAtt}/${curHeld} classes attended (**${matchedSubject.percent}%**)\n`;
-        resp += `- **If you miss ${bunkCount} class(es):** ${curAtt}/${newHeld} classes attended (**${newPct}%**)\n\n`;
+        resp += `- **If you skip ${skipCount} class(es):** ${curAtt}/${newHeld} classes attended (**${newPct}%**)\n\n`;
 
         if (newPct >= 75) {
-          resp += `**Status:** Safe to bunk. Your attendance will remain at **${newPct}%**, which is **${(newPct - 75).toFixed(1)}% above** the 75% cutoff.\n`;
-          resp += `You have a total safety cushion of **${maxBunks}** bunkable class(es) in this subject.\n\n`;
+          resp += `**Status:** Safe to skip. Your attendance will remain at **${newPct}%**, which is **${(newPct - 75).toFixed(1)}% above** the 75% cutoff.\n`;
+          resp += `You have a total safety cushion of **${maxSkips}** skippable class(es) in this subject.\n\n`;
         } else {
-          resp += `**Attendance Risk Warning:** Skipping ${bunkCount} class(es) will drop your attendance to **${newPct}%**, which is below the 75% mandatory threshold.\n`;
-          resp += `You can only safely skip **${maxBunks}** class(es) without falling into condonation.\n\n`;
+          resp += `**Attendance Risk Warning:** Skipping ${skipCount} class(es) will drop your attendance to **${newPct}%**, which is below the 75% mandatory threshold.\n`;
+          resp += `You can only safely skip **${maxSkips}** class(es) without falling into condonation.\n\n`;
         }
-        resp += `[action:nav:attendance|View Live Attendance Table] [action:bunk_sim|Simulate Other Subjects]`;
+        resp += `[action:nav:attendance|View Live Attendance Table] [action:skip_sim|Simulate Other Subjects]`;
         return resp;
       }
 
-      let resp = `### Attendance & Bunk Margin Simulator (Overall: ${overall}%)\n\n`;
+      let resp = `### Attendance & Skipping Classes Margin (Overall: ${overall}%)\n\n`;
       if (critical.length > 0) {
         resp += `**Critical Attendance Warning (< 75%):**\n` +
           critical.map(s => `- **${s.name}**: ${s.percent}% (Attend **${s.needed}** consecutive classes to clear shortage)`).join('\n') + '\n\n';
       }
       if (safe.length > 0) {
-        resp += `**Safe Bunk Allowance (>= 75%):**\n` +
-          safe.map(s => `- **${s.name}**: ${s.percent}% (${s.attended}/${s.held}) • Can safely bunk **${s.bunks}** class(es)`).join('\n') + '\n\n';
+        resp += `**Safe Margin for Skipping Classes (>= 75%):**\n` +
+          safe.map(s => `- **${s.name}**: ${s.percent}% (${s.attended}/${s.held}) • Can safely skip **${s.bunks}** class(es)`).join('\n') + '\n\n';
       }
-      resp += `*Tip: Ask specifically (e.g., "Can I bunk 2 classes of DBMS?") for an instant projection.*\n\n`;
+      resp += `*Tip: Ask specifically (e.g., "Can I skip 2 classes of DBMS?") for an instant projection.*\n\n`;
       resp += `[action:nav:attendance|View Live Attendance] [action:nav:marks|Check Grades]`;
       return resp;
     }
@@ -1361,13 +1362,13 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
     const rawName = dossier.identity?.name || getActiveStudentNameFromDom() || '';
     const cleanName = rawName ? rawName.split(' ')[0] : 'Student';
 
-    return `Hello ${cleanName}! I am **Aria**, your academic co-pilot in ReEcap.\n\n` +
+    return `Hello ${cleanName}! I am **Aria**, your academic co-pilot in 𝚁𝚎𝙴𝚌𝚊𝚙"/.\n\n` +
       `Here is a quick snapshot of your records:\n` +
       `- **CGPA:** ${acad.cgpa || '--'} | **Credits:** ${acad.credits || '--'}\n` +
       `- **Attendance:** ${att.overallPercent || '--'}%\n` +
       `- **Backlogs:** ${dossier.backlogs || '0'}\n\n` +
       `How can I assist you today? You can ask about your attendance buffer, grade breakdown, or navigation.\n\n` +
-      `[action:nav:marks|Marks Report] [action:nav:attendance|Attendance] [action:nav:fees|Fee Hub] [action:bunk_sim|Bunk Simulator]`;
+      `[action:nav:marks|Marks Report] [action:nav:attendance|Attendance] [action:nav:fees|Fee Hub] [action:skip_sim|Skipping Classes Margin]`;
   }
 
   /**
@@ -1468,8 +1469,8 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       return;
     }
 
-    if (domain === 'bunk_sim' || verb === 'bunk_sim') {
-      submitPrompt("How is my attendance in each subject, and how many classes can I safely bunk?");
+    if (domain === 'bunk_sim' || verb === 'bunk_sim' || domain === 'skip_sim' || verb === 'skip_sim') {
+      submitPrompt("How is my attendance in each subject, and how many classes can I safely skip?");
       return;
     }
 

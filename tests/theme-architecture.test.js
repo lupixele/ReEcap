@@ -103,6 +103,6 @@ assert.deepEqual(
   engine.migrateThemeStorage({ theme: 'amoled', nightTabRadius: 40, nightTabShadow: 80 }),
   { preset: 'black', style: 'dark', appearance: 'dark', radius: 40, shadow: 80 }
 );
-assert.equal(engine.migrateThemeStorage({ nightTabPreset: 'not-real', nightTabStyle: 'light' }).preset, 'app');
+assert.equal(engine.migrateThemeStorage({ nightTabPreset: 'not-real', nightTabStyle: 'light' }).preset, 'point');
 
 console.log('PASS: 45 original presets; 35 dark and 10 light token-derived filters; opposite-mode overrides rejected; scale, swatch, semantic-token, option, and migration checks passed.');

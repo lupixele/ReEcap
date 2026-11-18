@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "ReEcap",
+    "name": "𝚁𝚎𝙴𝚌𝚊𝚙\"/",
     "version": "1.6.0",
     "description": "A modern reskin for the AEC student portal - cleaner UI, same functionality.",
     "icons": {
@@ -19,7 +19,7 @@
             "64": "icons/icon64.png",
             "128": "icons/icon128.png"
         },
-        "default_title": "ReEcap"
+        "default_title": "𝚁𝚎𝙴𝚌𝚊𝚙\"/"
     },
     "permissions": [
         "storage",
@@ -27,9 +27,22 @@
     ],
     "host_permissions": [
         "*://info.aec.edu.in/*",
-        "https://aria.lupixele.online/*"
+        "https://aria.lupixele.online/*",
+        "https://fonts.googleapis.com/*",
+        "https://fonts.gstatic.com/*"
     ],
     "content_scripts": [
+        {
+            "matches": [
+                "*://info.aec.edu.in/*"
+            ],
+            "js": [
+                "shared/interceptor.js"
+            ],
+            "world": "MAIN",
+            "all_frames": true,
+            "run_at": "document_start"
+        },
         {
             "matches": [
                 "*://info.aec.edu.in/*"
@@ -51,6 +64,7 @@
     "web_accessible_resources": [
         {
             "resources": [
+                "shared/interceptor.js",
                 "shared/theme.js",
                 "shared/aria.js",
                 "shared/tokens.css",
