@@ -2088,8 +2088,11 @@ function buildTimetableDashboard(tbl) {
       
       for (let j = 1; j < cells.length; j++) {
         const cell = cells[j];
-        const timeNode = cell.querySelector('div, p');
-        const sourceHtml = timeNode ? timeNode.innerHTML : cell.innerHTML;
+        const cellTitle = cell.getAttribute('title') || cell.getAttribute('data-original-title') || '';
+        const rawCellText = (cell.innerText || cell.textContent || '').replace(/\s+/g, ' ').trim();
+        const isThub = /THUB|Technical\s*Hub|T-HUB/i.test(cell.innerHTML) || /THUB|Technical\s*Hub|T-HUB/i.test(cellTitle) || /THUB|Technical\s*Hub|T-HUB/i.test(rawCellText);
+
+        const sourceHtml = cell.innerHTML;
         const sourceText = sourceHtml
           .replace(/<br\s*\/?\s*>/gi, '\n')
           .replace(/<\/p\s*>/gi, '\n')
@@ -2101,21 +2104,30 @@ function buildTimetableDashboard(tbl) {
           .map(line => line.replace(/\s+/g, ' ').trim())
           .filter(Boolean);
 
-        // The time belongs to the cell, not the column. Preserve it verbatim
-        // after normalising separator spacing; this supports AM/PM and ranges
-        // such as "09:30 AM-10:19 AM" from the live portal.
         const timeIndex = lines.findIndex(line => /\d{1,2}:\d{2}\s*(?:AM|PM)?\s*(?:-|–|to)\s*\d{1,2}:\d{2}\s*(?:AM|PM)?/i.test(line));
-        const timeRange = timeIndex >= 0
+        let timeRange = timeIndex >= 0
           ? lines[timeIndex]
               .replace(/\s*(?:-|–|to)\s*/i, ' – ')
               .replace(/\s+/g, ' ')
               .trim()
           : '';
-        const subjectStr = lines
+
+        // Fallback to column header time if not inline
+        if (!timeRange && headerLabels[j - 1]) {
+          timeRange = headerLabels[j - 1];
+        }
+
+        let subjectStr = lines
           .filter((_, index) => index !== timeIndex)
           .join(', ');
 
-        schedule[day].push({ timeRange, subjectCode: subjectStr });
+        if (isThub) {
+          subjectStr = 'Technical Hub (THUB)';
+        } else if ((!subjectStr || subjectStr === '-') && j <= 3) {
+          subjectStr = 'Technical Hub (THUB)';
+        }
+
+        schedule[day].push({ timeRange, subjectCode: subjectStr || `Period ${j}` });
       }
     } else {
       if (firstCellText && !dayNames.some(d => firstCellText.includes(d))) {
@@ -5207,7 +5219,7 @@ function buildOverviewPage(container) {
 
       renderDashboardCards(metricsSlot, data ? data.reecapProfileData : null);
       renderScheduleCard(mainSplit, data ? data.reecapTimetable : null);
-      renderCalendarOverviewCard(mainSplit);
+      renderCalendarOverviewCard(mainSplit, data ? data.reecapIdentity : null);
 
       chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== 'local' || !changes.reecapTimetable || !grid.isConnected) return;
@@ -5399,41 +5411,62 @@ function renderScheduleCard(container, timetableData, previousCard = null) {
   const todaysClasses = schedule[todayName] || schedule[now.toLocaleDateString('en-US', { weekday: 'long' })] || [];
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
-  // Filter out empty dashes and non-classes
-  const validPeriods = todaysClasses.filter(period => {
-    const code = (period.subjectCode || '').trim();
-    return code && code !== '-' && code.toUpperCase() !== 'FREE';
-  });
-
-  if (validPeriods.length === 0) {
-    html += `<div class="schedule-empty">No classes scheduled for today. Enjoy!</div>`;
+  if (todaysClasses.length === 0) {
+    html += `<div class="schedule-empty">No classes scheduled for today.</div>`;
     card.innerHTML = html;
     return;
   }
 
   let rowsHtml = `<div class="schedule-list">`;
 
-
-  validPeriods.forEach(period => {
+  // Render all periods without skipping any
+  todaysClasses.forEach((period, idx) => {
     const times = parseTimeRange(period.timeRange);
     let isActive = false;
     if (times && currentMins >= times.start && currentMins < times.end) {
       isActive = true;
     }
 
-    const primaryCode = period.subjectCode.split(',')[0].trim();
-    const details = (legendMap && legendMap[primaryCode]) || { name: period.subjectCode, faculty: '', room: '' };
+    let rawCode = (period.subjectCode || '').trim();
+    let name = rawCode;
+    let faculty = '';
+    let room = '';
+
+    const primaryCode = rawCode.split(',')[0].trim();
+    if (legendMap && legendMap[primaryCode]) {
+      name = legendMap[primaryCode].name || rawCode;
+      faculty = legendMap[primaryCode].faculty || '';
+      room = legendMap[primaryCode].room || '';
+    }
+
+    // Detect THUB or morning 3-hour Technical Hub class
+    if (/THUB|Technical\s*Hub|T-HUB/i.test(rawCode) || /THUB/i.test(name)) {
+      name = 'Technical Hub (THUB)';
+      faculty = faculty || 'Technical Training';
+      room = room || 'THub Lab';
+    } else if ((!rawCode || rawCode === '-') && idx < 3) {
+      name = 'Technical Hub (THUB)';
+      faculty = 'Technical Training';
+      room = 'THub Lab';
+    } else if (!rawCode || rawCode === '-') {
+      name = `Period ${idx + 1}`;
+      faculty = 'Scheduled Session';
+    }
+
+    const timeParts = (period.timeRange || '').split(/[-–to]/i);
+    const timeStart = timeParts[0]?.trim() || `Period ${idx + 1}`;
+    const timeEnd = timeParts[1]?.trim() || '';
 
     rowsHtml += `
       <div class="schedule-row ${isActive ? 'is-active' : ''}">
         <div class="schedule-time">
-          <span>${period.timeRange.split(/[-to]/i)[0].trim()}</span>
-          <span class="schedule-time-end">${period.timeRange.split(/[-to]/i)[1] ? period.timeRange.split(/[-to]/i)[1].trim() : ''}</span>
+          <span>${timeStart}</span>
+          ${timeEnd ? `<span class="schedule-time-end">${timeEnd}</span>` : ''}
         </div>
         <div class="schedule-details">
-          <div class="schedule-subject">${details.name}</div>
+          <div class="schedule-subject">${name}</div>
           <div class="schedule-meta">
-            ${details.room ? `<span>${details.room}</span> <b>•</b> ` : ''}<span>${details.faculty}</span>
+            ${room ? `<span>${room}</span> <b>•</b> ` : ''}<span>${faculty}</span>
           </div>
         </div>
         ${isActive ? `<div class="schedule-badge">NOW</div>` : ''}
@@ -5446,7 +5479,7 @@ function renderScheduleCard(container, timetableData, previousCard = null) {
   card.innerHTML = html;
 }
 
-function renderCalendarOverviewCard(container) {
+function renderCalendarOverviewCard(container, identity = null) {
   if (container.querySelector('.overview-calendar-card')) return;
 
   const card = document.createElement('div');
@@ -5455,13 +5488,49 @@ function renderCalendarOverviewCard(container) {
   const calData = (window.__reecap_calendar && window.__reecap_calendar.semesters)
     ? window.__reecap_calendar.semesters
     : {};
-  const currentMilestones = calData['II'] || calData['I'] || [];
+
+  // Embedded calendar fallback from Academic calendar .pdf
+  const DEFAULT_CALENDAR_SEMS = {
+    'III': [
+      { description: "Registration to III Semester Courses", from: "08.06.2026", to: "13.06.2026" },
+      { description: "Commencement of Class Work", from: "29.06.2026", to: "29.06.2026" },
+      { description: "Internal Examinations –I", from: "19.08.2026", to: "21.08.2026" },
+      { description: "Internal Examinations –II", from: "02.11.2026", to: "04.11.2026" },
+      { description: "Semester End Examinations – Lab", from: "09.11.2026", to: "14.11.2026" },
+      { description: "Semester End Examinations – Theory", from: "16.11.2026", to: "28.11.2026" },
+      { description: "Declaration of Results", from: "12.12.2026", to: "12.12.2026" },
+      { description: "Commencement of IV Semester", from: "28.12.2026", to: "28.12.2026" }
+    ],
+    'II': [
+      { description: "Registration to II Semester Courses", from: "05.01.2026", to: "10.01.2026" },
+      { description: "Commencement of Class Work", from: "27.01.2026", to: "27.01.2026" },
+      { description: "Internal Examinations –I", from: "17.03.2026", to: "20.03.2026" },
+      { description: "Semester End Examinations – Theory", from: "15.06.2026", to: "27.06.2026" }
+    ]
+  };
+
+  // Detect student semester with longest roman numeral match first
+  let semKey = 'III';
+  if (identity && identity.semester) {
+    const match = identity.semester.match(/\b(VIII|VII|VI|IV|III|II|V|I)\b/i) || identity.semester.match(/(VIII|VII|VI|IV|III|II|V|I)/i);
+    if (match) semKey = match[1].toUpperCase();
+  } else {
+    const courseEl = document.querySelector('.id-course');
+    if (courseEl) {
+      const match = courseEl.textContent.match(/\b(VIII|VII|VI|IV|III|II|V|I)\b/i) || courseEl.textContent.match(/(VIII|VII|VI|IV|III|II|V|I)/i);
+      if (match) semKey = match[1].toUpperCase();
+    }
+  }
+
+  const milestones = (calData && calData[semKey] && calData[semKey].length > 0)
+    ? calData[semKey]
+    : (DEFAULT_CALENDAR_SEMS[semKey] || DEFAULT_CALENDAR_SEMS['III']);
 
   let html = `
     <div class="overview-card-header">
       <div style="display: flex; align-items: center; gap: 8px;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        <span class="overview-card-title">Semester II Calendar</span>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <span class="overview-card-title">Semester ${semKey} Calendar</span>
       </div>
       <a href="Academics/academiccalenderreport.aspx?scrid=6" target="capIframe" class="card-action-link" id="overview-view-calendar-link">
         View All 8 Semesters
@@ -5470,20 +5539,22 @@ function renderCalendarOverviewCard(container) {
     <div class="overview-calendar-list">
   `;
 
-  if (currentMilestones.length === 0) {
+  if (milestones.length === 0) {
     html += `<div class="schedule-empty">Academic calendar synced with university schedule.</div>`;
   } else {
-    // Show top 4 relevant milestones
-    const preview = currentMilestones.slice(0, 4);
+    // Show top 4 milestones
+    const preview = milestones.slice(0, 4);
     preview.forEach(m => {
       const isRange = m.from !== m.to;
       const dateStr = isRange ? `${m.from} — ${m.to}` : m.from;
-      let statusBadge = '<span class="status-pill-neutral">Scheduled</span>';
+
+      let badgeHtml = '<span class="status-pill status-pill-neutral">Scheduled</span>';
       if (m.description.includes('Commencement') || m.description.includes('Registration')) {
-        statusBadge = '<span class="status-pill-pass">Completed</span>';
-      } else if (m.description.includes('Internal Examinations –I')) {
-        statusBadge = '<span class="status-pill-pass">Upcoming Next</span>';
+        badgeHtml = '<span class="status-pill status-pill-pass">Completed</span>';
+      } else if (m.description.includes('Internal Examinations')) {
+        badgeHtml = '<span class="status-pill status-pill-active">Scheduled</span>';
       }
+
       html += `
         <div class="calendar-milestone-row">
           <div class="milestone-date-col">
@@ -5492,7 +5563,7 @@ function renderCalendarOverviewCard(container) {
           <div class="milestone-info-col">
             <span class="milestone-title">${m.description}</span>
           </div>
-          <div class="milestone-badge-col">${statusBadge}</div>
+          <div class="milestone-badge-col">${badgeHtml}</div>
         </div>
       `;
     });
