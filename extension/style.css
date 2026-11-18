@@ -7024,25 +7024,27 @@ table#tblquestions input[type="text"]:not([value]) {
   transform: translateX(2px) !important;
 }
 
-/* ── 13. PromptBar Composer (beautifului.dev PromptBar Primitive) ── */
+/* ── 13. PromptBar Composer (Minimalist single-box layout) ── */
 .aria-composer.prompt-bar-card {
-  padding: 12px 18px 16px !important;
+  padding: 12px 16px 14px !important;
   background: var(--surface-card) !important;
   border-top: 1px solid var(--border-light) !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 0 !important;
   flex-shrink: 0 !important;
   position: relative !important;
 }
 
 .prompt-bar-container {
   display: flex !important;
-  flex-direction: column !important;
+  flex-direction: row !important;
+  align-items: flex-end !important;
+  gap: 10px !important;
   background: var(--surface-sunken) !important;
   border: 1px solid var(--border-light) !important;
-  border-radius: 16px !important;
-  padding: 10px 12px 8px !important;
+  border-radius: 18px !important;
+  padding: 8px 10px 8px 14px !important;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
 }
@@ -7051,6 +7053,13 @@ table#tblquestions input[type="text"]:not([value]) {
   border-color: var(--accent) !important;
   background: var(--surface-card) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent), 0 6px 16px -4px rgba(0, 0, 0, 0.08) !important;
+}
+
+.prompt-bar-input-wrapper {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
 }
 
 .prompt-bar-input-wrapper textarea {
@@ -7063,9 +7072,11 @@ table#tblquestions input[type="text"]:not([value]) {
   font-size: 13.5px !important;
   color: var(--text-primary) !important;
   line-height: 1.45 !important;
+  min-height: 22px !important;
   max-height: 120px !important;
-  padding: 2px 0 6px !important;
-  scrollbar-width: none !important;
+  padding: 4px 0 !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--border) 45%, transparent) transparent !important;
   box-sizing: border-box !important;
 }
 
@@ -7073,71 +7084,9 @@ table#tblquestions input[type="text"]:not([value]) {
   color: var(--text-faint) !important;
 }
 
-.prompt-bar-controls {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
-  padding-top: 6px !important;
-  border-top: 1px solid color-mix(in srgb, var(--border-light) 60%, transparent) !important;
-}
-
-.prompt-bar-badges {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-
-.prompt-model-badge,
-.prompt-context-pill {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  font-family: var(--font-mono, monospace) !important;
-  font-size: 10px !important;
-  font-weight: 650 !important;
-  color: var(--text-secondary) !important;
-  background: color-mix(in srgb, var(--surface-card) 60%, var(--surface-sunken)) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: 9999px !important;
-  padding: 2px 7px !important;
-}
-
-.model-dot {
-  width: 6px !important;
-  height: 6px !important;
-  border-radius: 50% !important;
-  background: var(--success, #10b981) !important;
-}
-
-.prompt-bar-actions {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-
-.prompt-action-btn {
-  background: transparent !important;
-  border: none !important;
-  color: var(--text-faint) !important;
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 8px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.18s ease !important;
-}
-
-.prompt-action-btn:hover {
-  background: var(--surface-sunken) !important;
-  color: var(--text-primary) !important;
-}
-
 .prompt-send-pill {
-  width: 30px !important;
-  height: 30px !important;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 50% !important;
   background: var(--accent) !important;
   color: #fff !important;
@@ -7147,7 +7096,7 @@ table#tblquestions input[type="text"]:not([value]) {
   justify-content: center !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, opacity 0.2s ease !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease !important;
   box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 35%, transparent) !important;
 }
 
@@ -7163,19 +7112,27 @@ table#tblquestions input[type="text"]:not([value]) {
   box-shadow: none !important;
 }
 
-.prompt-bar-footer {
-  font-family: var(--font-mono, monospace) !important;
-  font-size: 10px !important;
-  color: var(--text-faint) !important;
-  text-align: center !important;
+.prompt-send-pill.is-stop {
+  background: var(--error, #ef4444) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--error, #ef4444) 40%, transparent) !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
 }
 
-.prompt-bar-footer kbd {
-  background: var(--surface-sunken) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: 4px !important;
-  padding: 1px 4px !important;
-  font-size: 9px !important;
+.prompt-send-pill.is-stop:hover {
+  transform: translateY(-1.5px) scale(1.06) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--error, #ef4444) 55%, transparent) !important;
+}
+
+/* Suppress all former prompt-bar bloat */
+.prompt-bar-controls,
+.prompt-bar-badges,
+.prompt-model-badge,
+.prompt-context-pill,
+.prompt-bar-actions,
+.prompt-bar-footer {
+  display: none !important;
 }
 
 
@@ -8906,22 +8863,7 @@ table[id*="grid"] tr:hover td {
 .aria-table tbody tr:last-child td { border-bottom: none !important; }
 
 /* Composer: one clean visual box, aligned controls, clear states */
-.prompt-bar-container { padding: 12px 14px 10px !important; }
 .prompt-bar-container:has(textarea:disabled) { opacity: 0.6 !important; }
-.prompt-bar-input-wrapper textarea {
-  padding: 2px 0 8px !important;
-  line-height: 1.5 !important;
-  overflow-y: auto !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: color-mix(in srgb, var(--border) 45%, transparent) transparent !important;
-}
-.prompt-bar-actions { align-items: center !important; }
-.prompt-send-pill {
-  width: 32px !important;
-  height: 32px !important;
-  align-self: center !important;
-}
-.prompt-bar-footer { padding-top: 2px !important; }
 
 /* ==========================================================================
    Universal In-UI Error State & Interceptor Cards (401 / Exam Details)

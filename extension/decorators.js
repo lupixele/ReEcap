@@ -7507,6 +7507,9 @@ function initAriaSidebar(layoutWrapper) {
         </div>
       </div>
       <div class="aria-header-actions">
+        <button type="button" class="aria-header-btn" id="aria-clear-chat" title="Clear conversation" aria-label="Clear chat">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
         <button type="button" class="aria-header-btn" id="aria-refresh-dossier-btn" title="Refresh Academic Telemetry" aria-label="Refresh data">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
         </button>
@@ -7525,35 +7528,15 @@ function initAriaSidebar(layoutWrapper) {
         <div class="prompt-bar-input-wrapper">
           <textarea id="aria-input" placeholder="Ask Aria about grades, attendance, or navigation..." rows="1"></textarea>
         </div>
-
-        <div class="prompt-bar-controls">
-          <div class="prompt-bar-badges">
-            <div class="prompt-model-badge">
-              <span class="model-dot"></span>
-              <span>Aura Super</span>
-            </div>
-            <div class="prompt-context-pill" title="Live ERP Master Synced">
-              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" style="color: var(--accent);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-              <span>ERP Live</span>
-            </div>
-          </div>
-
-          <div class="prompt-bar-actions">
-            <button type="button" class="prompt-action-btn" id="aria-clear-chat" title="Clear conversation" aria-label="Clear chat">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            </button>
-            <button type="submit" id="aria-send-btn" aria-label="Send prompt" class="prompt-send-pill">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="19" x2="12" y2="5"></line>
-                <polyline points="5 12 12 5 19 12"></polyline>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="prompt-bar-footer">
-        <span><kbd>Enter</kbd> send • <kbd>Shift + Enter</kbd> new line • <kbd>Ctrl + /</kbd> toggle</span>
+        <button type="submit" id="aria-send-btn" aria-label="Send prompt" class="prompt-send-pill" title="Send prompt">
+          <svg class="icon-send" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+          </svg>
+          <svg class="icon-stop" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="display: none;">
+            <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+          </svg>
+        </button>
       </div>
     </form>
   `;
@@ -7580,11 +7563,18 @@ function initAriaSidebar(layoutWrapper) {
   const clearBtn = sidebar.querySelector('#aria-clear-chat');
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
+      if (isAriaGenerating) {
+        stopAriaGeneration();
+      }
       ariaMessagesHistory.length = 0;
       const container = document.getElementById('aria-messages');
       if (container) {
         container.innerHTML = '';
         loadInitialWelcome();
+      }
+      const suggestionsPanel = document.getElementById('aria-suggestions-panel');
+      if (suggestionsPanel) {
+        suggestionsPanel.style.display = '';
       }
     });
   }
@@ -7613,8 +7603,15 @@ function initAriaSidebar(layoutWrapper) {
 
     const actionChip = e.target.closest('.aria-action-chip');
     if (actionChip && actionChip.dataset.action) {
+      const act = actionChip.dataset.action;
+      if (act === 'nav:fees' || act === 'nav:feedetails') {
+        if (typeof navigateToFeeDetails === 'function') {
+          navigateToFeeDetails();
+          return;
+        }
+      }
       if (window.__reecap_aria && window.__reecap_aria.executePortalAction) {
-        window.__reecap_aria.executePortalAction(actionChip.dataset.action);
+        window.__reecap_aria.executePortalAction(act);
       }
       return;
     }
@@ -7637,26 +7634,35 @@ function initAriaSidebar(layoutWrapper) {
     input.addEventListener('input', () => {
       input.style.height = 'auto';
       input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-      if (sendBtn) {
-        sendBtn.classList.toggle('is-active', input.value.trim().length > 0);
-        sendBtn.disabled = input.value.trim().length === 0;
+      if (sendBtn && !isAriaGenerating) {
+        const hasText = input.value.trim().length > 0;
+        sendBtn.classList.toggle('is-active', hasText);
+        sendBtn.disabled = !hasText;
       }
     });
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        submitAriaMessage();
+        if (isAriaGenerating) {
+          stopAriaGeneration();
+        } else {
+          submitAriaMessage();
+        }
       }
     });
   }
 
-  // Composer submit
+  // Composer submit (handles send and stop)
   const form = document.getElementById('aria-composer');
   if (form) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      submitAriaMessage();
+      if (isAriaGenerating) {
+        stopAriaGeneration();
+      } else {
+        submitAriaMessage();
+      }
     });
   }
 
@@ -7885,7 +7891,56 @@ function parseMarkdownAndActions(text, options) {
   return safe;
 }
 
+let currentAriaAbortController = null;
+let isAriaGenerating = false;
+let currentSettleThinking = null;
+
+function setAriaGeneratingState(generating) {
+  isAriaGenerating = generating;
+  const sendBtn = document.getElementById('aria-send-btn');
+  if (!sendBtn) return;
+
+  const iconSend = sendBtn.querySelector('.icon-send');
+  const iconStop = sendBtn.querySelector('.icon-stop');
+
+  if (generating) {
+    sendBtn.classList.add('is-stop');
+    sendBtn.disabled = false;
+    sendBtn.setAttribute('title', 'Stop generation');
+    sendBtn.setAttribute('aria-label', 'Stop generation');
+    if (iconSend) iconSend.style.display = 'none';
+    if (iconStop) iconStop.style.display = 'block';
+  } else {
+    sendBtn.classList.remove('is-stop');
+    sendBtn.setAttribute('title', 'Send prompt');
+    sendBtn.setAttribute('aria-label', 'Send prompt');
+    if (iconSend) iconSend.style.display = 'block';
+    if (iconStop) iconStop.style.display = 'none';
+    const input = document.getElementById('aria-input');
+    const hasText = Boolean(input && input.value.trim().length > 0);
+    sendBtn.disabled = !hasText;
+    sendBtn.classList.toggle('is-active', hasText);
+  }
+}
+
+function stopAriaGeneration() {
+  if (currentSettleThinking) {
+    currentSettleThinking();
+    currentSettleThinking = null;
+  }
+  if (currentAriaAbortController) {
+    currentAriaAbortController.abort();
+    currentAriaAbortController = null;
+  }
+  setAriaGeneratingState(false);
+}
+
 async function submitAriaMessage() {
+  if (isAriaGenerating) {
+    stopAriaGeneration();
+    return;
+  }
+
   const input = document.getElementById('aria-input');
   const sendBtn = document.getElementById('aria-send-btn');
   const container = document.getElementById('aria-messages');
@@ -7894,12 +7949,23 @@ async function submitAriaMessage() {
   const query = input.value.trim();
   if (!query) return;
 
+  // Make the helper card go away right after first prompt
+  const welcomeCards = container.querySelectorAll('.aria-welcome-hero, .aria-welcome-card');
+  welcomeCards.forEach(card => {
+    const parentMsg = card.closest('.aria-msg');
+    if (parentMsg) {
+      parentMsg.remove();
+    } else {
+      card.remove();
+    }
+  });
+  const suggestionsPanel = document.getElementById('aria-suggestions-panel');
+  if (suggestionsPanel) {
+    suggestionsPanel.style.display = 'none';
+  }
+
   input.value = '';
   input.style.height = 'auto';
-  if (sendBtn) {
-    sendBtn.classList.remove('is-active');
-    sendBtn.disabled = true;
-  }
 
   // Append user message
   const userMsgEl = document.createElement('div');
@@ -7907,6 +7973,10 @@ async function submitAriaMessage() {
   userMsgEl.textContent = query;
   container.appendChild(userMsgEl);
   container.scrollTop = container.scrollHeight;
+
+  // Set generating state
+  currentAriaAbortController = new AbortController();
+  setAriaGeneratingState(true);
 
   // Mount ThinkingState component (beautifului.dev ThinkingState primitive)
   const assistantMsgEl = document.createElement('div');
@@ -8009,7 +8079,8 @@ async function submitAriaMessage() {
     });
   }
 
-  sendBtn.disabled = true;
+  currentSettleThinking = settleThinking;
+
   ariaMessagesHistory.push({ role: 'user', content: query });
 
   const dossier = ariaDossierCache || (window.__reecap_aria ? await window.__reecap_aria.getStudentDossier() : {});
@@ -8018,6 +8089,7 @@ async function submitAriaMessage() {
     window.__reecap_aria.streamAriaChat({
       messages: ariaMessagesHistory,
       dossier: dossier,
+      signal: currentAriaAbortController ? currentAriaAbortController.signal : null,
       onChunk: (delta, fullText) => {
         settleThinking();
         if (streamingBody) {
@@ -8027,29 +8099,43 @@ async function submitAriaMessage() {
       },
       onDone: (finalText) => {
         settleThinking();
+        currentSettleThinking = null;
         if (streamingBody) {
           streamingBody.innerHTML = parseMarkdownAndActions(finalText);
         }
         ariaMessagesHistory.push({ role: 'assistant', content: finalText });
-        sendBtn.disabled = false;
+        setAriaGeneratingState(false);
+        currentAriaAbortController = null;
         container.scrollTop = container.scrollHeight;
       },
       onError: (err) => {
         settleThinking();
+        currentSettleThinking = null;
         if (streamingBody) {
           streamingBody.innerHTML = `<p style="color: var(--danger);">Unable to reach Aria inference. Try again shortly.</p>`;
         }
-        sendBtn.disabled = false;
+        setAriaGeneratingState(false);
+        currentAriaAbortController = null;
       }
     });
   } else {
     settleThinking();
+    currentSettleThinking = null;
     if (streamingBody) {
       streamingBody.innerHTML = `<p>Aria module not loaded.</p>`;
     }
-    sendBtn.disabled = false;
+    setAriaGeneratingState(false);
+    currentAriaAbortController = null;
   }
 }
 
 window.toggleAriaSidebar = toggleAriaSidebar;
 window.__reecap_refresh_aria = refreshAriaDossier;
+window.navigateToFeeDetails = navigateToFeeDetails;
+window.submitAriaMessage = submitAriaMessage;
+window.showIframe = showIframe;
+window.showOverview = showOverview;
+window.showAcademicCalendar = showAcademicCalendar;
+window.navigateToProfileTab = navigateToProfileTab;
+window.setAriaGeneratingState = setAriaGeneratingState;
+window.stopAriaGeneration = stopAriaGeneration;

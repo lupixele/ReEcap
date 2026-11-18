@@ -196,6 +196,20 @@ Root cause: Child height resizers previously read `document.documentElement.scro
 
 - **Dossier Extraction**: Silently scans and compiles student attendance rates, internal marks, backlogs, and term timelines into an in-memory academic dossier.
 - **Sidecar Panel**: Accessible via the masthead pill or theme toolbar, opening a dedicated side-panel assistant with conversational chat.
+- **Streamlined Minimalist Composer**:
+  - Eliminated UI clutter from the prompt composer: stripped out the "Aura Super" model badge, "ERP Live" context pill, and keyboard shortcut footer hints.
+  - Composer is structured as a single clean row container (`.prompt-bar-container`) housing exclusively the auto-resizing prompt textarea and a unified Send/Stop button.
+- **Adaptive Send / Stop Button State Machine**:
+  - **Idle State**: Displays the upward arrow send icon (`.icon-send`). Disabled when textarea is empty; becomes active and styled with `--accent` when text is input.
+  - **Generating State**: Morphs smoothly into a Stop button (`.prompt-send-pill.is-stop`) with error accent (`var(--error, #ef4444)`), displaying a solid square stop icon (`.icon-stop`).
+  - **Instant Cancellation**: Clicking Stop (or pressing Enter while generating) triggers `stopAriaGeneration()`, passing an abort signal to `AbortController`, cancelling the reader stream, settling active thinking traces, and keeping any partial text intact.
+- **Helper Card Auto-Dismissal Lifecycle**:
+  - The "Academic Co-Pilot Ready" hero card displays initial student metrics (CGPA, attendance, backlogs) on an empty conversation.
+  - Upon submitting the first prompt (either via input or clicking a prompt chip), all welcome card DOM nodes (`.aria-welcome-hero`, `.aria-welcome-card`) and the suggestions panel are immediately dismissed from the chat thread.
+  - Clearing the chat via `#aria-clear-chat` (relocated to `.aria-header-actions` in the sidebar header) restores the initial welcome card and suggestion shelf.
+- **Tuition Fee Ledger & Action Routing**:
+  - Fixed action chip routing for "Tuition Fee Ledger" (`data-action="nav:fees"` / `data-action="nav:feedetails"`) to invoke `navigateToFeeDetails()` and activate `#divProfile_Fees` with `&view=fee`.
+  - Global navigation and composer primitives (`navigateToFeeDetails`, `submitAriaMessage`, `showIframe`, `showOverview`, `showAcademicCalendar`, `navigateToProfileTab`, `setAriaGeneratingState`, `stopAriaGeneration`) are exported to `window` for reliable execution.
 - **Markdown & Math Rendering**: Full streaming markdown parser in [extension/shared/aria.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/aria.js) supporting headings, nested lists, task lists, tables, fenced code blocks with copy actions, LaTeX KaTeX formulas, and interactive action chips.
 
 ---
@@ -205,13 +219,14 @@ Root cause: Child height resizers previously read `document.documentElement.scro
 | File | Primary Responsibilities |
 | :--- | :--- |
 | [extension/manifest.json](file:///p:/Magnanimity/Projects/ReEcap/extension/manifest.json) | Manifest V3 specification; matches `info.aec.edu.in`; declares permissions (`storage`, `activeTab`) and web accessible resources. |
-| [extension/decorators.js](file:///p:/Magnanimity/Projects/ReEcap/extension/decorators.js) | Core UI enhancement engine: Main World alert interceptor, sidebar categorization, dual-pane layout, height auto-resizers, timetable tooltips, receipts sanitization, fee standalone view, error cards. |
-| [extension/style.css](file:///p:/Magnanimity/Projects/ReEcap/extension/style.css) | nightTab CSS architecture: layout grid, independent scrollbars, masthead, cards, timetable, receipts override, error state components, responsive breakpoints. |
+| [extension/decorators.js](file:///p:/Magnanimity/Projects/ReEcap/extension/decorators.js) | Core UI enhancement engine: Main World alert interceptor, sidebar categorization, dual-pane layout, height auto-resizers, timetable tooltips, receipts sanitization, fee standalone view, error cards, Aria composer & stop button. |
+| [extension/style.css](file:///p:/Magnanimity/Projects/ReEcap/extension/style.css) | nightTab CSS architecture: layout grid, independent scrollbars, masthead, cards, timetable, receipts override, error state components, streamlined composer, stop button styles, responsive breakpoints. |
 | [extension/content.js](file:///p:/Magnanimity/Projects/ReEcap/extension/content.js) | Stylesheet and token injector; theme migration and active preset application. |
 | [extension/shared/theme.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/theme.js) | 45 nightTab presets, mathematical color spaces, appearance filters (35 dark, 10 light), semantic CSS token mappings. |
-| [extension/shared/aria.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/aria.js) | Aria AI copilot client: streaming markdown parser, dossier compilation, quick action chips, message history. |
+| [extension/shared/aria.js](file:///p:/Magnanimity/Projects/ReEcap/extension/shared/aria.js) | Aria AI copilot client: streaming markdown parser, dossier compilation, quick action chips, message history, stream abortion support. |
 | [extension/popup.html](file:///p:/Magnanimity/Projects/ReEcap/extension/popup.html) | Extension popup interface featuring brand title `"𝚁𝚎𝙴𝚌𝚊𝚙"/"`, appearance filters, and theme preset picker. |
 | [tests/alert-interceptor.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/alert-interceptor.test.js) | Regression test suite verifying 401 XHTML detection, alert suppression, exam route differentiation, and recovery card rendering. |
+| [tests/aria-composer.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/aria-composer.test.js) | Test suite validating streamlined composer layout, stop button state machine, helper card dismissal, and fee ledger navigation. |
 | [tests/aria-markdown.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/aria-markdown.test.js) | 45-point test suite validating Aria markdown formatting, XSS sanitization, and streaming buffers. |
 | [tests/theme-architecture.test.js](file:///p:/Magnanimity/Projects/ReEcap/tests/theme-architecture.test.js) | Test suite verifying 45 presets, token filters, and theme migration logic. |
 | [PROGRESS.md](file:///p:/Magnanimity/Projects/ReEcap/PROGRESS.md) | Ongoing development log, architectural decisions, and current implementation status. |
@@ -231,12 +246,15 @@ node --check extension/shared/aria.js
 # 2. Alert Interception & Error Recovery Suite
 node tests/alert-interceptor.test.js
 
-# 3. Aria Markdown Parser Suite (45 checks)
+# 3. Aria Composer & Stop Button Lifecycle Suite
+node tests/aria-composer.test.js
+
+# 4. Aria Markdown Parser Suite (45 checks)
 node tests/aria-markdown.test.js
 
-# 4. Theme & Token Architecture Suite
+# 5. Theme & Token Architecture Suite
 node tests/theme-architecture.test.js
 
-# 5. Iframe Navigation Test
+# 6. Iframe Navigation Test
 # Open tests/iframe-navigation.html in browser to verify 12/12 DOM checks
 ```

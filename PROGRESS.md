@@ -1,5 +1,9 @@
 ## Current State
 - Active working branch on `main` with latest commits pushed to `origin/main`.
+- Streamlined Aria Composer & Stop Button: Stripped out all composer UI clutter ("Aura Super" model badge, "ERP Live" context pill, and keyboard shortcut footer hints). Single minimalist flex container housing the auto-resizing input textarea and an adaptive Send/Stop action pill.
+- Adaptive Send / Stop Button State Machine: During Aria token streaming or thinking trace execution, the send button morphs into a red stop button (`.prompt-send-pill.is-stop`). Clicking Stop or hitting Enter aborts active edge fetch streams via `AbortController` and settles thinking traces without trigger-happy fallback errors.
+- Helper Card Auto-Dismissal Lifecycle: The "Academic Co-Pilot Ready" welcome hero card and prompt suggestions shelf disappear automatically upon submitting the first prompt (or clicking any prompt chip), maintaining a focused chat view. Restored cleanly when clearing chat via the relocated header action button (`#aria-clear-chat`).
+- Tuition Fee Ledger Navigation Repaired: Fixed action chip routing for `nav:fees` / `nav:feedetails` to invoke `navigateToFeeDetails()` and activate `#divProfile_Fees` with `&view=fee`. Exported all navigation and composer control primitives (`navigateToFeeDetails`, `submitAriaMessage`, `showIframe`, `showOverview`, `showAcademicCalendar`, `navigateToProfileTab`, `setAriaGeneratingState`, `stopAriaGeneration`) onto `window`.
 - ReEcap Brand Identity: Replaced masthead and extension popup brand title text and styling with exact mathematical monospace `"𝚁𝚎𝙴𝚌𝚊𝚙"/"` glyph string.
 - Universal Alert Interceptor & In-UI Error Cards: Overrode `window.alert` in both Main World and isolated content script contexts and hooked ASP.NET AJAX `PageRequestManager.endRequest` to suppress raw HTML error popups (such as IIS 401 Unauthorized pages on Exam Details). Renders an elegant in-UI nightTab error hero card with clear status badges, context explanations, and one-click actions (Reload View, Academic Calendar, Return to Overview).
 - Universal Portal Server Error Recovery: Extended `observeAndRecoverServerError()` to detect 401 Unauthorized, 403 Forbidden, and 500 Internal Server Error pages directly loaded in child iframes or top-level windows, replacing raw server error traces with responsive nightTab error recovery cards.
@@ -12,6 +16,10 @@
 - Master shell layout on `data-reecap-master="true"` locks `html` and `body` to `100vh` on desktop with `overflow: hidden`, giving `.reecap-sidebar-col` and `.reecap-content-col` independent scroll containers with `overscroll-behavior: contain`.
 
 ## Recent Decisions
+- Streamlined Aria prompt composer into a distraction-free single input bar. Moved the Clear Chat button to the sidebar header alongside Refresh and Close.
+- Added full `AbortController` cancellation to Aria streaming, enabling students to cancel in-flight queries and stop generation immediately with the stop button.
+- Automatically dismiss the academic welcome hero card upon the first student prompt to keep conversational history uncluttered.
+- Route "Tuition Fee Ledger" action chips to `navigateToFeeDetails()` and `#divProfile_Fees` with `&view=fee`.
 - Intercept browser `window.alert` modal dialogs in the Main World before ASP.NET Ajax and jQuery error handlers execute, suppressing raw IIS XHTML error dumps and routing them to ReEcap in-UI state cards.
 - Restructured sidebar navigation into distinct sections: `Academics`, `Finance`, `Profile`, and `Account`. Profile now contains unique profile views (Bio-Data, Performance, Past Performance, Outings, Counseling, Disciplinary Action) without duplicating Backlogs (in Academics) or Fee Details (in Finance).
 - Sub-item navigation in Profile and Finance utilizes `REECAP_SWITCH_TAB` postMessage for instant view switching without iframe reloads when `StudentProfile.aspx` is active.
@@ -22,6 +30,7 @@
 ## Verification
 - `node --check extension/decorators.js`: PASS
 - `node --check extension/shared/aria.js`: PASS
+- `node tests/aria-composer.test.js`: PASS
 - `node tests/aria-markdown.test.js`: PASS (45 checks)
 - `node tests/theme-architecture.test.js`: PASS
 - `node tests/alert-interceptor.test.js`: PASS

@@ -1042,7 +1042,7 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
   /**
    * Streams a query to Aria AI edge endpoint with automatic fallback.
    */
-  async function streamAriaChat({ messages, dossier, onChunk, onDone, onError }) {
+  async function streamAriaChat({ messages, dossier, onChunk, onDone, onError, signal }) {
     const systemPrompt = buildSystemPrompt(dossier, true);
     const scrubbedMessages = (messages || []).map(m => ({
       role: m.role,
@@ -1064,7 +1064,8 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
           messages: payloadMessages,
           model: ARIA_DEFAULT_MODEL,
           stream: true
-        })
+        }),
+        signal: signal
       });
 
       if (!response.ok) {
@@ -1077,6 +1078,11 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       let fullText = '';
 
       while (true) {
+        if (signal && signal.aborted) {
+          reader.cancel().catch(() => {});
+          break;
+        }
+
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -1104,6 +1110,10 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
 
       if (typeof onDone === 'function') onDone(fullText);
     } catch (err) {
+      if (err.name === 'AbortError' || signal?.aborted) {
+        if (typeof onDone === 'function') onDone('Generation stopped.');
+        return;
+      }
       console.warn('ReEcap: Aria edge stream failed, falling back to local academic engine:', err);
       // Fallback: Generate grounded local response based on the student's dossier
       const fallbackResponse = generateLocalFallbackResponse(messages[messages.length - 1]?.content || '', dossier);
@@ -1367,17 +1377,64 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
     if (!actionKey) return;
     const [domain, verb, target] = actionKey.split(':');
 
+    // Reliable prompt submission helper
+    function submitPrompt(text) {
+      const input = document.getElementById('aria-input');
+      if (input) {
+        input.value = text;
+        if (typeof root.submitAriaMessage === 'function') {
+          root.submitAriaMessage();
+        } else if (typeof window !== 'undefined' && typeof window.submitAriaMessage === 'function') {
+          window.submitAriaMessage();
+        } else {
+          const form = document.getElementById('aria-composer');
+          if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+      }
+    }
+
     if (domain === 'nav') {
       const iframe = document.getElementById('capIframeId');
       const overview = document.getElementById('reecap-overview');
       const pageTitle = document.getElementById('reecap-page-title');
 
+      if (verb === 'overview') {
+        if (typeof root.showOverview === 'function') root.showOverview();
+        else if (typeof window !== 'undefined' && typeof window.showOverview === 'function') window.showOverview();
+        return;
+      }
+
+      if (verb === 'fees' || verb === 'feedetails' || actionKey === 'nav:fees' || actionKey === 'nav:feedetails') {
+        if (typeof root.navigateToFeeDetails === 'function') {
+          root.navigateToFeeDetails();
+          return;
+        } else if (typeof window !== 'undefined' && typeof window.navigateToFeeDetails === 'function') {
+          window.navigateToFeeDetails();
+          return;
+        }
+        // Direct navigation fallback to fee details with view=fee
+        if (typeof root.showIframe === 'function') root.showIframe();
+        else if (typeof window !== 'undefined' && typeof window.showIframe === 'function') window.showIframe();
+        if (iframe) {
+          const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
+          if (curSrc.includes('studentprofile.aspx')) {
+            try {
+              iframe.contentWindow?.postMessage({ type: 'REECAP_SWITCH_TAB', tabId: 'divProfile_Fees' }, '*');
+            } catch (e) {}
+          } else {
+            iframe.src = `${getPortalBaseUrl()}Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees`;
+          }
+          if (pageTitle) pageTitle.textContent = 'FEE DETAILS';
+        }
+        return;
+      }
+
       const routeMap = {
         attendance: { url: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', title: 'ATTENDANCE' },
         marks: { url: 'Academics/StudentMarksReport.aspx?scrid=15', title: 'MARKS REPORT' },
         timetable: { url: 'Academics/studenttimetableoption.aspx', title: 'TIMETABLE' },
-        fees: { url: 'Academics/StudentProfile.aspx?scrid=17#fees', title: 'FEE DETAILS' },
-        feedetails: { url: 'Academics/StudentProfile.aspx?scrid=17#fees', title: 'FEE DETAILS' },
+        fees: { url: 'Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees', title: 'FEE DETAILS' },
+        feedetails: { url: 'Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees', title: 'FEE DETAILS' },
         receipts: { url: 'FeePayments/studentreceipts.aspx?scrid=28', title: 'RECEIPTS' },
         backlogs: { url: 'Academics/studentbacklogs.aspx?scrid=4', title: 'BACKLOGS REPORT' },
         examviewer: { url: 'Examinations/RevalutionScriptViewer.aspx', title: 'VIEW ANSWER SHEET' },
@@ -1385,22 +1442,12 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         transactions: { url: 'feepayments/optransactions.aspx', title: 'ONLINE TRANSACTIONS' }
       };
 
-      if (verb === 'overview') {
-        if (typeof root.showOverview === 'function') root.showOverview();
-        return;
-      }
-
-      if (verb === 'fees' || verb === 'feedetails') {
-        if (typeof root.navigateToFeeDetails === 'function') {
-          root.navigateToFeeDetails();
-          return;
-        }
-      }
-
       const route = routeMap[verb];
       if (route && iframe) {
         if (typeof root.showIframe === 'function') {
           root.showIframe();
+        } else if (typeof window !== 'undefined' && typeof window.showIframe === 'function') {
+          window.showIframe();
         } else {
           if (overview) overview.style.setProperty('display', 'none', 'important');
           iframe.style.removeProperty('display');
@@ -1418,37 +1465,27 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
           l.classList.toggle('active', href.includes(route.url.toLowerCase()));
         });
       }
+      return;
     }
 
     if (domain === 'bunk_sim' || verb === 'bunk_sim') {
-      const input = document.getElementById('aria-input');
-      const form = document.getElementById('aria-composer');
-      if (input && form) {
-        input.value = "How is my attendance in each subject, and how many classes can I safely bunk?";
-        form.dispatchEvent(new Event('submit', { cancelable: true }));
-      }
+      submitPrompt("How is my attendance in each subject, and how many classes can I safely bunk?");
+      return;
     }
 
     if (domain === 'target_calc' || verb === 'target_calc') {
-      const input = document.getElementById('aria-input');
-      const form = document.getElementById('aria-composer');
-      if (input && form) {
-        input.value = "What SGPA do I need in Semester 3 to achieve an overall 8.0 CGPA?";
-        form.dispatchEvent(new Event('submit', { cancelable: true }));
-      }
+      submitPrompt("What SGPA do I need in Semester 3 to achieve an overall 8.0 CGPA?");
+      return;
     }
 
     if (domain === 'weak_subjects' || verb === 'weak_subjects') {
-      const input = document.getElementById('aria-input');
-      const form = document.getElementById('aria-composer');
-      if (input && form) {
-        input.value = "What are my weak subjects and where do I need to improve?";
-        form.dispatchEvent(new Event('submit', { cancelable: true }));
-      }
+      submitPrompt("What are my weak subjects and where do I need to improve?");
+      return;
     }
 
     if (domain === 'export_dossier' || verb === 'export_dossier') {
       window.print();
+      return;
     }
   }
 
