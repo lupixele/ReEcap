@@ -87,8 +87,10 @@ function initDecorators() {
             if (isOverview) {
               iframe.style.setProperty('height', '1px', 'important');
             } else {
-              const targetHeight = Math.max(250, Math.ceil(e.data.height));
-              iframe.style.setProperty('height', targetHeight + 'px', 'important');
+              const targetHeight = Math.ceil(e.data.height);
+              if (targetHeight > 0) {
+                iframe.style.setProperty('height', targetHeight + 'px', 'important');
+              }
             }
           }
         }
@@ -135,7 +137,7 @@ function initDecorators() {
            </button>
            <div class="brand-identity">
              <div class="eyebrow">${titleEyebrow}</div>
-             <h1 class="brand-title">ReEcap</h1>
+             <h1 class="brand-title">𝚁𝚎𝙴𝚌𝚊𝚙</h1>
            </div>
          `;
 
@@ -266,6 +268,10 @@ function initDecorators() {
       buildSidebar();
       rebuildMainLayout();
     } else {
+      // Tag embedded iframe document
+      document.documentElement.classList.add('reecap-in-frame');
+      if (document.body) document.body.classList.add('reecap-in-frame');
+
       // Running inside an iframe — send title to parent and hide the legacy MainHead
       const sendTitle = () => {
         const mainHead = document.querySelector('.MainHead');
@@ -280,6 +286,93 @@ function initDecorators() {
         sendTitle();
         // Also retry after a short delay in case the title is rendered async
         setTimeout(sendTitle, 300);
+      }
+
+      // Universal Content Height Measurer to eliminate empty scrolls across all child pages
+      const getExactContentHeight = () => {
+        const body = document.body;
+        if (!body) return 0;
+        let maxBottom = 0;
+        const selectors = [
+          '.reecap-biodata',
+          '#reecap-timetable',
+          '.reecap-payment-page',
+          '.reecap-pane-active',
+          '#divProfile_Fees',
+          '#divProfile_BioData',
+          '.ajax__tab_container',
+          '[id*="TabContainer"]',
+          '#tblReport',
+          '#divdetails',
+          'table',
+          'form',
+          '.container'
+        ];
+        const elements = body.querySelectorAll(selectors.join(', '));
+        elements.forEach(el => {
+          if (el.offsetParent === null && el.style.display === 'none') return;
+          const rect = el.getBoundingClientRect();
+          if (rect.height > 0) {
+            const bottom = rect.bottom + window.scrollY;
+            if (bottom > maxBottom) maxBottom = bottom;
+          }
+        });
+        if (maxBottom <= 50) {
+          const root = document.forms[0] || body;
+          Array.from(root.children).forEach(child => {
+            if (child.offsetParent === null && child.style.display === 'none') return;
+            const rect = child.getBoundingClientRect();
+            if (rect.height > 0) {
+              const bottom = rect.bottom + window.scrollY;
+              if (bottom > maxBottom) maxBottom = bottom;
+            }
+          });
+        }
+        return Math.ceil(maxBottom + 16);
+      };
+
+      const sendAutoResize = () => {
+        try {
+          const h = getExactContentHeight();
+          if (h > 0 && window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'REECAP_RESIZE', height: h }, '*');
+          }
+        } catch (e) {}
+      };
+
+      window.__reecapSendResize = sendAutoResize;
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          sendAutoResize();
+          setTimeout(sendAutoResize, 200);
+          setTimeout(sendAutoResize, 600);
+        });
+      } else {
+        sendAutoResize();
+        setTimeout(sendAutoResize, 200);
+        setTimeout(sendAutoResize, 600);
+      }
+
+      window.addEventListener('load', () => {
+        sendAutoResize();
+        setTimeout(sendAutoResize, 300);
+      });
+
+      window.addEventListener('message', (e) => {
+        if (e.data && (e.data.type === 'REECAP_REQUEST_RESIZE' || e.data.type === 'REECAP_SWITCH_TAB')) {
+          sendAutoResize();
+          setTimeout(sendAutoResize, 100);
+        }
+      });
+
+      if (document.body) {
+        try {
+          const resizeObserver = new MutationObserver(() => {
+            sendAutoResize();
+          });
+          resizeObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+        } catch (e) {}
       }
 
       // Forward mouse wheel events to parent content container for seamless independent scrolling
@@ -1987,21 +2080,155 @@ function handleAcademicCalendarPage() {
 }
 
 
+function injectReceiptsOverrideStyles() {
+  if (document.getElementById('reecap-receipts-aggressive-override')) return;
+  const style = document.createElement('style');
+  style.id = 'reecap-receipts-aggressive-override';
+  style.textContent = `
+    html body .ajax__tab_container,
+    html body .ajax__tab_xp,
+    html body .ajax__tab_default,
+    html body [class*="ajax__tab_container"],
+    html body [class*="ajax__tab_xp"],
+    html body [class*="ajax__tab_default"],
+    html body [id*="TabContainer"],
+    html body [id*="tabContainer"] {
+      background: transparent !important;
+      background-image: none !important;
+      background-color: transparent !important;
+      border: none !important;
+    }
+    html body .ajax__tab_header,
+    html body [class*="ajax__tab_header"],
+    html body [id*="TabContainer"][id*="header"],
+    html body [id*="tabContainer"][id*="header"],
+    html body [id*="Tab"][id*="header"] {
+      background: var(--surface-card, #1c2620) !important;
+      background-image: none !important;
+      background-color: var(--surface-card, #1c2620) !important;
+      border: var(--card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
+      border-radius: var(--radius-lg, 12px) !important;
+      padding: 8px !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      box-shadow: var(--card-shadow, none) !important;
+      height: auto !important;
+    }
+    html body .ajax__tab_outer,
+    html body .ajax__tab_inner,
+    html body [class*="ajax__tab_outer"],
+    html body [class*="ajax__tab_inner"] {
+      background: transparent !important;
+      background-image: none !important;
+      background-color: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: inline-flex !important;
+      height: auto !important;
+    }
+    html body .ajax__tab_tab,
+    html body [class*="ajax__tab_tab"],
+    html body a[id*="__tab_"] {
+      background: var(--surface-sunken, #141d18) !important;
+      background-image: none !important;
+      background-color: var(--surface-sunken, #141d18) !important;
+      color: var(--text-secondary, #9eb3a6) !important;
+      border: 1px solid var(--border, rgba(255, 255, 255, 0.1)) !important;
+      border-radius: var(--radius-md, 8px) !important;
+      padding: 8px 16px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      text-decoration: none !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      height: auto !important;
+    }
+    html body .ajax__tab_tab:hover,
+    html body [class*="ajax__tab_tab"]:hover,
+    html body a[id*="__tab_"]:hover {
+      background: var(--surface-card, #1c2620) !important;
+      color: var(--text-primary, #ffffff) !important;
+    }
+    html body .ajax__tab_active .ajax__tab_tab,
+    html body [class*="ajax__tab_active"] [class*="ajax__tab_tab"] {
+      background: var(--accent, #e57373) !important;
+      background-image: none !important;
+      background-color: var(--accent, #e57373) !important;
+      color: var(--accent-text, #ffffff) !important;
+      border-color: var(--accent, #e57373) !important;
+    }
+    html body .ajax__tab_tab span,
+    html body [class*="ajax__tab_tab"] span,
+    html body a[id*="__tab_"] span {
+      background: transparent !important;
+      background-image: none !important;
+      color: inherit !important;
+    }
+    html body .ajax__tab_body,
+    html body [class*="ajax__tab_body"],
+    html body div[id*="TabContainer"][id*="body"],
+    html body div[id*="tabContainer"][id*="body"] {
+      background: var(--surface-card, #1c2620) !important;
+      background-image: none !important;
+      background-color: var(--surface-card, #1c2620) !important;
+      border: var(--card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
+      border-radius: var(--radius-lg, 12px) !important;
+      padding: 24px !important;
+      box-shadow: var(--card-shadow, none) !important;
+      color: var(--text-primary, #ffffff) !important;
+    }
+  `;
+  (document.head || document.documentElement).appendChild(style);
+}
+
+function sanitizeReceiptsTheme() {
+  injectReceiptsOverrideStyles();
+  const elements = document.querySelectorAll('[class*="ajax__tab"], [id*="TabContainer"], [id*="tabContainer"]');
+  elements.forEach(el => {
+    if (el.style.backgroundImage) el.style.backgroundImage = 'none';
+    if (el.style.backgroundColor && /5dade2|70b4e6|89c4ff|112,\s*180,\s*230/i.test(el.style.backgroundColor)) {
+      el.style.removeProperty('background-color');
+    }
+    if (el.style.background && /5dade2|70b4e6|89c4ff|112,\s*180,\s*230|gradient/i.test(el.style.background)) {
+      el.style.removeProperty('background');
+    }
+    if (el.style.borderColor && /5dade2|70b4e6|89c4ff|112,\s*180,\s*230/i.test(el.style.borderColor)) {
+      el.style.removeProperty('border-color');
+    }
+  });
+}
+
 function decorateReceiptsPage() {
   try {
     window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'RECEIPTS' }, '*');
   } catch (e) {}
 
+  sanitizeReceiptsTheme();
+
   const sendReceiptsResize = () => {
     try {
-      const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 400);
-      window.parent.postMessage({ type: 'REECAP_RESIZE', height: h + 40 }, '*');
+      sanitizeReceiptsTheme();
+      if (typeof window.__reecapSendResize === 'function') {
+        window.__reecapSendResize();
+        return;
+      }
+      const container = document.querySelector('[class*="ajax__tab_container"], [id*="TabContainer"]') || document.forms[0] || document.body;
+      const h = container.offsetHeight || container.scrollHeight || 300;
+      window.parent.postMessage({ type: 'REECAP_RESIZE', height: h + 16 }, '*');
     } catch (e) {}
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', sendReceiptsResize);
+    document.addEventListener('DOMContentLoaded', () => {
+      sanitizeReceiptsTheme();
+      sendReceiptsResize();
+    });
   } else {
+    sanitizeReceiptsTheme();
     sendReceiptsResize();
   }
   setTimeout(sendReceiptsResize, 300);
@@ -2009,10 +2236,21 @@ function decorateReceiptsPage() {
 
   document.addEventListener('click', (e) => {
     if (e.target && e.target.closest('[class*="ajax__tab"]')) {
+      setTimeout(sanitizeReceiptsTheme, 50);
       setTimeout(sendReceiptsResize, 100);
       setTimeout(sendReceiptsResize, 400);
     }
   });
+
+  const tabContainer = document.querySelector('[class*="ajax__tab_container"], [id*="TabContainer"]');
+  if (tabContainer) {
+    try {
+      const ro = new MutationObserver(() => {
+        sanitizeReceiptsTheme();
+      });
+      ro.observe(tabContainer, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    } catch (e) {}
+  }
 
   window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'REECAP_REQUEST_RESIZE') {
@@ -2540,10 +2778,12 @@ function buildTimetableDashboard(tbl) {
     html += `<div class="tt-cell tt-header tt-period-head" role="columnheader"><span>${String(idx + 1).padStart(2, '0')}</span><time>${escapeAttr(label)}</time></div>`;
   });
 
-  for (const day of sortedDays) {
+  sortedDays.forEach((day, dayIndex) => {
     const slots = layoutByDay[day];
-    if (!slots) continue;
+    if (!slots) return;
     const isToday = (day === todayName) ? 'is-today' : '';
+    const isUpperRow = dayIndex < 2;
+    const tooltipDir = isUpperRow ? ' tt-tooltip-below' : '';
 
     html += `<div class="tt-cell tt-day ${isToday}" role="rowheader"><span>${escapeAttr(day.slice(0, 3))}</span><strong>${escapeAttr(day)}</strong></div>`;
 
@@ -2573,7 +2813,7 @@ function buildTimetableDashboard(tbl) {
       const ttAriaLabel = `${periodLabel}, ${slot.timeRange} — ${slot.allCodes}${slot.details.name ? ', ' + slot.details.name : ''}${slot.faculty ? ', taught by ' + slot.faculty : ''}${slot.room ? ', in ' + slot.room : ''}`;
 
       html += `
-        <div class="tt-cell tt-class ${isToday}${slot.span > 1 ? ' tt-merged' : ''}${tooltipEdge}" style="${spanStyle} --palette: ${slot.palette};" tabindex="0" role="gridcell" aria-label="${escapeAttr(ttAriaLabel)}">
+        <div class="tt-cell tt-class ${isToday}${slot.span > 1 ? ' tt-merged' : ''}${tooltipEdge}${tooltipDir}" style="${spanStyle} --palette: ${slot.palette};" tabindex="0" role="gridcell" aria-label="${escapeAttr(ttAriaLabel)}">
           <div class="subject-card__top">
             <span class="subject-card__code">${escapeAttr(slot.allCodes)}</span>
             <span class="subject-card__dot"></span>
@@ -2591,7 +2831,7 @@ function buildTimetableDashboard(tbl) {
         </div>
       `;
     }
-  }
+  });
 
   html += `</div></div>`;
 
@@ -2660,6 +2900,33 @@ function buildTimetableDashboard(tbl) {
   });
 
   tbl.parentElement.insertBefore(dashboard, tbl);
+
+  // Dynamic boundary check to prevent tooltip popup clipping
+  const gridWrap = dashboard.querySelector('.tt-grid-wrap');
+  if (gridWrap) {
+    dashboard.querySelectorAll('.tt-class').forEach(cell => {
+      const checkSpace = () => {
+        const wrapRect = gridWrap.getBoundingClientRect();
+        const cellRect = cell.getBoundingClientRect();
+        if (cellRect.top - wrapRect.top < 210) {
+          cell.classList.add('tt-tooltip-below');
+        } else {
+          cell.classList.remove('tt-tooltip-below');
+        }
+      };
+      cell.addEventListener('mouseenter', checkSpace);
+      cell.addEventListener('focusin', checkSpace);
+    });
+  }
+
+  // Measure exact rendered height and inform parent shell
+  if (typeof window.__reecapSendResize === 'function') {
+    window.__reecapSendResize();
+    setTimeout(window.__reecapSendResize, 100);
+  } else if (window.parent && window.parent !== window) {
+    const h = dashboard.offsetHeight || dashboard.scrollHeight;
+    if (h > 0) window.parent.postMessage({ type: 'REECAP_RESIZE', height: h + 24 }, '*');
+  }
 }
 
 // Color guide section removed per user preference.
@@ -2974,11 +3241,23 @@ function buildProfileDashboard(accordion) {
 
 function sendProfileResize() {
   try {
-    const h = Math.max(
-      document.body.scrollHeight || 0,
-      document.documentElement.scrollHeight || 0,
-      (document.getElementById('tblReport')?.scrollHeight || 0) + 120
-    );
+    if (typeof window.__reecapSendResize === 'function') {
+      window.__reecapSendResize();
+      return;
+    }
+    const bioCard = document.querySelector('.reecap-biodata') || document.getElementById('divProfile_BioData');
+    const feeCard = document.getElementById('divProfile_Fees');
+    const activePane = document.querySelector('.reecap-pane-active');
+    let h = 0;
+    if (activePane && activePane.offsetHeight > 0) {
+      h = activePane.offsetHeight + 40;
+    } else if (bioCard && bioCard.offsetHeight > 0) {
+      h = bioCard.offsetHeight + 40;
+    } else if (feeCard && feeCard.offsetHeight > 0) {
+      h = feeCard.offsetHeight + 40;
+    } else {
+      h = Math.max(document.body.scrollHeight || 0, 400);
+    }
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ type: 'REECAP_RESIZE', height: h }, '*');
     }
@@ -3068,7 +3347,18 @@ function buildProfileTabs(accordion) {
   tabContainer.id = 'reecap-profile-dashboard';
   tabContainer.className = 'reecap-tabs';
 
+  // In embedded ReEcap shell, tabs are displayed in the sidebar so hide in-content strip
+  const inFrame = window.parent && window.parent !== window;
+  if (inFrame) {
+    tabContainer.style.setProperty('display', 'none', 'important');
+  }
+
   const activeHash = (window.location.hash || '').toLowerCase();
+  const isFeeOnly = activeHash.includes('fee') || window.location.search.toLowerCase().includes('view=fee');
+  if (isFeeOnly) {
+    document.documentElement.setAttribute('data-fee-only-view', 'true');
+  }
+
   let defaultActiveIndex = 0;
   if (activeHash.includes('fee')) {
     const feeIndex = availableTabs.findIndex(t => t.id === 'divProfile_Fees');
@@ -3076,6 +3366,21 @@ function buildProfileTabs(accordion) {
   } else if (activeHash.includes('backlog')) {
     const bIndex = availableTabs.findIndex(t => t.id === 'divProfile_Backlogs');
     if (bIndex >= 0) defaultActiveIndex = bIndex;
+  } else if (activeHash.includes('present')) {
+    const pIndex = availableTabs.findIndex(t => t.id === 'divProfile_Present' || t.fallbackId === 'divProfile_PresentSem');
+    if (pIndex >= 0) defaultActiveIndex = pIndex;
+  } else if (activeHash.includes('past')) {
+    const pIndex = availableTabs.findIndex(t => t.id === 'divProfile_Past' || t.fallbackId === 'divProfile_PastSem');
+    if (pIndex >= 0) defaultActiveIndex = pIndex;
+  } else if (activeHash.includes('outing')) {
+    const oIndex = availableTabs.findIndex(t => t.id === 'divProfile_Outings');
+    if (oIndex >= 0) defaultActiveIndex = oIndex;
+  } else if (activeHash.includes('counsel')) {
+    const cIndex = availableTabs.findIndex(t => t.id === 'divProfile_Counseling');
+    if (cIndex >= 0) defaultActiveIndex = cIndex;
+  } else if (activeHash.includes('disciplinary')) {
+    const dIndex = availableTabs.findIndex(t => t.id === 'divProfile_DisciplinaryAction' || t.fallbackId === 'divProfile_Disciplinary');
+    if (dIndex >= 0) defaultActiveIndex = dIndex;
   }
 
   const tabButtons = [];
@@ -3103,13 +3408,18 @@ function buildProfileTabs(accordion) {
       tab.pane.classList.add('reecap-pane-active');
       tab.pane.style.setProperty('display', 'block', 'important');
 
+      const isFee = tab.id === 'divProfile_Fees';
+      document.documentElement.setAttribute('data-fee-only-view', isFee ? 'true' : 'false');
+
       // Update parent title if specific tab
       if (tab.id === 'divProfile_Fees') {
         try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'FEE DETAILS' }, '*'); } catch (err) {}
       } else if (tab.id === 'divProfile_Backlogs') {
         try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'BACKLOGS' }, '*'); } catch (err) {}
+      } else if (tab.id === 'divProfile_BioData') {
+        try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'BIO-DATA' }, '*'); } catch (err) {}
       } else {
-        try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'STUDENT PROFILE' }, '*'); } catch (err) {}
+        try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: tab.label.toUpperCase() }, '*'); } catch (err) {}
       }
 
       sendProfileResize();
@@ -3140,7 +3450,7 @@ function buildProfileTabs(accordion) {
   window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'REECAP_SWITCH_TAB') {
       const targetId = e.data.tabId;
-      const targetIndex = availableTabs.findIndex(t => t.id === targetId);
+      const targetIndex = availableTabs.findIndex(t => t.id === targetId || t.fallbackId === targetId);
       if (targetIndex >= 0 && tabButtons[targetIndex]) {
         tabButtons[targetIndex].click();
       }
@@ -4533,21 +4843,50 @@ if (window.self !== window.top) {
     });
 
     const body = document.body;
-    const docEl = document.documentElement;
-    if (!body || !docEl) return 400;
+    if (!body) return 300;
 
     // Purge legacy empty br spacers
     document.querySelectorAll('form > center > div > br, form > center > br, form > br').forEach(br => br.remove());
 
-    // Compute standard document height accurately without offsetTop truncation
-    const h = Math.max(
-      body.scrollHeight || 0,
-      docEl.scrollHeight || 0,
-      body.offsetHeight || 0,
-      docEl.offsetHeight || 0
-    );
+    let maxBottom = 0;
+    const selectors = [
+      '.reecap-biodata',
+      '#reecap-timetable',
+      '.reecap-payment-page',
+      '.reecap-pane-active',
+      '#divProfile_Fees',
+      '#divProfile_BioData',
+      '.ajax__tab_container',
+      '[id*="TabContainer"]',
+      '#tblReport',
+      '#divdetails',
+      'table',
+      'form',
+      '.container'
+    ];
+    const elements = body.querySelectorAll(selectors.join(', '));
+    elements.forEach(el => {
+      if (el.offsetParent === null && el.style.display === 'none') return;
+      const rect = el.getBoundingClientRect();
+      if (rect.height > 0) {
+        const bottom = rect.bottom + window.scrollY;
+        if (bottom > maxBottom) maxBottom = bottom;
+      }
+    });
 
-    return Math.max(350, Math.ceil(h + 24));
+    if (maxBottom <= 50) {
+      const root = document.forms[0] || body;
+      Array.from(root.children).forEach(child => {
+        if (child.offsetParent === null && child.style.display === 'none') return;
+        const rect = child.getBoundingClientRect();
+        if (rect.height > 0) {
+          const bottom = rect.bottom + window.scrollY;
+          if (bottom > maxBottom) maxBottom = bottom;
+        }
+      });
+    }
+
+    return Math.max(120, Math.ceil(maxBottom + 16));
   }
 
   function reportIframeHeight() {
@@ -4691,7 +5030,8 @@ function buildSidebar() {
   const groups = {
     'Academics': ['SEMESTER CALENDAR', 'ACADEMIC CALENDAR', 'ACADEMIC CALENDER', 'ATTENDANCE', 'TIMETABLE', 'COURSE REGISTRATION', 'MARKS', 'LESSON PLAN', 'EXAMS DETAILS', 'HALLTICKET', 'VIEW ANSWER SHEET', 'VIEW EXAM PAPER', 'BACKLOGS'],
     'Finance': ['FEE DETAILS', 'ONLINE PAYMENT', 'COLLEGE FEE', 'EXAM FEE', 'RE-VALUATION', 'ONLINE TRANSACTIONS', 'RECEIPTS'],
-    'Account': ['PROFILE', 'HOSTEL ROOM BOOKING', 'LIBRARY BOOKS', 'BOOK SEARCH']
+    'Profile': ['BIO-DATA', 'PERFORMANCE', 'PAST PERFORMANCE', 'OUTINGS', 'COUNSELING', 'DISCIPLINARY ACTION'],
+    'Account': ['HOSTEL ROOM BOOKING', 'LIBRARY BOOKS', 'BOOK SEARCH']
   };
   
   const icons = {
@@ -4718,6 +5058,12 @@ function buildSidebar() {
     'ONLINE TRANSACTIONS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>',
     'RECEIPTS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
     'PROFILE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+    'BIO-DATA': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+    'PERFORMANCE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+    'PAST PERFORMANCE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path></svg>',
+    'OUTINGS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>',
+    'COUNSELING': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+    'DISCIPLINARY ACTION': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
     'HOSTEL ROOM BOOKING': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
     'LIBRARY BOOKS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>',
     'BOOK SEARCH': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>'
@@ -4725,7 +5071,7 @@ function buildSidebar() {
 
   const genericIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
 
-  const categorized = { 'Academics': [], 'Finance': [], 'Account': [] };
+  const categorized = { 'Academics': [], 'Finance': [], 'Profile': [], 'Account': [] };
   let profileItem = null;
 
   links.forEach(link => {
@@ -4755,6 +5101,27 @@ function buildSidebar() {
     if (!matched) categorized['Account'].push({ text, link });
   });
 
+  // Populate dedicated Profile section with non-duplicate sub-tabs
+  if (profileItem || isStudentRole()) {
+    const profileSubTabs = [
+      { text: 'BIO-DATA', tabId: 'divProfile_BioData', title: 'BIO-DATA' },
+      { text: 'PERFORMANCE', tabId: 'divProfile_Present', title: 'PERFORMANCE' },
+      { text: 'PAST PERFORMANCE', tabId: 'divProfile_Past', title: 'PAST PERFORMANCE' },
+      { text: 'OUTINGS', tabId: 'divProfile_Outings', title: 'OUTINGS' },
+      { text: 'COUNSELING', tabId: 'divProfile_Counseling', title: 'COUNSELING' },
+      { text: 'DISCIPLINARY ACTION', tabId: 'divProfile_DisciplinaryAction', title: 'DISCIPLINARY ACTION' }
+    ];
+
+    profileSubTabs.forEach(sub => {
+      const a = document.createElement('a');
+      a.className = 'menuLink';
+      a.href = `Academics/StudentProfile.aspx?scrid=17#${sub.tabId}`;
+      a.setAttribute('href', `Academics/StudentProfile.aspx?scrid=17#${sub.tabId}`);
+      a.textContent = sub.text;
+      categorized['Profile'].push({ text: sub.text, link: a, tabId: sub.tabId, title: sub.title });
+    });
+  }
+
   // Ensure ACADEMIC CALENDAR is always present in Academics
   const hasCal = categorized['Academics'].some(it =>
     it.text.includes('CALENDAR') || it.text.includes('CALENDER')
@@ -4768,7 +5135,7 @@ function buildSidebar() {
     categorized['Academics'].unshift({ text: 'ACADEMIC CALENDAR', link: calLink });
   }
 
-  chrome.storage.sync.get({ sidebarOpen: { Academics: true, Finance: false, Account: false }, reecapHiddenNav: [] }, ({ sidebarOpen, reecapHiddenNav = [] }) => {
+  chrome.storage.sync.get({ sidebarOpen: { Academics: true, Finance: false, Profile: false, Account: false }, reecapHiddenNav: [] }, ({ sidebarOpen = {}, reecapHiddenNav = [] }) => {
     menu.innerHTML = '';
 
     const navigationHeading = document.createElement('li');
@@ -4783,25 +5150,24 @@ function buildSidebar() {
     `;
     menu.appendChild(navigationHeading);
 
-
-    // Beautiful UI: Fast Search Bar & Command Palette (Ctrl+K)
+    // Fast Search Bar & Command Palette
     const overviewIcon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg>';
     
     const searchTargets = [
-      { id: 'overview', title: 'Overview', group: 'Dashboard', icon: overviewIcon, action: () => showOverview() },
-      ...(profileItem ? [{ id: 'profile', title: 'Profile', group: 'Account', icon: icons.PROFILE || genericIcon, action: () => profileItem.link.click() }] : [])
+      { id: 'overview', title: 'Overview', group: 'Dashboard', icon: overviewIcon, action: () => showOverview() }
     ];
 
     for (const [groupName, items] of Object.entries(categorized)) {
       items.forEach(it => {
         const isCal = it.text.includes('CALENDAR') || it.text.includes('CALENDER');
         const isFeeDetails = it.text.trim().toUpperCase() === 'FEE DETAILS';
+        const isProfileSubTab = Boolean(it.tabId);
         searchTargets.push({
           id: it.text.toLowerCase().replace(/\s+/g, '-'),
           title: it.text,
           group: groupName,
           icon: icons[it.text] || genericIcon,
-          action: isCal ? () => showAcademicCalendar() : (isFeeDetails ? () => navigateToFeeDetails() : () => it.link.click())
+          action: isCal ? () => showAcademicCalendar() : (isFeeDetails ? () => navigateToFeeDetails() : (isProfileSubTab ? () => navigateToProfileTab(it.tabId, it.title || it.text) : () => it.link.click()))
         });
       });
     }
@@ -4838,31 +5204,6 @@ function buildSidebar() {
       });
       overviewLi.appendChild(overviewA);
       menu.appendChild(overviewLi);
-    }
-
-    if (profileItem) {
-      const profileLink = profileItem.link;
-      profileLink.className = 'reecap-sidebar-link';
-      let profileRouteKey = null;
-      try {
-        if (window.__reecap_theme && typeof window.__reecap_theme.routeKeyForHref === 'function') {
-          profileRouteKey = window.__reecap_theme.routeKeyForHref(profileLink.getAttribute('href') || '');
-        }
-      } catch (e) {}
-      if (profileRouteKey) profileLink.setAttribute('data-route-key', profileRouteKey);
-      profileLink.title = profileItem.text;
-      profileLink.innerHTML = `<span class="reecap-sidebar-icon">${icons.PROFILE || genericIcon}</span><span class="reecap-sidebar-text">${profileItem.text}</span>`;
-      profileLink.addEventListener('click', () => {
-        if (typeof showIframe === 'function') showIframe();
-        if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
-      });
-      const profileLi = document.createElement('li');
-      profileLi.dataset.navKey = 'PROFILE';
-      if (Array.isArray(reecapHiddenNav) && reecapHiddenNav.includes('PROFILE')) {
-        profileLi.classList.add('is-nav-hidden');
-      }
-      profileLi.appendChild(profileLink);
-      menu.appendChild(profileLi);
     }
 
     const divider = document.createElement('div');
@@ -4915,6 +5256,7 @@ function buildSidebar() {
         a.title = item.text;
         const isCal = item.text.includes('CALENDAR') || item.text.includes('CALENDER');
         const isFeeDetails = item.text.trim().toUpperCase() === 'FEE DETAILS';
+        const isProfileSubTab = Boolean(item.tabId);
         a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>`;
         a.addEventListener('click', (e) => {
           if (isCal) {
@@ -4923,6 +5265,9 @@ function buildSidebar() {
           } else if (isFeeDetails) {
             e.preventDefault();
             navigateToFeeDetails();
+          } else if (isProfileSubTab) {
+            e.preventDefault();
+            navigateToProfileTab(item.tabId, item.title || item.text);
           } else {
             if (typeof showIframe === 'function') showIframe();
           }
@@ -5021,6 +5366,28 @@ function buildSidebar() {
   });
 }
 
+function navigateToProfileTab(tabId, title) {
+  if (typeof showIframe === 'function') showIframe();
+  const iframe = document.getElementById('capIframeId');
+  if (!iframe) return;
+
+  const pageTitle = document.getElementById('reecap-page-title');
+  if (pageTitle && title) pageTitle.textContent = title;
+
+  document.querySelectorAll('.reecap-sidebar-link').forEach(link => {
+    link.classList.toggle('active', link.textContent.trim().toUpperCase() === title.trim().toUpperCase());
+  });
+
+  const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
+  if (curSrc.includes('studentprofile.aspx')) {
+    try {
+      iframe.contentWindow?.postMessage({ type: 'REECAP_SWITCH_TAB', tabId }, '*');
+    } catch (e) {}
+  } else {
+    iframe.src = `Academics/StudentProfile.aspx?scrid=17#${tabId}`;
+  }
+}
+
 function navigateToFeeDetails() {
   if (typeof showIframe === 'function') showIframe();
   const iframe = document.getElementById('capIframeId');
@@ -5043,7 +5410,7 @@ function navigateToFeeDetails() {
       iframe.contentWindow?.postMessage({ type: 'REECAP_SWITCH_TAB', tabId: 'divProfile_Fees' }, '*');
     } catch (e) {}
   } else {
-    iframe.src = 'Academics/StudentProfile.aspx?scrid=17#fees';
+    iframe.src = 'Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees';
   }
 }
 

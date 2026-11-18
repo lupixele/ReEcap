@@ -671,8 +671,8 @@ li.is-expanded .reecap-submenu-container {
 
 .brand-title {
   margin: 0;
-  font-family: var(--font-sans), sans-serif;
-  font-size: 30px;
+  font-family: var(--font-mono), monospace, system-ui, sans-serif;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-primary);
@@ -1575,22 +1575,31 @@ input[type=button]:active,
    AjaxControlToolkit TabContainer & Receipts Theming (studentreceipts.aspx)
    Neutralize vanilla blue leaks and style into nightTab architecture
    ========================================================================== */
-.ajax__tab_container,
-.ajax__tab_xp,
-.ajax__tab_default,
-[class*="ajax__tab_container"],
-[class*="ajax__tab_xp"],
-[class*="ajax__tab_default"] {
+html body .ajax__tab_container,
+html body .ajax__tab_xp,
+html body .ajax__tab_default,
+html body [class*="ajax__tab_container"],
+html body [class*="ajax__tab_xp"],
+html body [class*="ajax__tab_default"],
+html body [id*="TabContainer"],
+html body [id*="tabContainer"] {
   background: transparent !important;
   background-image: none !important;
+  background-color: transparent !important;
   border: none !important;
   font-family: var(--font-sans), system-ui, sans-serif !important;
 }
 
-.ajax__tab_header,
-[class*="ajax__tab_header"] {
+html body .ajax__tab_xp .ajax__tab_header,
+html body [class*="ajax__tab"] [class*="ajax__tab_header"],
+html body [class*="ajax__tab_header"],
+html body [id*="TabContainer"][id*="header"],
+html body [id*="tabContainer"][id*="header"],
+html body [id*="Tab"][id*="header"],
+html body .ajax__tab_header {
   background: var(--surface-card) !important;
   background-image: none !important;
+  background-color: var(--surface-card) !important;
   border: var(--card-border) !important;
   border-radius: var(--radius-lg, 12px) !important;
   padding: 8px !important;
@@ -1603,23 +1612,30 @@ input[type=button]:active,
   height: auto !important;
 }
 
-.ajax__tab_outer,
-.ajax__tab_inner,
-[class*="ajax__tab_outer"],
-[class*="ajax__tab_inner"] {
+html body .ajax__tab_xp .ajax__tab_outer,
+html body .ajax__tab_xp .ajax__tab_inner,
+html body [class*="ajax__tab"] [class*="ajax__tab_outer"],
+html body [class*="ajax__tab"] [class*="ajax__tab_inner"],
+html body [class*="ajax__tab_outer"],
+html body [class*="ajax__tab_inner"] {
   background: transparent !important;
   background-image: none !important;
+  background-color: transparent !important;
   border: none !important;
+  box-shadow: none !important;
   padding: 0 !important;
   margin: 0 !important;
   display: inline-flex !important;
   height: auto !important;
 }
 
-.ajax__tab_tab,
-[class*="ajax__tab_tab"] {
+html body .ajax__tab_xp .ajax__tab_tab,
+html body [class*="ajax__tab"] [class*="ajax__tab_tab"],
+html body [class*="ajax__tab_tab"],
+html body a[id*="__tab_"] {
   background: var(--surface-sunken) !important;
   background-image: none !important;
+  background-color: var(--surface-sunken) !important;
   color: var(--text-secondary) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-md, 8px) !important;
@@ -1636,28 +1652,35 @@ input[type=button]:active,
   height: auto !important;
 }
 
-.ajax__tab_tab:hover,
-[class*="ajax__tab_tab"]:hover {
+html body .ajax__tab_xp .ajax__tab_tab:hover,
+html body [class*="ajax__tab"] [class*="ajax__tab_tab"]:hover,
+html body [class*="ajax__tab_tab"]:hover,
+html body a[id*="__tab_"]:hover {
   background: var(--surface-card) !important;
+  background-color: var(--surface-card) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-hover, var(--border)) !important;
 }
 
-.ajax__tab_active .ajax__tab_tab,
-.ajax__tab_active [class*="ajax__tab_tab"],
-[class*="ajax__tab_active"] .ajax__tab_tab,
-[class*="ajax__tab_active"] [class*="ajax__tab_tab"] {
+html body .ajax__tab_xp .ajax__tab_active .ajax__tab_tab,
+html body [class*="ajax__tab"] [class*="ajax__tab_active"] [class*="ajax__tab_tab"],
+html body [class*="ajax__tab_active"] [class*="ajax__tab_tab"],
+html body [class*="ajax__tab_active"] .ajax__tab_tab,
+html body .ajax__tab_active .ajax__tab_tab {
   background: var(--accent) !important;
   background-image: none !important;
+  background-color: var(--accent) !important;
   color: var(--accent-text, #ffffff) !important;
   border-color: var(--accent) !important;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent) !important;
 }
 
-.ajax__tab_tab span,
-[class*="ajax__tab_tab"] span {
+html body .ajax__tab_tab span,
+html body [class*="ajax__tab_tab"] span,
+html body a[id*="__tab_"] span {
   background: transparent !important;
   background-image: none !important;
+  background-color: transparent !important;
   padding: 0 !important;
   margin: 0 !important;
   color: inherit !important;
@@ -1665,10 +1688,16 @@ input[type=button]:active,
   font-size: inherit !important;
 }
 
-.ajax__tab_body,
-[class*="ajax__tab_body"] {
+html body .ajax__tab_xp .ajax__tab_body,
+html body [class*="ajax__tab"] [class*="ajax__tab_body"],
+html body div[id*="TabContainer"][id*="body"],
+html body div[id*="tabContainer"][id*="body"],
+html body div[id*="Tab"][id*="body"],
+html body [class*="ajax__tab_body"],
+html body .ajax__tab_body {
   background: var(--surface-card) !important;
   background-image: none !important;
+  background-color: var(--surface-card) !important;
   border: var(--card-border) !important;
   border-radius: var(--radius-lg, 12px) !important;
   padding: 24px !important;
@@ -1676,13 +1705,50 @@ input[type=button]:active,
   color: var(--text-primary) !important;
 }
 
-.ajax__tab_panel,
-[class*="ajax__tab_panel"] {
+html body .ajax__tab_xp .ajax__tab_panel,
+html body [class*="ajax__tab"] [class*="ajax__tab_panel"],
+html body [class*="ajax__tab_panel"] {
   background: transparent !important;
   background-image: none !important;
+  background-color: transparent !important;
   border: none !important;
   color: var(--text-primary) !important;
   padding: 0 !important;
+}
+
+/* Embedded Frame Normalization: prevent duplicate scrollbars and allow parent to size precisely */
+html.reecap-in-frame,
+body.reecap-in-frame {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow-y: hidden !important;
+}
+
+/* Hide horizontal in-content profile tab strip when embedded in ReEcap shell */
+body[data-reecap-master="true"] #reecap-profile-dashboard,
+html[data-fee-only-view="true"] #reecap-profile-dashboard,
+.reecap-in-frame #reecap-profile-dashboard,
+html.reecap-in-frame #reecap-profile-dashboard {
+  display: none !important;
+}
+
+/* Fee Only Dedicated View (when opened from Fee Details in sidebar) */
+html[data-fee-only-view="true"] #reecap-profile-dashboard,
+html[data-fee-only-view="true"] #divProfile_BioData,
+html[data-fee-only-view="true"] .reecap-biodata-dashboard,
+html[data-fee-only-view="true"] .reecap-biodata,
+html[data-fee-only-view="true"] #tblReport > h1,
+html[data-fee-only-view="true"] #tblReport > h3,
+html[data-fee-only-view="true"] #tblReport > [role="tab"],
+html[data-fee-only-view="true"] #tblReport > .ui-accordion-header {
+  display: none !important;
+}
+
+html[data-fee-only-view="true"] #divProfile_Fees {
+  display: block !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  border-top: none !important;
 }
 
 /* Data Tables inside Receipts */
@@ -2727,6 +2793,42 @@ html[data-theme="rosewood-dark"] .tt-class {
 .tt-class.tt-tooltip-end .tt-tooltip.subject-card__details::after {
   left: auto;
   right: 20px;
+}
+
+/* Detail Popover: Downward orientation for upper rows to prevent clipping */
+.tt-class.tt-tooltip-below .tt-tooltip.subject-card__details {
+  bottom: auto;
+  top: calc(100% + 10px);
+  transform: translateX(-50%) translateY(-4px) scale(0.96);
+}
+
+.tt-class.tt-tooltip-below:hover .tt-tooltip.subject-card__details,
+.tt-class.tt-tooltip-below:focus-within .tt-tooltip.subject-card__details {
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.tt-class.tt-tooltip-below.tt-tooltip-start .tt-tooltip.subject-card__details {
+  left: 0;
+  transform: translateX(0) translateY(-4px) scale(0.96);
+}
+
+.tt-class.tt-tooltip-below.tt-tooltip-end .tt-tooltip.subject-card__details {
+  left: auto;
+  right: 0;
+  transform: translateX(0) translateY(-4px) scale(0.96);
+}
+
+.tt-class.tt-tooltip-below.tt-tooltip-start:hover .tt-tooltip.subject-card__details,
+.tt-class.tt-tooltip-below.tt-tooltip-start:focus-within .tt-tooltip.subject-card__details,
+.tt-class.tt-tooltip-below.tt-tooltip-end:hover .tt-tooltip.subject-card__details,
+.tt-class.tt-tooltip-below.tt-tooltip-end:focus-within .tt-tooltip.subject-card__details {
+  transform: translateX(0) translateY(0) scale(1);
+}
+
+.tt-class.tt-tooltip-below .tt-tooltip.subject-card__details::after {
+  top: auto;
+  bottom: 100%;
+  border-color: transparent transparent var(--border) transparent;
 }
 
 .detail-eyebrow {

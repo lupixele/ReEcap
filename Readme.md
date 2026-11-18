@@ -41,10 +41,13 @@ ReEcap is a Manifest V3 Chrome extension that completely overhauls the legacy AS
 - **Split Timeline**: Real-time today's schedule column paired with the active semester examination schedule.
 
 ### 6. Refined Navigation & Workstation UI
-- **Accordion Sidebar**: Accessible semantic categories (`Academics`, `Finance`, `Account`, `Services`) with single-open accordion behavior.
+- **Accordion Sidebar with Dedicated Profile Section**: Accessible semantic categories (`Academics`, `Finance`, `Profile`, `Account`) with single-open accordion behavior. The Profile section contains dedicated sub-views (Bio-Data, Performance - Present, Performance - Past, Outings, Counseling, Disciplinary Action) without duplicating items found in other sections (such as Backlogs in Academics or Fee Details in Finance).
+- **Clean Content Area**: In-content horizontal profile tabs are completely removed when embedded in the shell, keeping the content pane focused and uncluttered.
+- **Dedicated Fee Details View**: Accessing Fee Details renders a pure, focused fee ledger with active semester hero meter, due/payable progress, and payment actions without leaking profile navigation tabs or bio data.
 - **Independent Dual-Pane Scrolling**: Dedicated vertical scrolling containers for both sidebar and content panes with nightTab styled scrollbars that respond independently to cursor hover while pinning the top masthead.
+- **Accurate Content Fitting**: Content height calculation dynamically scans visible elements to ensure compact pages (timetable, bio-data, receipts) fit cleanly without redundant empty scroll space.
 - **Quick Navigation Search Palette**: Fast search modal across all portal sections and tools accessible directly from the sidebar.
-- **Clean Masthead**: Pinned top navigation with teacher top tabs, student full name, Aria launcher, and native session controls without distracting accent lines.
+- **Clean Masthead with Mathematical Monospace Brand**: Pinned top navigation featuring the signature `"𝚁𝚎𝙴𝚌𝚊𝚙"` monospace brand styling, student full name in proper Title Case, Aria launcher, and native session controls without distracting accent lines.
 - **Exam Script PDF Generator**: Canvas stitching tool on revaluation viewer generating multi-page exam booklets.
 
 ---

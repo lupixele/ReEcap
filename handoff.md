@@ -18,8 +18,9 @@ ReEcap is a Manifest V3 Chrome extension that modernizes the Aditya University A
 - Child iframes relay wheel events to the parent `.reecap-content-col` via `REECAP_CONTENT_WHEEL` for smooth content scrolling when hovering over iframe content.
 - Graceful fallback on mobile (`<= 900px`) preserving native touch scrolling.
 
-### 2. Top Bar & Masthead Polish
+### 2. Top Bar & Masthead Brand Polish
 - Masthead is permanently locked at the top of the workstation shell (`flex-shrink: 0`).
+- Replaced the ReEcap brand name with exact mathematical monospace `"𝚁𝚎𝙴𝚌𝚊𝚙"` glyphs and monospace typeface.
 - Removed the orange accent underline (`.masthead::after`) below the ReEcap brand name.
 - Dynamically extracts and formats the student's full name in proper Title Case without hardcoded personal information.
 - Removed the "Hi," prefix from the masthead greeting.
@@ -30,18 +31,25 @@ ReEcap is a Manifest V3 Chrome extension that modernizes the Aditya University A
 
 ### 4. Receipts Theming & Theme Leak Elimination
 - Overrode AjaxControlToolkit TabContainer classes (`.ajax__tab_container`, `.ajax__tab_xp`, `.ajax__tab_header`, `.ajax__tab_tab`, `.ajax__tab_active`, `.ajax__tab_body`, `.ajax__tab_panel`) using nightTab design tokens.
-- Fully eliminated vanilla cyan/blue gradient leaks and unstyled borders on `studentreceipts.aspx`.
+- Injected dedicated `<style id="reecap-receipts-aggressive-override">` tag and runtime `sanitizeReceiptsTheme()` method removing cyan/blue gradient leaks (`#70b4e6`, `#5dade2`) and blue borders on `studentreceipts.aspx`.
 - Styled receipt data tables and print action buttons with tactile nightTab surfaces and hover states.
-- Bound child resize events on tab clicks to keep the iframe smoothly fitted.
+- Bound child resize events on tab clicks and mutations to keep the iframe smoothly fitted.
 
-### 5. Unified Fee Details Navigation
-- Replaced broken legacy sidebar routing (`FeePayments/studentpayments.aspx?scrid=11`) with direct integration into the student profile fee ledger (`Academics/StudentProfile.aspx?scrid=17#fees`).
-- Directly activates the redesigned Fee Details tab with active semester hero meter, due/payable progress, semester cards, and row-level ledger.
-- Supports instant tab switching via `REECAP_SWITCH_TAB` postMessage when the profile iframe is already active.
-- Synchronized overview quicklinks and Aria action intents to the unified fee destination.
+### 5. Dedicated Profile & Fee Details Architecture
+- Made "Profile" into its own dedicated section in the sidebar with unique sub-views: Bio-Data, Performance (Present), Performance (Past), Outings, Counseling, Disciplinary Action.
+- Enforced strict non-duplication: excluded duplicate Backlogs (kept in Academics) and Fee Details (kept in Finance) from the Profile section.
+- Completely removed the horizontal tab navigation bar (`#reecap-profile-dashboard`) from the content area when embedded in the shell.
+- When opening "Fee Details" from Finance, sets `data-fee-only-view="true"` to render only the fee ledger, hero meter, and payment actions without leaking student bio data or profile tabs.
+- Supports instant view switching via `REECAP_SWITCH_TAB` postMessage when the profile iframe is already loaded.
 
-### 6. Interactive Timetable Polish
-- Removed the "Color Guide / Know Your Subjects" legend section per user preference, leaving a clean timetable grid and mobile day switcher.
+### 6. Timetable Tooltip Boundary & Collision Protection
+- Fixed tooltip cutoff when hovering or focusing subjects in the top rows of the timetable (Monday and Tuesday).
+- Tooltips in upper rows orient downward (`.tt-class.tt-tooltip-below`) with flipped arrows, reinforced with a dynamic mouseenter/focusin collision check against the `.tt-grid-wrap` container.
+- Removed the "Color Guide / Know Your Subjects" legend section per user preference.
+
+### 7. Universal Elimination of Empty Scrolling
+- Re-architected child iframe height measuring: replaced inflated `docEl.scrollHeight` calculation with physical bounding box scan of visible content elements (`rect.bottom + window.scrollY`).
+- Repaired `getTrueContentHeight()` and universal child auto-resizers, ensuring short pages (timetable, bio-data, receipts, etc.) do not spawn hundreds of pixels of blank/empty scroll space.
 
 ## Verification Commands & Status
 
