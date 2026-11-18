@@ -8922,3 +8922,128 @@ table[id*="grid"] tr:hover td {
   align-self: center !important;
 }
 .prompt-bar-footer { padding-top: 2px !important; }
+
+/* ==========================================================================
+   Universal In-UI Error State & Interceptor Cards (401 / Exam Details)
+   ========================================================================== */
+.reecap-error-recovery-container {
+  width: 100%;
+  max-width: 680px;
+  margin: 40px auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  animation: reecap-fade-in 0.2s ease-out;
+}
+
+.reecap-error-recovery-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 12px);
+  padding: 36px 32px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  box-sizing: border-box;
+}
+
+.reecap-error-icon-box {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--error-soft, rgba(239, 68, 68, 0.12));
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--error, #ef4444);
+  margin: 0 auto 18px auto;
+}
+
+.reecap-error-badge {
+  display: inline-block;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--error, #ef4444);
+  background: var(--error-soft, rgba(239, 68, 68, 0.1));
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.reecap-error-title {
+  font-size: 20px;
+  font-weight: 750;
+  color: var(--text-primary);
+  margin: 0 0 10px 0;
+  letter-spacing: -0.01em;
+}
+
+.reecap-error-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 520px;
+  margin: 0 auto 24px auto;
+}
+
+.reecap-error-callout {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: 16px 20px;
+  margin: 0 auto 28px auto;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  box-sizing: border-box;
+}
+
+.reecap-callout-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.reecap-callout-row:last-child {
+  margin-bottom: 0;
+}
+
+.reecap-callout-bullet {
+  color: var(--accent);
+  margin-top: 1px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.reecap-callout-row strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.reecap-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+#reecap-shell-error-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px 0;
+  box-sizing: border-box;
+}
+
+@keyframes reecap-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+

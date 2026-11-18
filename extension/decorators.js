@@ -26,6 +26,338 @@ function escapeAttr(s) {
     .replace(/>/g, '&gt;');
 }
 
+// ────────────────────────────────────────────────────────────────
+// Universal Alert & Server Error Interceptor (Main World + Isolated World)
+// ────────────────────────────────────────────────────────────────
+// Intercepts raw IIS / ASP.NET HTML error popups (e.g. 401 Unauthorized,
+// 500 Server Error) triggered via window.alert() or Sys.WebForms and
+// translates them into elegant in-UI nightTab error state cards.
+
+function isRawHtmlOrServerError(msg) {
+  if (!msg) return false;
+  let text = '';
+  if (typeof msg === 'string') {
+    text = msg;
+  } else if (msg instanceof Error) {
+    text = (msg.message || '') + ' ' + (msg.stack || '');
+  } else {
+    try { text = String(msg); } catch (e) { return false; }
+  }
+  return text.includes('<!DOCTYPE') ||
+         text.includes('<html') ||
+         text.includes('<title>401') ||
+         text.includes('401 - Unauthorized') ||
+         text.includes('401 Unauthorized') ||
+         text.includes('Access is denied due to invalid credentials') ||
+         text.includes('You do not have permission to view this directory') ||
+         text.includes('403 - Forbidden') ||
+         text.includes('500 - Internal Server Error') ||
+         text.includes('Server Error in') ||
+         text.includes('Runtime Error') ||
+         text.includes('Sys.WebForms.PageRequestManager') ||
+         text.includes('Sorry, error while accessing page');
+}
+
+(function installMainWorldAlertInterceptor() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  function doInject() {
+    if (document.getElementById('reecap-alert-interceptor')) return;
+    const script = document.createElement('script');
+    script.id = 'reecap-alert-interceptor';
+    script.textContent = `(${function() {
+      if (window.__reecap_alert_intercepted) return;
+      window.__reecap_alert_intercepted = true;
+
+      function isRawHtmlOrServerError(msg) {
+        if (!msg) return false;
+        let text = '';
+        if (typeof msg === 'string') {
+          text = msg;
+        } else if (msg instanceof Error) {
+          text = (msg.message || '') + ' ' + (msg.stack || '');
+        } else {
+          try { text = String(msg); } catch (e) { return false; }
+        }
+        return text.includes('<!DOCTYPE') ||
+               text.includes('<html') ||
+               text.includes('<title>401') ||
+               text.includes('401 - Unauthorized') ||
+               text.includes('401 Unauthorized') ||
+               text.includes('Access is denied due to invalid credentials') ||
+               text.includes('You do not have permission to view this directory') ||
+               text.includes('403 - Forbidden') ||
+               text.includes('500 - Internal Server Error') ||
+               text.includes('Server Error in') ||
+               text.includes('Runtime Error') ||
+               text.includes('Sys.WebForms.PageRequestManager') ||
+               text.includes('Sorry, error while accessing page');
+      }
+
+      const _nativeAlert = window.alert;
+      window.alert = function(msg) {
+        if (isRawHtmlOrServerError(msg)) {
+          console.warn('ReEcap suppressed raw HTML alert modal:', typeof msg === 'string' ? msg.slice(0, 160) : msg);
+          window.dispatchEvent(new CustomEvent('REECAP_SUPPRESSED_ALERT', {
+            detail: { message: typeof msg === 'string' ? msg : String(msg) }
+          }));
+          return;
+        }
+        return _nativeAlert.apply(this, arguments);
+      };
+
+      function hookPrm() {
+        if (window.Sys && window.Sys.WebForms && window.Sys.WebForms.PageRequestManager) {
+          try {
+            const prm = window.Sys.WebForms.PageRequestManager.getInstance();
+            if (prm && !prm.__reecap_hooked) {
+              prm.__reecap_hooked = true;
+              prm.add_endRequest(function(sender, args) {
+                if (args && args.get_error()) {
+                  const err = args.get_error();
+                  const m = err.message || '';
+                  if (isRawHtmlOrServerError(m)) {
+                    args.set_errorHandled(true);
+                    console.warn('ReEcap handled PageRequestManager error:', m.slice(0, 160));
+                    window.dispatchEvent(new CustomEvent('REECAP_SUPPRESSED_ALERT', {
+                      detail: { message: m }
+                    }));
+                  }
+                }
+              });
+            }
+          } catch (e) {}
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hookPrm);
+      } else {
+        hookPrm();
+      }
+
+      let attempts = 0;
+      const prmTimer = setInterval(function() {
+        attempts++;
+        hookPrm();
+        if (attempts > 20 || (window.Sys && window.Sys.WebForms && window.Sys.WebForms.PageRequestManager)) {
+          clearInterval(prmTimer);
+        }
+      }, 300);
+    }})();`;
+
+    try {
+      const target = document.head || document.documentElement;
+      if (target) {
+        target.appendChild(script);
+        script.remove();
+      }
+    } catch (e) {}
+  }
+
+  if (document.documentElement || document.head) {
+    doInject();
+  } else {
+    document.addEventListener('DOMContentLoaded', doInject, { once: true });
+  }
+})();
+
+// Isolated world alert interception
+const _nativeIsolatedAlert = window.alert;
+window.alert = function(msg) {
+  if (isRawHtmlOrServerError(msg)) {
+    handleSuppressedAlert(typeof msg === 'string' ? msg : String(msg));
+    return;
+  }
+  return _nativeIsolatedAlert.apply(this, arguments);
+};
+
+window.addEventListener('REECAP_SUPPRESSED_ALERT', (e) => {
+  const msg = (e.detail && e.detail.message) ? e.detail.message : '';
+  handleSuppressedAlert(msg);
+});
+
+function parseServerErrorInfo(raw, pathname) {
+  const text = String(raw || '');
+  const path = String(pathname || (typeof window !== 'undefined' ? window.location.pathname : '')).toLowerCase();
+  const isExamRelated = path.includes('exam') || path.includes('hallticket') || path.includes('answersheet') || text.toLowerCase().includes('exam');
+
+  let statusCode = '401';
+  let title = isExamRelated ? 'Exam Details Temporarily Restricted' : 'Portal Service Notice';
+  let subtitle = '401 • Unauthorized Access';
+  let description = isExamRelated
+    ? 'The ERP examination module reported an authorization restriction (401 - Unauthorized: Access is denied). Student exam schedules, hall tickets, and marks are opened by the examination branch during active exam windows.'
+    : 'The portal reported an authorization restriction (401 - Unauthorized). Your student session lacks permission for this endpoint.';
+
+  if (text.includes('401') || text.includes('Unauthorized') || text.includes('invalid credentials')) {
+    statusCode = '401';
+    title = isExamRelated ? 'Exam Details Temporarily Restricted' : 'Portal Service Notice';
+    subtitle = '401 • Unauthorized Access';
+    description = isExamRelated
+      ? 'The ERP examination module reported an authorization restriction (401 - Unauthorized: Access is denied). Student exam schedules, hall tickets, and marks are opened by the examination branch during active exam windows.'
+      : 'The portal reported an authorization restriction (401 - Unauthorized). Your student session lacks permission for this endpoint.';
+  } else if (text.includes('403') || text.includes('Forbidden')) {
+    statusCode = '403';
+    title = isExamRelated ? 'Exam Records Restricted' : 'Access Forbidden';
+    subtitle = '403 • Forbidden';
+    description = 'Access to this academic record is restricted by college ERP security policies for your account role.';
+  } else if (text.includes('500') || text.includes('Server Error') || text.includes('Runtime Error')) {
+    statusCode = '500';
+    title = 'ERP Server Interruption';
+    subtitle = '500 • Internal Server Error';
+    description = 'The college ERP server encountered an internal error while processing your request. Please try reloading the view.';
+  } else if (text.includes('Sorry, error while accessing page')) {
+    statusCode = '503';
+    title = 'Service Temporarily Unavailable';
+    subtitle = 'Portal Routing Interruption';
+    description = 'The requested portal page could not be accessed at this time. Please verify your connection.';
+  }
+
+  return { statusCode, title, subtitle, description, isExamRelated };
+}
+
+function renderInUiErrorCard(info, targetContainer) {
+  const details = info || parseServerErrorInfo('');
+  const cardId = 'reecap-error-recovery-card';
+
+  if (document.getElementById(cardId)) return;
+
+  const isChild = window.self !== window.top;
+  const container = targetContainer || (isChild ? document.body : (document.getElementById('reecap-content-col') || document.body));
+  if (!container) return;
+
+  if (isChild && container === document.body) {
+    Array.from(document.body.children).forEach(c => {
+      if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+        c.style.setProperty('display', 'none', 'important');
+      }
+    });
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.id = cardId;
+  wrapper.className = 'reecap-error-recovery-container';
+  wrapper.innerHTML = `
+    <div class="reecap-error-recovery-card">
+      <div class="reecap-error-icon-box">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <div class="reecap-error-badge">${escapeAttr(details.subtitle)}</div>
+      <h2 class="reecap-error-title">${escapeAttr(details.title)}</h2>
+      <p class="reecap-error-desc">${escapeAttr(details.description)}</p>
+
+      <div class="reecap-error-callout">
+        <div class="reecap-callout-row">
+          <span class="reecap-callout-bullet">•</span>
+          <span><strong>Official Schedules:</strong> Published examination windows, mid-term dates, and exam fees are accessible in the Academic Calendar.</span>
+        </div>
+        <div class="reecap-callout-row">
+          <span class="reecap-callout-bullet">•</span>
+          <span><strong>Portal Security:</strong> Your student session is active, but access to this ERP exam service is restricted by the college examination branch.</span>
+        </div>
+      </div>
+
+      <div class="reecap-error-actions">
+        <button type="button" class="pay-btn pay-btn-primary" id="reecap-err-reload-btn">Reload View</button>
+        <button type="button" class="pay-btn pay-btn-secondary" id="reecap-err-calendar-btn">Academic Calendar</button>
+        <button type="button" class="pay-btn pay-btn-secondary" id="reecap-err-overview-btn">Return to Overview</button>
+      </div>
+    </div>
+  `;
+
+  container.appendChild(wrapper);
+
+  const reloadBtn = wrapper.querySelector('#reecap-err-reload-btn');
+  const calBtn = wrapper.querySelector('#reecap-err-calendar-btn');
+  const overviewBtn = wrapper.querySelector('#reecap-err-overview-btn');
+
+  if (reloadBtn) {
+    reloadBtn.addEventListener('click', () => {
+      if (isChild) {
+        window.location.reload();
+      } else {
+        const iframe = document.getElementById('capIframeId');
+        if (iframe && iframe.contentWindow) {
+          try { iframe.contentWindow.location.reload(); } catch (e) { iframe.src = iframe.src; }
+        } else {
+          window.location.reload();
+        }
+      }
+    });
+  }
+
+  if (calBtn) {
+    calBtn.addEventListener('click', () => {
+      if (isChild && window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'REECAP_NAVIGATE', route: 'calendar' }, '*');
+      } else if (typeof showAcademicCalendar === 'function') {
+        showAcademicCalendar();
+      }
+    });
+  }
+
+  if (overviewBtn) {
+    overviewBtn.addEventListener('click', () => {
+      if (isChild && window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'REECAP_NAVIGATE', route: 'overview' }, '*');
+      } else if (typeof showOverview === 'function') {
+        showOverview();
+      }
+    });
+  }
+
+  if (isChild && window.parent && window.parent !== window) {
+    window.parent.postMessage({
+      type: 'REECAP_SET_TITLE',
+      title: details.isExamRelated ? 'EXAMS DETAILS' : 'PORTAL NOTICE'
+    }, '*');
+    window.parent.postMessage({
+      type: 'REECAP_CHILD_ERROR',
+      errorInfo: details,
+      height: Math.max(480, (wrapper.offsetHeight || 440) + 60)
+    }, '*');
+    setTimeout(() => {
+      const h = wrapper.offsetHeight || wrapper.scrollHeight || 480;
+      window.parent.postMessage({ type: 'REECAP_RESIZE', height: Math.max(480, h + 60) }, '*');
+    }, 50);
+  }
+}
+
+function handleSuppressedAlert(rawMessage) {
+  const info = parseServerErrorInfo(rawMessage);
+  if (window.self !== window.top) {
+    renderInUiErrorCard(info);
+  } else {
+    let shellContainer = document.getElementById('reecap-shell-error-container');
+    const contentCol = document.getElementById('reecap-content-col');
+    if (!shellContainer && contentCol) {
+      shellContainer = document.createElement('div');
+      shellContainer.id = 'reecap-shell-error-container';
+      contentCol.appendChild(shellContainer);
+    }
+    if (shellContainer) {
+      shellContainer.innerHTML = '';
+      shellContainer.style.setProperty('display', 'flex', 'important');
+      const iframe = document.getElementById('capIframeId');
+      const overview = document.getElementById('reecap-overview');
+      const cal = document.getElementById('reecap-calendar-view');
+      if (iframe) iframe.style.setProperty('display', 'none', 'important');
+      if (overview) overview.style.setProperty('display', 'none', 'important');
+      if (cal) cal.style.setProperty('display', 'none', 'important');
+      const pageTitle = document.getElementById('reecap-page-title');
+      if (pageTitle) pageTitle.textContent = info.isExamRelated ? 'EXAMS DETAILS' : 'PORTAL NOTICE';
+      renderInUiErrorCard(info, shellContainer);
+    } else {
+      renderInUiErrorCard(info);
+    }
+  }
+}
+
+
 function formatCurrencyAmount(val) {
   if (val === undefined || val === null || val === '--' || val === '' || val === '—') return '--';
   const num = parseFloat(String(val).replace(/,/g, ''));
@@ -101,6 +433,26 @@ function initDecorators() {
             contentCol.scrollTop += e.data.deltaY * mult;
           }
         }
+        if (e.data && e.data.type === 'REECAP_CHILD_ERROR') {
+          const iframe = document.getElementById('capIframeId');
+          if (iframe) {
+            iframe.style.removeProperty('display');
+            iframe.style.removeProperty('visibility');
+            const h = e.data.height || 520;
+            iframe.style.setProperty('height', `${h}px`, 'important');
+          }
+          const pageTitle = document.getElementById('reecap-page-title');
+          if (pageTitle && e.data.errorInfo && e.data.errorInfo.isExamRelated) {
+            pageTitle.textContent = 'EXAMS DETAILS';
+          }
+        }
+        if (e.data && e.data.type === 'REECAP_NAVIGATE') {
+          if (e.data.route === 'overview' && typeof showOverview === 'function') {
+            showOverview();
+          } else if (e.data.route === 'calendar' && typeof showAcademicCalendar === 'function') {
+            showAcademicCalendar();
+          }
+        }
       });
       // Unified Header & Status Strip Injection
       const userDataRow = document.querySelector('.userData');
@@ -137,7 +489,7 @@ function initDecorators() {
            </button>
            <div class="brand-identity">
              <div class="eyebrow">${titleEyebrow}</div>
-             <h1 class="brand-title">𝚁𝚎𝙴𝚌𝚊𝚙</h1>
+             <h1 class="brand-title">𝚁𝚎𝙴𝚌𝚊𝚙"/</h1>
            </div>
          `;
 
@@ -2456,11 +2808,20 @@ function renderStandaloneBacklogsPage() {
 function observeAndRecoverServerError() {
   if (window === window.top) return; // Only run inside iframes
   const checkError = () => {
-    const text = document.body ? document.body.textContent : '';
+    const text = ((document.body ? document.body.textContent : '') + ' ' + (document.title || '')) || '';
     const isError = text.includes('Sorry, error while accessing page') ||
       text.includes('Server Error in \'/\' Application') ||
       text.includes('error while accessing page') ||
-      text.includes('Runtime Error');
+      text.includes('Runtime Error') ||
+      text.includes('401 - Unauthorized') ||
+      text.includes('401 Unauthorized') ||
+      text.includes('Access is denied due to invalid credentials') ||
+      text.includes('You do not have permission to view this directory') ||
+      text.includes('403 - Forbidden') ||
+      text.includes('500 - Internal Server Error') ||
+      text.includes('Server Error') ||
+      (document.title && (document.title.includes('401') || document.title.includes('Server Error')));
+
     if (isError) {
       const lower = window.location.pathname.toLowerCase();
       if (lower.includes('studentfeereceipt.aspx') || lower.includes('studentreceipts.aspx') || lower.includes('studentpayments.aspx')) {
@@ -2470,7 +2831,7 @@ function observeAndRecoverServerError() {
       } else if (lower.includes('studentattendance.aspx')) {
         redesignAttendancePage();
       } else {
-        renderGenericErrorCard();
+        renderInUiErrorCard(parseServerErrorInfo(text, lower));
       }
     }
   };
@@ -2492,37 +2853,8 @@ function observeAndRecoverServerError() {
   }
 }
 
-function renderGenericErrorCard() {
-  if (document.getElementById('reecap-error-recovery-card')) return;
-  Array.from(document.body.children).forEach(c => {
-    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
-      c.style.setProperty('display', 'none', 'important');
-    }
-  });
-  const card = document.createElement('div');
-  card.id = 'reecap-error-recovery-card';
-  card.style.padding = '40px 24px';
-  card.style.maxWidth = '600px';
-  card.style.margin = '40px auto';
-  card.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
-  card.innerHTML = `
-    <div style="background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg, 12px); padding: 32px; text-align: center; box-shadow: var(--shadow-md);">
-      <div style="margin-bottom: 16px; display: flex; justify-content: center;">
-        <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--surface-sunken); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; color: var(--accent);">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        </div>
-      </div>
-      <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0;">Temporary Portal Access Notice</h3>
-      <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0 0 24px 0; line-height: 1.5;">
-        The ERP server encountered a temporary session or authorization interruption while loading this screen.
-      </p>
-      <div style="display: flex; gap: 12px; justify-content: center;">
-        <button type="button" class="pay-btn pay-btn-primary" onclick="window.location.reload()" style="cursor: pointer;">Reload Screen</button>
-        <button type="button" class="pay-btn pay-btn-secondary" onclick="window.parent.postMessage({ type: 'REECAP_NAVIGATE', route: 'overview' }, '*')" style="cursor: pointer;">Return to Overview</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(card);
+function renderGenericErrorCard(customDetails) {
+  renderInUiErrorCard(customDetails || parseServerErrorInfo(document.body ? document.body.textContent : ''));
 }
 
 function observeTimetable() {
@@ -5689,6 +6021,8 @@ function showOverview() {
   if (overview) overview.style.setProperty('display', 'flex', 'important');
   const calView = document.getElementById('reecap-calendar-view');
   if (calView) calView.style.setProperty('display', 'none', 'important');
+  const shellErr = document.getElementById('reecap-shell-error-container');
+  if (shellErr) shellErr.style.setProperty('display', 'none', 'important');
   document.documentElement.setAttribute('data-calendar-active', 'false');
 
   // Attempt to aggressively hide nested legacy profile wrappers
@@ -5746,6 +6080,8 @@ function showIframe() {
   if (overview) overview.style.setProperty('display', 'none', 'important');
   const calView = document.getElementById('reecap-calendar-view');
   if (calView) calView.style.setProperty('display', 'none', 'important');
+  const shellErr = document.getElementById('reecap-shell-error-container');
+  if (shellErr) shellErr.style.setProperty('display', 'none', 'important');
 
   document.documentElement.setAttribute('data-overview-active', 'false');
   document.documentElement.setAttribute('data-calendar-active', 'false');
@@ -5783,6 +6119,8 @@ function showAcademicCalendar() {
   }
 
   if (overview) overview.style.setProperty('display', 'none', 'important');
+  const shellErr = document.getElementById('reecap-shell-error-container');
+  if (shellErr) shellErr.style.setProperty('display', 'none', 'important');
 
   if (!calendarView && contentCol) {
     calendarView = document.createElement('div');

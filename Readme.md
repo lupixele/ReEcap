@@ -47,7 +47,7 @@ ReEcap is a Manifest V3 Chrome extension that completely overhauls the legacy AS
 - **Independent Dual-Pane Scrolling**: Dedicated vertical scrolling containers for both sidebar and content panes with nightTab styled scrollbars that respond independently to cursor hover while pinning the top masthead.
 - **Accurate Content Fitting**: Content height calculation dynamically scans visible elements to ensure compact pages (timetable, bio-data, receipts) fit cleanly without redundant empty scroll space.
 - **Quick Navigation Search Palette**: Fast search modal across all portal sections and tools accessible directly from the sidebar.
-- **Clean Masthead with Mathematical Monospace Brand**: Pinned top navigation featuring the signature `"𝚁𝚎𝙴𝚌𝚊𝚙"` monospace brand styling, student full name in proper Title Case, Aria launcher, and native session controls without distracting accent lines.
+- **Clean Masthead with Mathematical Monospace Brand**: Pinned top navigation featuring the signature `"𝚁𝚎𝙴𝚌𝚊𝚙"/"` monospace brand styling, student full name in proper Title Case, Aria launcher, and native session controls without distracting accent lines.
 - **Exam Script PDF Generator**: Canvas stitching tool on revaluation viewer generating multi-page exam booklets.
 
 ---

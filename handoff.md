@@ -20,12 +20,18 @@ ReEcap is a Manifest V3 Chrome extension that modernizes the Aditya University A
 
 ### 2. Top Bar & Masthead Brand Polish
 - Masthead is permanently locked at the top of the workstation shell (`flex-shrink: 0`).
-- Replaced the ReEcap brand name with exact mathematical monospace `"𝚁𝚎𝙴𝚌𝚊𝚙"` glyphs and monospace typeface.
+- Replaced the ReEcap brand name with exact mathematical monospace `"𝚁𝚎𝙴𝚌𝚊𝚙"/"` glyph string across masthead and extension popup.
 - Removed the orange accent underline (`.masthead::after`) below the ReEcap brand name.
 - Dynamically extracts and formats the student's full name in proper Title Case without hardcoded personal information.
 - Removed the "Hi," prefix from the masthead greeting.
 
-### 3. Keyboard Shortcuts Cleanup
+### 3. Universal Alert Interceptor & In-UI Error Cards
+- Overrode `window.alert` in both the Main World and isolated content script contexts to completely suppress raw IIS XHTML error dumps (e.g., 401 Unauthorized popups when loading Exam Details).
+- Hooked ASP.NET AJAX `PageRequestManager.endRequest` to catch and neutralize unhandled asynchronous postback errors before native alert dialogs trigger.
+- Displays an elegant, responsive nightTab in-UI error hero card with status badge, plain-English context explanation, official schedule callout, and one-click actions: "Reload View", "Academic Calendar", and "Return to Overview".
+- Extended `observeAndRecoverServerError()` to detect 401, 403, and 500 error pages loaded inside child frames or the master shell, guaranteeing clean in-UI recovery without broken server traces.
+
+### 4. Keyboard Shortcuts Cleanup
 - Completely removed `Ctrl+K` and `Ctrl+,` shortcuts from both the UI (`<kbd>` badges in search item and bottom nav) and backend (`keydown` event listeners).
 - Search modal remains readily accessible via direct click.
 
@@ -58,6 +64,7 @@ node --check extension/decorators.js
 node --check extension/shared/aria.js
 node tests/aria-markdown.test.js
 node tests/theme-architecture.test.js
+node tests/alert-interceptor.test.js
 ```
 
 - Parser regression suite: 45/45 Node checks passing.
