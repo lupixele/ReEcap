@@ -486,6 +486,19 @@ function injectThemeToolbar() {
     });
   }
 
+  function notifyActiveIframe(preset, style) {
+    try {
+      const iframe = document.getElementById('capIframeId');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'REECAP_NIGHTTAB_PRESET',
+          preset,
+          style
+        }, '*');
+      }
+    } catch (e) {}
+  }
+
   // Handle Mode setting (light/dark)
   wrapper.querySelectorAll('.toolbar-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -496,6 +509,7 @@ function injectThemeToolbar() {
            const activePreset = d.nightTabPreset || 'app';
            if (window.__reecap_theme && window.__reecap_theme.applyTheme) {
              window.__reecap_theme.applyTheme(activePreset, m);
+            notifyActiveIframe(activePreset, m);
            }
            chrome.storage.sync.set({ nightTabStyle: m, themeMode: m });
          });
@@ -515,6 +529,7 @@ function injectThemeToolbar() {
            const activeStyle = d.nightTabStyle || 'dark';
            if (window.__reecap_theme && window.__reecap_theme.applyTheme) {
              window.__reecap_theme.applyTheme(p, activeStyle);
+            notifyActiveIframe(p, activeStyle);
            }
            chrome.storage.sync.set({ nightTabPreset: p, themeFamily: p });
          });

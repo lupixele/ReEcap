@@ -34,6 +34,10 @@
             "matches": [
                 "*://info.aec.edu.in/*"
             ],
+            "css": [
+                "shared/tokens.css",
+                "style.css"
+            ],
             "js": [
                 "shared/theme.js",
                 "shared/aria.js",

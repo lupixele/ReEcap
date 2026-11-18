@@ -2074,6 +2074,7 @@
   function applyTheme(presetId, styleMode, customOptions) {
     const preset = PRESETS[presetId] || PRESETS.app;
     const mode = styleMode || preset.style || 'dark';
+    const isDark = (mode === 'dark');
     const shades = calculateShades(preset);
     const root = document.documentElement;
 
@@ -2088,20 +2089,91 @@
       root.style.setProperty(`--theme-primary-${s.index}-l`, s.hsl.l);
     }
 
-    // 2. Inject Accent Colors (RGB and channels)
+    // 2. Inject 010-140 mapped shade scale directly on root
+    for (let i = 0; i < 14; i++) {
+      const shadeIdx = isDark ? i : (13 - i);
+      const s = shades[shadeIdx];
+      const keyNum = String((i + 1) * 10).padStart(3, '0');
+      root.style.setProperty(`--theme-primary-${keyNum}`, s.hslString);
+      root.style.setProperty(`--theme-primary-${keyNum}-r`, s.rgb.r);
+      root.style.setProperty(`--theme-primary-${keyNum}-g`, s.rgb.g);
+      root.style.setProperty(`--theme-primary-${keyNum}-b`, s.rgb.b);
+      root.style.setProperty(`--theme-primary-${keyNum}-h`, s.hsl.h);
+      root.style.setProperty(`--theme-primary-${keyNum}-s`, s.hsl.s);
+      root.style.setProperty(`--theme-primary-${keyNum}-l`, s.hsl.l);
+    }
+
+    // 3. Inject Accent Colors and Auto-Contrast Luma
     const accentRgb = (customOptions && customOptions.accentRgb) || preset.accent.rgb || { r: 0, g: 80, b: 255 };
+    const accentLuma = ((accentRgb.r * 0.2721) + (accentRgb.g * 0.7152) + (accentRgb.b * 0.1255)) / 255;
+    const isLightAccent = accentLuma > 0.55;
+    const accentColor = `rgb(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b})`;
+    const accentSoft = `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.16)`;
+    const onAccent = isLightAccent ? '#000000' : '#ffffff';
+
     root.style.setProperty('--theme-accent', `${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}`);
     root.style.setProperty('--theme-accent-rgb-r', accentRgb.r);
     root.style.setProperty('--theme-accent-rgb-g', accentRgb.g);
     root.style.setProperty('--theme-accent-rgb-b', accentRgb.b);
+    root.style.setProperty('--theme-accent-text', isLightAccent ? '0, 0%, 0%' : '0, 0%, 100%');
+    root.style.setProperty('--accent', accentColor);
+    root.style.setProperty('--accent-dark', accentColor);
+    root.style.setProperty('--accent-soft', accentSoft);
+    root.style.setProperty('--on-accent', onAccent);
+    root.style.setProperty('--text-on-action', onAccent);
+    root.style.setProperty('--action-primary', accentColor);
+    root.style.setProperty('--action-primary-hover', accentColor);
+    root.style.setProperty('--action-soft', accentSoft);
 
-    // 3. Inject Radius and Shadow Constants
+    // 4. Inject Comprehensive Semantic Surfaces & Fallbacks directly
+    const pageShade = shades[isDark ? 0 : 13];
+    const cardShade = shades[isDark ? 1 : 12];
+    const sunkenShade = shades[isDark ? 0 : 13];
+    const elevatedShade = shades[isDark ? 2 : 11];
+    const borderShade = shades[isDark ? 3 : 10];
+
+    const textPrimary = isDark ? '#F1F1EE' : '#111827';
+    const textSecondary = isDark ? '#C7C7D0' : '#4B5563';
+    const textFaint = isDark ? '#8E8E99' : '#6B7280';
+
+    const pageGlow = isDark
+      ? `radial-gradient(ellipse 900px 500px at 20% -10%, hsla(${cardShade.hslString}, 0.5) 0%, transparent 60%), hsl(${pageShade.hslString})`
+      : `radial-gradient(circle at 12% 0%, hsl(${pageShade.hslString}) 0%, hsl(${cardShade.hslString}) 55%)`;
+
+    root.style.setProperty('--surface-page', `hsl(${pageShade.hslString})`);
+    root.style.setProperty('--surface-page-glow', pageGlow);
+    root.style.setProperty('--surface-bg', `hsl(${pageShade.hslString})`);
+    root.style.setProperty('--surface-card', `hsl(${cardShade.hslString})`);
+    root.style.setProperty('--surface-sunken', `hsl(${sunkenShade.hslString})`);
+    root.style.setProperty('--surface-hover', `hsl(${elevatedShade.hslString})`);
+    root.style.setProperty('--surface-elevated', `hsl(${elevatedShade.hslString})`);
+    root.style.setProperty('--surface-raised', `hsl(${cardShade.hslString})`);
+    root.style.setProperty('--surface-strip', `hsl(${pageShade.hslString})`);
+    root.style.setProperty('--surface-strip-text', textPrimary);
+    root.style.setProperty('--surface-strip-text-muted', textSecondary);
+
+    root.style.setProperty('--border', `hsl(${borderShade.hslString})`);
+    root.style.setProperty('--border-light', `hsla(${borderShade.hslString}, 0.45)`);
+    root.style.setProperty('--border-subtle', `hsl(${elevatedShade.hslString})`);
+    root.style.setProperty('--card-border', `1px solid hsl(${borderShade.hslString})`);
+
+    root.style.setProperty('--text-primary', textPrimary);
+    root.style.setProperty('--text-secondary', textSecondary);
+    root.style.setProperty('--text-faint', textFaint);
+
+    // 5. Inject Radius and Shadow Constants
     const radius = (customOptions && typeof customOptions.radius === 'number') ? customOptions.radius : (preset.radius ?? 25);
     const shadow = (customOptions && typeof customOptions.shadow === 'number') ? customOptions.shadow : (preset.shadow ?? 75);
     root.style.setProperty('--theme-radius', radius);
     root.style.setProperty('--theme-shadow', shadow);
+    root.style.setProperty('--radius', `calc(${radius} * 0.01em)`);
+    root.style.setProperty('--radius-sm', `calc(${radius} * 0.5 * 0.01em)`);
+    root.style.setProperty('--radius-xs', `calc(${radius} * 0.25 * 0.01em)`);
+    root.style.setProperty('--radius-lg', `calc(${radius} * 1.5 * 0.01em)`);
+    root.style.setProperty('--radius-pill', '9999px');
+    root.style.setProperty('--ambient-glow', `0 0 24px rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.14)`);
 
-    // 4. Inject Display & UI Fonts
+    // 6. Inject Display & UI Fonts
     if (preset.font && preset.font.display && preset.font.display.name) {
       root.style.setProperty('--theme-font-display-name', `"${preset.font.display.name}", "Fjalla One", "Rubik", system-ui, sans-serif`);
     } else {
@@ -2114,7 +2186,7 @@
       root.style.setProperty('--theme-font-ui-name', `"Open Sans", "Inter", system-ui, -apple-system, sans-serif`);
     }
 
-    // 5. Update Style Class and Attributes
+    // 7. Update Style Class and Attributes
     root.classList.remove('is-theme-style-dark', 'is-theme-style-light');
     root.classList.add(`is-theme-style-${mode}`);
     root.setAttribute('data-theme-style', mode);
@@ -2147,9 +2219,13 @@
 
   function migrateThemeStorage(data) {
     if (data && data.nightTabPreset && PRESETS[data.nightTabPreset]) {
+      const p = data.nightTabPreset;
+      const s = data.nightTabStyle || PRESETS[p].style || 'dark';
       return {
-        preset: data.nightTabPreset,
-        style: data.nightTabStyle || PRESETS[data.nightTabPreset].style || 'dark',
+        preset: p,
+        style: s,
+        family: p,
+        mode: s,
         radius: typeof data.nightTabRadius === 'number' ? data.nightTabRadius : undefined,
         shadow: typeof data.nightTabShadow === 'number' ? data.nightTabShadow : undefined
       };
@@ -2157,9 +2233,15 @@
 
     const legacyKey = (data && data.themeFamily) || (data && data.theme) || 'app';
     const mapped = LEGACY_PRESET_MAP[legacyKey] || { preset: 'app', style: data?.themeMode || 'dark' };
+    const finalPreset = PRESETS[mapped.preset] ? mapped.preset : 'app';
+    const finalStyle = data?.themeMode || mapped.style || 'dark';
     return {
-      preset: PRESETS[mapped.preset] ? mapped.preset : 'app',
-      style: data?.themeMode || mapped.style || 'dark'
+      preset: finalPreset,
+      style: finalStyle,
+      family: finalPreset,
+      mode: finalStyle,
+      radius: typeof data?.nightTabRadius === 'number' ? data.nightTabRadius : undefined,
+      shadow: typeof data?.nightTabShadow === 'number' ? data.nightTabShadow : undefined
     };
   }
 

@@ -65,9 +65,15 @@ function migrateThemeStorage(data) {
   // Migrate only once. The storage-level onChanged listener below ensures the
   // successful write reaches every iframe — messages alone reach only the
   // top-level document in many MV3 situations.
-  if (data && !data.themeFamily && window === window.top) {
+  if (data && (!data.nightTabPreset || !data.themeFamily) && window === window.top) {
     try {
-      chrome.storage.sync.set({ themeFamily: mapped.family, themeMode: mapped.mode, theme: null }, () => {
+      chrome.storage.sync.set({ 
+        nightTabPreset: mapped.preset, 
+        nightTabStyle: mapped.style,
+        themeFamily: mapped.family || mapped.preset, 
+        themeMode: mapped.mode || mapped.style, 
+        theme: null 
+      }, () => {
         void chrome.runtime && chrome.runtime.lastError;
       });
     } catch (e) { /* extension reloaded between read and write — ignore */ }
@@ -91,6 +97,21 @@ function applyStoredTheme(data) {
     reecap.applyTheme(mapped.preset, mapped.style, { radius: mapped.radius, shadow: mapped.shadow });
   } else {
     document.documentElement.setAttribute('data-theme', resolveTheme(mapped.preset, mapped.style));
+  }
+
+  // Relay active theme tokens immediately to the authenticated child iframe
+  if (window === window.top) {
+    try {
+      const iframe = document.getElementById('capIframeId');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'REECAP_NIGHTTAB_PRESET',
+          preset: mapped.preset,
+          style: mapped.style,
+          options: { radius: mapped.radius, shadow: mapped.shadow }
+        }, '*');
+      }
+    } catch (e) {}
   }
 }
 
@@ -125,8 +146,25 @@ chrome.runtime.onMessage.addListener((msg) => {
     if (reecap.applyTheme) {
       reecap.applyTheme(msg.preset, msg.style, msg.options);
     }
+    if (window === window.top) {
+      try {
+        const iframe = document.getElementById('capIframeId');
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage(msg, '*');
+        }
+      } catch (e) {}
+    }
   } else if (msg.type === 'REECAP_THEME' && reecapEnabled) {
     document.documentElement.setAttribute('data-theme', msg.theme);
+  }
+});
+
+// Cross-frame listener for instant theme propagation
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'REECAP_NIGHTTAB_PRESET') {
+    if (reecap.applyTheme) {
+      reecap.applyTheme(e.data.preset, e.data.style, e.data.options);
+    }
   }
 });
 

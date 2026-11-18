@@ -985,6 +985,16 @@ const ADITYA_ACADEMIC_CALENDAR = {
 
     const studentDisplayName = isLupelUser ? 'lupel' : (rawName ? rawName.split(' ')[0] : 'Student');
     const studentFullName = isLupelUser ? 'lupel' : (rawName || 'Student');
+    const studentName = studentDisplayName;
+
+    let curSemKey = 'III';
+    if (id.semester) {
+      const semMatch = String(id.semester).match(/\b(VIII|VII|VI|V|IV|III|II|I)\b/i);
+      if (semMatch) curSemKey = semMatch[1].toUpperCase();
+    }
+    const calList = (ADITYA_ACADEMIC_CALENDAR?.semesters?.[curSemKey] || [])
+      .map(e => `- ${e.description}: ${e.from}${e.to && e.to !== e.from ? ' to ' + e.to : ''}`)
+      .join('\n');
 
     return `You are Aria, an intelligent academic co-pilot and portal assistant embedded directly into ReEcap for Aditya University students.
 You were built by lupel (an Aditya University Data Science student) to guide students through their academics, analyze their performance, and help them navigate their student portal.
@@ -994,7 +1004,7 @@ You were built by lupel (an Aditya University Data Science student) to guide stu
 - Address the student directly as: "${studentDisplayName}" (always call them "${studentDisplayName}" when speaking to them)
 - Roll Number: ${id.rollNo || 'Not specified'}
 - Branch / Course: ${id.branch || id.course || 'Aditya University'}
-- Current Semester: ${id.semester || 'Current'}
+- Current Semester: ${id.semester || curSemKey}
 - Overall CGPA: ${acad.cgpa} (Credits: ${acad.credits}, Passed: ${acad.passed}, Failed: ${acad.failed})
 - Overall Attendance: ${att.overallPercent}% (${att.attended}/${att.held} classes)
 - Active Backlogs: ${dossier.backlogs}
@@ -1009,23 +1019,15 @@ ${gradesSummary}
 [TODAY'S TIMETABLE SCHEDULE]:
 ${dossier.schedule.length > 0 ? JSON.stringify(dossier.schedule) : 'No timetable schedule cached for today.'}
 
-[ADITYA UNIVERSITY ACADEMIC CALENDAR (2025–26 SEMESTER II)]:
-- Internal Exams I: 17.03.2026 to 20.03.2026
-- Summer Vacation: 18.05.2026 to 30.05.2026
-- Detentions Finalization: 23.05.2026
-- SEE Fee Payment: 25.05.2026 to 27.05.2026
-- Internal Exams II: 01.06.2026 to 03.06.2026
-- Lab End Exams: 08.06.2026 to 13.06.2026
-- Theory End Exams: 15.06.2026 to 27.06.2026
-- Results: 11.07.2026
-- III Semester Starts: 29.06.2026
+[ADITYA UNIVERSITY ACADEMIC CALENDAR (2025–26 SEMESTER ${curSemKey})]:
+${calList || '- Semester End Theory Exams: 16.11.2026 to 28.11.2026\n- Results: 12.12.2026'}
 
 [ADITYA UNIVERSITY POLICIES]:
 - Minimum 75% attendance required for SEE eligibility; 65-75% condonable on genuine medical grounds; <65% detained.
 - 10-point scale: O(10), S/A+(9), A(8), B(7), C(6), P/D(5), F(0). NAAC A++ Autonomous Institution.
 
 [YOUR CORE ROLES]:
-1. ACADEMIC ADVISOR: Always refer to the student strictly as "${studentName}" (never use any other surname). Analyze grades, identify weak subjects (courses with Grade B or below: Digital Logic Design, Basic Electrical Engineering), evaluate internal test patterns, and suggest practical study strategies. Never dismiss the student or say you cannot identify weak subjects.
+1. ACADEMIC ADVISOR: Always refer to the student strictly as "${studentDisplayName}" (never use any other surname). Analyze grades, identify weak subjects (courses with Grade B or below: Digital Logic Design, Basic Electrical Engineering), evaluate internal test patterns, and suggest practical study strategies. Never dismiss the student or say you cannot identify weak subjects.
 2. ATTENDANCE STRATEGIST: Calculate precise bunk allowances or mandatory attendance targets using the 75% formula.
 3. PORTAL NAVIGATOR: Guide the student to the exact sections of ReEcap.
 
@@ -1119,19 +1121,22 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
 
     // 0a. Academic Calendar, Exams & Milestones Intelligence
     if (q.includes('calendar') || q.includes('vacation') || q.includes('holiday') || q.includes('mid') || (q.includes('exam') && (q.includes('date') || q.includes('when') || q.includes('schedule') || q.includes('start') || q.includes('end'))) || q.includes('revaluation')) {
-      return `### Aditya University Semester II Academic Schedule (2025–26)\n\n` +
-        `Here are the verified milestone dates from the official academic calendar for **Semester II**:\n\n` +
-        `- **Internal Examinations – I (Mid 1):** **17.03.2026** to **20.03.2026**\n` +
-        `- **Summer Vacation:** **18.05.2026** to **30.05.2026**\n` +
-        `- **Finalization of Detentions (Attendance Cutoff):** **23.05.2026**\n` +
-        `- **Payment of SEE Exam Fee:** **25.05.2026** to **27.05.2026**\n` +
-        `- **Internal Examinations – II (Mid 2):** **01.06.2026** to **03.06.2026**\n` +
-        `- **Makeup Internal Examinations:** **04.06.2026** to **06.06.2026**\n` +
-        `- **Semester End Lab Examinations:** **08.06.2026** to **13.06.2026**\n` +
-        `- **Semester End Theory Examinations:** **15.06.2026** to **27.06.2026**\n` +
-        `- **Declaration of Results:** **11.07.2026**\n` +
-        `- **SEE Script Viewing & Revaluation:** **11.07.2026** to **15.07.2026**\n` +
-        `- **Commencement of III Semester Class Work:** **29.06.2026**\n\n` +
+      let curSemKey = 'III';
+      const idSem = dossier.identity?.semester || '';
+      const semMatch = String(idSem).match(/\b(VIII|VII|VI|V|IV|III|II|I)\b/i);
+      if (semMatch) curSemKey = semMatch[1].toUpperCase();
+
+      const events = (ADITYA_ACADEMIC_CALENDAR?.semesters?.[curSemKey]) || [];
+      let scheduleText = '';
+      if (events.length > 0) {
+        scheduleText = events.map(e => `- **${e.description}:** **${e.from}**${e.to && e.to !== e.from ? ' to **' + e.to + '**' : ''}`).join('\n');
+      } else {
+        scheduleText = `- **Semester End Examinations – Theory:** **16.11.2026** to **28.11.2026**\n- **Declaration of Results:** **12.12.2026**`;
+      }
+
+      return `### Aditya University Semester ${curSemKey} Academic Schedule (2025–26)\n\n` +
+        `Here are the verified milestone dates from the official academic calendar for **Semester ${curSemKey}**:\n\n` +
+        `${scheduleText}\n\n` +
         `[action:nav:calendar|Open Semester Calendar] [action:nav:marks|Check Grades]`;
     }
 

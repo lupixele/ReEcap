@@ -244,12 +244,17 @@
 /* Typography */
 * { box-sizing: border-box; }
 
+html {
+  background: var(--surface-page-glow, var(--surface-page)) !important;
+  color: var(--text-primary) !important;
+}
+
 body.bodyStyle,
 body#ctl00_MasterBody,
 body {
   margin: 0;
   padding: 0;
-  background: var(--surface-page-glow) !important;
+  background: var(--surface-page-glow, var(--surface-page)) !important;
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif !important;
   color: var(--text-primary) !important;
   -webkit-font-smoothing: antialiased;
@@ -2174,12 +2179,16 @@ tr:has(td[height="1000"]) {
 
 .tt-class > * { position: relative; z-index: 1; }
 
+html.is-theme-style-dark .tt-class,
+html[data-theme-style="dark"] .tt-class,
 html[data-theme="dark"] .tt-class,
 html[data-theme="amoled"] .tt-class,
 html[data-theme="cappuccino-dark"] .tt-class,
 html[data-theme="evergreen-dark"] .tt-class,
 html[data-theme="midnight-dark"] .tt-class,
 html[data-theme="rosewood-dark"] .tt-class,
+html.is-theme-style-dark .tt-mobile-class,
+html[data-theme-style="dark"] .tt-mobile-class,
 html[data-theme="dark"] .tt-mobile-class,
 html[data-theme="amoled"] .tt-mobile-class,
 html[data-theme="cappuccino-dark"] .tt-mobile-class,
@@ -2376,6 +2385,8 @@ html[data-theme="rosewood-dark"] .tt-mobile-class {
   text-overflow: ellipsis;
   overflow: hidden;
 }
+html.is-theme-style-dark .tt-legend-chip,
+html[data-theme-style="dark"] .tt-legend-chip,
 html[data-theme="dark"] .tt-legend-chip,
 html[data-theme="amoled"] .tt-legend-chip,
 html[data-theme="cappuccino-dark"] .tt-legend-chip,
@@ -2386,6 +2397,8 @@ html[data-theme="rosewood-dark"] .tt-legend-chip {
   border-color: transparent;
   color: var(--text-secondary);
 }
+html.is-theme-style-dark .tt-legend-code,
+html[data-theme-style="dark"] .tt-legend-code,
 html[data-theme="dark"] .tt-legend-code,
 html[data-theme="amoled"] .tt-legend-code,
 html[data-theme="cappuccino-dark"] .tt-legend-code,
@@ -2503,6 +2516,8 @@ html[data-theme="rosewood-dark"] .tt-legend-code {
     box-shadow: 0 3px 8px color-mix(in srgb, var(--palette-color) 8%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
 
+  html.is-theme-style-dark .tt-mobile-class,
+  html[data-theme-style="dark"] .tt-mobile-class,
   html[data-theme="dark"] .tt-mobile-class,
   html[data-theme="amoled"] .tt-mobile-class,
   html[data-theme="cappuccino-dark"] .tt-mobile-class,

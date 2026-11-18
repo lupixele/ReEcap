@@ -211,6 +211,8 @@ html[data-theme-style="light"] {
    ========================================================================== */
 :root {
   --surface-page: hsl(var(--theme-primary-010));
+  --surface-page-glow: var(--surface-page);
+  --surface-bg: var(--surface-page);
   --surface-card: hsl(var(--theme-primary-020));
   --surface-sunken: hsl(var(--theme-primary-010));
   --surface-hover: hsl(var(--theme-primary-030));

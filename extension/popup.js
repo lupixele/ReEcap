@@ -28,19 +28,20 @@
   const shadowVal = document.getElementById('shadowVal');
   const statusLabel = document.getElementById('statusLabel');
 
-  function getActivePortalTab() {
-    return chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-      if (!tab || !tab.url || !/^https?:\/\/info\.aec\.edu\.in\//i.test(tab.url)) return null;
-      return tab;
-    });
-  }
-
   function sendMessageToPortal(msg) {
-    getActivePortalTab().then((tab) => {
-      if (tab) {
-        chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
-      }
-    });
+    try {
+      chrome.tabs.query({ url: '*://info.aec.edu.in/*' }, (tabs) => {
+        if (!tabs || !tabs.length) {
+          chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+            if (tab && tab.id) chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+          });
+          return;
+        }
+        tabs.forEach(tab => {
+          chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+        });
+      });
+    } catch (e) {}
   }
 
   function applyAndBroadcast() {
