@@ -382,6 +382,8 @@ const ADITYA_ACADEMIC_CALENDAR = {
               schedule: todaySchedule,
               backlogs: profile.backlogsText || academic.overallStats?.backlogs || '0',
               feeDue: profile.feeCurrentSem || profile.feeDue || '0',
+              feeTotalDue: profile.feeTotalDue || profile.feeDue || '0',
+              feeBalanceWords: profile.feeBalanceWords || '',
               feeLedger: profile.feeLedger || null,
               feeReceipts: profile.feeReceipts || []
             });
@@ -951,6 +953,10 @@ const ADITYA_ACADEMIC_CALENDAR = {
     const acad = dossier.academic || {};
     const subList = att.subjects?.map(s => `- ${s.name}: ${s.percent}% (Held: ${s.held}, Attended: ${s.attended}, Margin: ${s.bunks}, Needed: ${s.needed})`).join('\n') || 'None recorded';
     
+    const feeReceiptsList = (dossier.feeReceipts && dossier.feeReceipts.length > 0)
+      ? ('\n[RECENT VERIFIED FEE RECEIPTS]:\n' + dossier.feeReceipts.slice(-5).map(r => `- ${r.item || 'Fee'}: ₹${r.paid || r.amount || '--'} (Receipt: ${r.recNo || r.receiptNo || 'N/A'}, Date: ${r.recDate || r.date || 'N/A'})`).join('\n'))
+      : '';
+
     let gradesSummary = '';
     const sems = (acad.semesters && acad.semesters.length > 0) ? acad.semesters : (dossier.academic?.semesters || []);
     const validCourses = [];
@@ -995,7 +1001,8 @@ You are built to guide students through their academics, analyze their performan
 - Overall CGPA: ${acad.cgpa} (Credits: ${acad.credits}, Passed: ${acad.passed}, Failed: ${acad.failed})
 - Overall Attendance: ${att.overallPercent}% (${att.attended}/${att.held} classes)
 - Active Backlogs: ${dossier.backlogs}
-- Semester Fee Balance: ₹${dossier.feeDue}
+- Semester Fee Due: ₹${dossier.feeDue || '0.00'}
+- Total Outstanding Institutional Fee: ₹${dossier.feeTotalDue || dossier.feeDue || '0.00'}${dossier.feeBalanceWords ? `\n- Fee Status: ${dossier.feeBalanceWords}` : ''}${feeReceiptsList}
 
 [SUBJECT-WISE ATTENDANCE BREAKDOWN]:
 ${subList}
@@ -1345,17 +1352,25 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         `[action:nav:timetable|Open Full Timetable]`;
     }
 
-    if (q.includes('fee') || q.includes('due') || q.includes('receipt') || q.includes('payment') || q.includes('tuition')) {
+    if (q.includes('fee') || q.includes('due') || q.includes('receipt') || q.includes('payment') || q.includes('tuition') || q.includes('ledger')) {
       const feeDue = dossier.feeDue || '0.00';
+      const feeTotal = dossier.feeTotalDue || dossier.feeDue || '0.00';
       const receipts = dossier.feeReceipts || [];
-      let resp = `### Tuition Fees & Official Receipts\n\n`;
-      resp += `- **Current Term Status:** Active Term Settled (₹0.00 due for this semester)\n`;
-      resp += `- **Official Receipts Logged:** ${receipts.length || '6'} verified transactions on file\n\n`;
-      if (receipts.length > 0) {
-        resp += `**Recent Verified Receipts:**\n` +
-          receipts.slice(-3).map(r => `- **${r.item}**: ₹${r.paid} (Rec: \`${r.recNo}\` on ${r.recDate})`).join('\n') + '\n\n';
+      let resp = `### Tuition Fees & Financial Ledger\n\n`;
+      if (parseFloat(feeDue) > 0 || parseFloat(feeTotal) > 0) {
+        resp += `- **Current Semester Due:** ₹${feeDue}\n`;
+        if (feeTotal !== feeDue) resp += `- **Total Outstanding Dues:** ₹${feeTotal}\n`;
+        if (dossier.feeBalanceWords) resp += `- **Status:** ${dossier.feeBalanceWords}\n`;
+        resp += `\nYou can clear pending semester dues through the official online payment gateway below.\n\n`;
+      } else {
+        resp += `- **Current Semester Dues:** Fully Settled (₹0.00 outstanding)\n`;
+        resp += `- **Account Standing:** Clear / In Good Health\n\n`;
       }
-      resp += `[action:nav:fees|Open Fee & Receipts Hub] [action:nav:marks|Academic Marks]`;
+      if (receipts.length > 0) {
+        resp += `**Recent Verified Transactions & Receipts:**\n` +
+          receipts.slice(-4).map(r => `- **${r.item || 'Tuition Fee'}**: ₹${r.paid || r.amount || '--'} (Receipt: \`${r.recNo || r.receiptNo || 'N/A'}\` • ${r.recDate || r.date || 'N/A'})`).join('\n') + '\n\n';
+      }
+      resp += `[action:nav:fees|Open Fee Ledger & Pay Online] [action:nav:receipts|View All Receipts]`;
       return resp;
     }
 
@@ -1466,6 +1481,21 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
           l.classList.toggle('active', href.includes(route.url.toLowerCase()));
         });
       }
+      return;
+    }
+
+    if (domain === 'fee_ledger' || verb === 'fee_ledger' || actionKey === 'fee_ledger') {
+      submitPrompt("What is my current tuition fee balance, dues breakdown, and payment status?");
+      return;
+    }
+
+    if (domain === 'live_attendance' || verb === 'live_attendance' || actionKey === 'live_attendance') {
+      submitPrompt("Can you give me a live attendance summary across all my subjects with my attendance buffer?");
+      return;
+    }
+
+    if (domain === 'detailed_grades' || verb === 'detailed_grades' || actionKey === 'detailed_grades') {
+      submitPrompt("Can you summarize my academic grades, SGPA, credits, and overall progress?");
       return;
     }
 

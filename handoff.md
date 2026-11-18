@@ -223,6 +223,9 @@ Short child pages generated blank trailing space due to reading `document.docume
 ## 10. Aria AI Academic Assistant Integration
 
 - **Dossier Extraction**: Silently scans and compiles student attendance rates, internal marks, backlogs, and term timelines into an in-memory academic dossier.
+- **Aria Sidebar Prompt Card Delegation**:
+  - All prompt suggestion chips on the welcome hero card (`weak_subjects`, `target_calc`, `skip_sim`, `live_attendance`, `detailed_grades`, `fee_ledger`) directly submit conversational prompts into Aria chat instead of merely navigating the iframe.
+  - Aria utilizes the student's live dossier (semester fee due, total outstanding institutional fee, balance in words, verified receipt history, subject attendance buffers, and academic grades) to directly deliver full conversational answers in chat while synchronizing background portal navigation.
 - **Sidecar Panel**: Accessible via the masthead pill or theme toolbar, opening a dedicated side-panel assistant with conversational chat.
 - **Header Actions Restructuring**:
   - Eliminated the redundant "Refresh Telemetry" button.
