@@ -119,11 +119,22 @@ function initDecorators() {
                <path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>
              </svg>
            </button>
+           <button type="button" class="sidebar-collapse-btn desktop-only" id="reecap-sidebar-toggle-btn" aria-label="Toggle Sidebar" title="Toggle Sidebar">
+             <svg class="icon-collapse" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path><path d="m14 9-3 3 3 3"></path></svg>
+             <svg class="icon-expand" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" style="display:none;"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path><path d="m11 9 3 3-3 3"></path></svg>
+           </button>
            <div class="brand-identity">
              <div class="eyebrow">${titleEyebrow}</div>
              <h1 class="brand-title">ReEcap</h1>
            </div>
          `;
+
+         const sidebarToggleBtn = brandBlock.querySelector('#reecap-sidebar-toggle-btn');
+         if (sidebarToggleBtn) {
+           sidebarToggleBtn.addEventListener('click', () => {
+             document.documentElement.classList.toggle('is-sidebar-collapsed');
+           });
+         }
 
          const userCluster = document.createElement('div');
          userCluster.className = 'user-cluster';
@@ -4409,15 +4420,125 @@ function buildSidebar() {
     `;
     menu.appendChild(navigationHeading);
 
+    // Beautiful UI: Workspace Switcher Header
+    const workspaceSwitcher = document.createElement('div');
+    workspaceSwitcher.className = 'reecap-workspace-switcher';
+    workspaceSwitcher.innerHTML = `
+      <div class="workspace-chip" id="reecap-workspace-trigger">
+        <div class="workspace-avatar">A</div>
+        <div class="workspace-info">
+          <span class="workspace-name">Aditya University</span>
+          <span class="workspace-plan">ECAP Student Portal</span>
+        </div>
+        <span class="workspace-chevron">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+      </div>
+      <div class="workspace-dropdown" id="reecap-workspace-dropdown" style="display: none;">
+        <div class="workspace-option is-active" data-action="portal">
+          <span class="option-title">Aditya University ECAP</span>
+          <span class="option-sub">Current Workspace</span>
+        </div>
+        <div class="workspace-option" data-action="profile">
+          <span class="option-title">Student Profile</span>
+          <span class="option-sub">25B11DS190 · lupel</span>
+        </div>
+        <div class="workspace-option" data-action="aria">
+          <span class="option-title">Aria AI Assistant</span>
+          <span class="option-sub">Academic Intelligence</span>
+        </div>
+      </div>
+    `;
+
+    const wsTrigger = workspaceSwitcher.querySelector('#reecap-workspace-trigger');
+    const wsDropdown = workspaceSwitcher.querySelector('#reecap-workspace-dropdown');
+    if (wsTrigger && wsDropdown) {
+      wsTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = wsDropdown.style.display === 'none';
+        wsDropdown.style.display = isHidden ? 'flex' : 'none';
+        wsTrigger.querySelector('.workspace-chevron').style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+      });
+
+      document.addEventListener('click', () => {
+        if (wsDropdown.style.display !== 'none') {
+          wsDropdown.style.display = 'none';
+          const ch = wsTrigger.querySelector('.workspace-chevron');
+          if (ch) ch.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      workspaceSwitcher.querySelectorAll('.workspace-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          wsDropdown.style.display = 'none';
+          const action = opt.dataset.action;
+          if (action === 'profile' && profileItem) {
+            profileItem.link.click();
+          } else if (action === 'aria') {
+            if (typeof toggleAriaSidebar === 'function') toggleAriaSidebar();
+          } else if (action === 'portal') {
+            showOverview();
+          }
+        });
+      });
+    }
+    menu.appendChild(workspaceSwitcher);
+
+    // Beautiful UI: Fast Search Bar & Command Palette (Ctrl+K)
+    const overviewIcon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg>';
+    
+    const searchTargets = [
+      { id: 'overview', title: 'Overview', group: 'Dashboard', icon: overviewIcon, action: () => showOverview() },
+      ...(profileItem ? [{ id: 'profile', title: 'Profile', group: 'Account', icon: icons.PROFILE || genericIcon, action: () => profileItem.link.click() }] : [])
+    ];
+
+    for (const [groupName, items] of Object.entries(categorized)) {
+      items.forEach(it => {
+        searchTargets.push({
+          id: it.text.toLowerCase().replace(/\s+/g, '-'),
+          title: it.text,
+          group: groupName,
+          icon: icons[it.text] || genericIcon,
+          action: () => it.link.click()
+        });
+      });
+    }
+
+    const searchItem = document.createElement('div');
+    searchItem.className = 'reecap-sidebar-search-item';
+    searchItem.id = 'reecap-sidebar-search-trigger';
+    searchItem.innerHTML = `
+      <div class="search-left">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span>Search</span>
+      </div>
+      <kbd class="search-shortcut">Ctrl+K</kbd>
+    `;
+
+    searchItem.addEventListener('click', () => {
+      openSearchCommandModal(searchTargets);
+    });
+    menu.appendChild(searchItem);
+
+    if (!window.__reecap_search_listener_bound) {
+      window.__reecap_search_listener_bound = true;
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          openSearchCommandModal(searchTargets);
+        }
+      });
+    }
+
     // Add OVERVIEW item at top (Only for Students)
     if (isStudentRole()) {
       const overviewLi = document.createElement('li');
       const overviewA = document.createElement('a');
       overviewA.className = 'reecap-sidebar-link reecap-sidebar-overview';
       overviewA.href = 'javascript:void(0);';
-      const overviewIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>';
       overviewA.title = 'Overview';
-      overviewA.innerHTML = `<span class="reecap-sidebar-icon">${overviewIcon}</span><span class="reecap-sidebar-text">OVERVIEW</span>`;
+      overviewA.innerHTML = `<span class="reecap-sidebar-icon">${overviewIcon}</span><span class="reecap-sidebar-text">Overview</span>`;
       overviewA.addEventListener('click', (e) => {
         e.preventDefault();
         document.querySelectorAll('.reecap-sidebar-link').forEach(link => link.classList.remove('active'));
@@ -4544,26 +4665,150 @@ function buildSidebar() {
       menu.appendChild(section);
     }
 
-    // Insert Customize Menu Button at bottom of sidebar
-    const customizeFooter = document.createElement('div');
-    customizeFooter.className = 'reecap-sidebar-footer';
-    customizeFooter.innerHTML = `
-      <button type="button" class="reecap-sidebar-customize-btn" id="reecap-btn-customize-nav" title="Hide or show navigation links">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 20h9"></path>
-          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-        </svg>
-        <span>Customize Menu</span>
-      </button>
+    // Beautiful UI: Bottom Nav Items (Customize & Logout)
+    const bottomNav = document.createElement('div');
+    bottomNav.className = 'reecap-sidebar-bottom-nav';
+    bottomNav.innerHTML = `
+      <div class="reecap-sidebar-link bottom-link" id="reecap-btn-customize-nav" title="Customize Menu">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span class="reecap-sidebar-text">Customize Menu</span>
+        </div>
+        <kbd class="kbd-shortcut">Ctrl+,</kbd>
+      </div>
+      <div class="reecap-sidebar-link bottom-link" id="reecap-btn-sidebar-logout" title="Log Out">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span class="reecap-sidebar-text">Log Out</span>
+        </div>
+      </div>
     `;
-    const custBtn = customizeFooter.querySelector('#reecap-btn-customize-nav');
+
+    const custBtn = bottomNav.querySelector('#reecap-btn-customize-nav');
     if (custBtn) {
       custBtn.addEventListener('click', () => {
         openNavCustomizeModal(categorized, profileItem);
       });
     }
-    menu.appendChild(customizeFooter);
+
+    const logoutBtn = bottomNav.querySelector('#reecap-btn-sidebar-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        const portalLogout = document.getElementById('lnkLogOut');
+        if (portalLogout) portalLogout.click();
+      });
+    }
+
+    menu.appendChild(bottomNav);
     
+  });
+}
+
+function openSearchCommandModal(searchTargets) {
+  const existing = document.getElementById('reecap-search-modal');
+  if (existing) {
+    existing.remove();
+    return;
+  }
+
+  const scrim = document.createElement('div');
+  scrim.id = 'reecap-search-modal';
+  scrim.className = 'reecap-search-scrim';
+
+  const dialog = document.createElement('div');
+  dialog.className = 'reecap-search-dialog';
+  dialog.innerHTML = `
+    <div class="search-dialog-header">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" id="reecap-search-input" placeholder="Search pages, docs, or actions..." autocomplete="off" />
+      <kbd id="reecap-search-esc" class="kbd-shortcut">ESC</kbd>
+      <button type="button" id="reecap-search-close" class="search-close-btn" aria-label="Close search">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="search-results-list" id="reecap-search-results"></div>
+  `;
+
+  scrim.appendChild(dialog);
+  document.body.appendChild(scrim);
+
+  const input = dialog.querySelector('#reecap-search-input');
+  const resultsContainer = dialog.querySelector('#reecap-search-results');
+  const closeBtn = dialog.querySelector('#reecap-search-close');
+  const escBtn = dialog.querySelector('#reecap-search-esc');
+
+  const close = () => scrim.remove();
+  scrim.addEventListener('click', (e) => {
+    if (e.target === scrim) close();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  if (escBtn) escBtn.addEventListener('click', close);
+
+  const renderResults = (query) => {
+    resultsContainer.innerHTML = '';
+    const q = (query || '').trim().toLowerCase();
+    const filtered = (searchTargets || []).filter(t => !q || t.title.toLowerCase().includes(q) || t.group.toLowerCase().includes(q));
+
+    if (filtered.length === 0) {
+      resultsContainer.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+          No matching pages found for "${escapeAttr(query)}"
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach((t, idx) => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'search-result-item' + (idx === 0 ? ' is-selected' : '');
+      itemEl.innerHTML = `
+        <div class="search-result-left">
+          <span style="display: flex; align-items: center; width: 16px; height: 16px; color: var(--text-secondary);">${t.icon}</span>
+          <span>${t.title}</span>
+        </div>
+        <span class="search-result-group-badge">${t.group}</span>
+      `;
+      itemEl.addEventListener('click', () => {
+        close();
+        t.action();
+      });
+      resultsContainer.appendChild(itemEl);
+    });
+  };
+
+  renderResults('');
+  input.focus();
+
+  input.addEventListener('input', () => {
+    renderResults(input.value);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    const items = Array.from(resultsContainer.querySelectorAll('.search-result-item'));
+    if (items.length === 0) return;
+    let selectedIdx = items.findIndex(el => el.classList.contains('is-selected'));
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (selectedIdx >= 0) items[selectedIdx].classList.remove('is-selected');
+      selectedIdx = (selectedIdx + 1) % items.length;
+      items[selectedIdx].classList.add('is-selected');
+      items[selectedIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (selectedIdx >= 0) items[selectedIdx].classList.remove('is-selected');
+      selectedIdx = (selectedIdx - 1 + items.length) % items.length;
+      items[selectedIdx].classList.add('is-selected');
+      items[selectedIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIdx >= 0 && items[selectedIdx]) {
+        items[selectedIdx].click();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    }
   });
 }
 
