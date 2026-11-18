@@ -1055,7 +1055,8 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       const response = await fetch(ARIA_CHAT_ENDPOINT, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Aria-Client': 'ReEcap'
         },
         body: JSON.stringify({
           messages: payloadMessages,

@@ -27,7 +27,6 @@
     ],
     "host_permissions": [
         "*://info.aec.edu.in/*",
-        "https://aria.lupixele.online/*",
         "https://aria.lupixele.online/*"
     ],
     "content_scripts": [
