@@ -83,7 +83,7 @@
   - Omitted the informal "Hi," greeting prefix per user preference.
   - The profile card is docked at the absolute rightmost position of the masthead (`.user-cluster`).
   - Left column: The profile avatar photo (`#imgstudent` / `.user-avatar`, or `.user-avatar-placeholder` fallback).
-  - Right column: A dedicated vertical 2-row CSS grid (`.user-meta-grid`) housing the student's name above (`.user-name`) and the logout action directly below (`#lnkLogOut` / `.user-logout-btn`) as a compact nightTab pill button.
+  - Right column: A dedicated vertical 2-row CSS grid (`.user-meta-grid`) housing the student's name centered above (`.user-name`) and the logout action centered directly below (`#lnkLogOut` / `.user-logout-btn`) as a nightTab pill button equipped with an enlarged 14px Feather log-out SVG icon, 11.5px monospace typography, and a 4px gap that aligns with the avatar photo height.
   - Action pills (`Aria AI`, `Change Password`) remain cleanly organized to the left of the profile card.
 
 ---
