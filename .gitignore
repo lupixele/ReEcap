@@ -15,3 +15,5 @@ scratch/*/shared/students.*
 dist/
 scratch/
 .git.backup/
+
+*.zip
