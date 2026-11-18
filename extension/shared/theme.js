@@ -149,7 +149,7 @@
   },
   "app": {
     "id": "app",
-    "name": "nightTab (default)",
+    "name": "nightTab",
     "color": {
       "range": {
         "primary": {
@@ -1312,7 +1312,7 @@
   },
   "point": {
     "id": "point",
-    "name": "Point",
+    "name": "Point (default)",
     "color": {
       "range": {
         "primary": {

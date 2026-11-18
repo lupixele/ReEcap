@@ -272,17 +272,31 @@ const ADITYA_ACADEMIC_CALENDAR = {
    * Helper to retrieve active student name directly from the DOM as a resilient fallback.
    */
   function getActiveStudentNameFromDom() {
-    try {
-      const lbl = document.getElementById('lblUser') || window.parent?.document?.getElementById('lblUser');
-      if (lbl) {
-        const txt = (lbl.querySelector('b, strong')?.textContent || lbl.textContent || '').replace(/^Hi[\.\s]*/i, '').trim();
-        if (txt) return txt;
-      }
-    } catch (e) {}
-    try {
-      const td = document.getElementById('tdstudentname') || window.parent?.document?.getElementById('tdstudentname');
-      if (td && td.textContent.trim()) return td.textContent.trim();
-    } catch (e) {}
+    const candidateDocs = [
+      document,
+      (typeof window !== 'undefined' && window.top) ? window.top.document : null,
+      (typeof window !== 'undefined' && window.parent) ? window.parent.document : null
+    ].filter(Boolean);
+
+    for (const doc of candidateDocs) {
+      try {
+        const nameEl = doc.querySelector('.user-display-name, .user-profile-badge .user-name, #lblUser');
+        if (nameEl) {
+          const txt = (nameEl.textContent || '')
+            .replace(/^(Hi|Welcome)[\.\s,:-]*/i, '')
+            .trim();
+          if (txt && txt.toLowerCase() !== 'student') return txt;
+        }
+      } catch (e) {}
+
+      try {
+        const td = doc.getElementById('tdstudentname');
+        if (td && td.textContent.trim()) {
+          const txt = td.textContent.trim();
+          if (txt && txt.toLowerCase() !== 'student') return txt;
+        }
+      } catch (e) {}
+    }
     return '';
   }
 
@@ -313,8 +327,8 @@ const ADITYA_ACADEMIC_CALENDAR = {
             const academic = data?.reecapAcademicData || {};
 
             const rollNo = id.RollNo || id.rollNo || '';
-            const rawParsedName = id.Name || id.name || getActiveStudentNameFromDom() || '';
-            const name = rawParsedName || 'Student';
+            const rawParsedName = id.Name || id.name || id.rawName || getActiveStudentNameFromDom() || '';
+            const name = (rawParsedName && rawParsedName.toLowerCase() !== 'student') ? rawParsedName : (getActiveStudentNameFromDom() || '');
             const course = id.Course || '';
             const branch = id.Branch || '';
             const sem = id.Semester || '';
@@ -975,9 +989,17 @@ const ADITYA_ACADEMIC_CALENDAR = {
         : 'No formal grades recorded yet.';
     }
 
-    const rawName = id.name || getActiveStudentNameFromDom() || '';
-    const studentDisplayName = isCloud ? 'Student' : (rawName ? rawName.split(' ')[0] : 'Student');
-    const studentFullName = isCloud ? 'Student' : (rawName || 'Student');
+    const rawName = id.name || id.Name || id.rawName || getActiveStudentNameFromDom() || '';
+    let studentDisplayName = 'Student';
+    let studentFullName = 'Student';
+
+    if (rawName && rawName.toLowerCase() !== 'student') {
+      const parts = rawName.split(/\s+/).filter(Boolean);
+      studentFullName = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+      // Use full title-cased name so Aria knows their full real name
+      studentDisplayName = studentFullName;
+    }
+
     const studentRollNo = isCloud ? '[REDACTED]' : (id.rollNo || 'Not specified');
 
     let curSemKey = 'III';
@@ -994,7 +1016,7 @@ You are built to guide students through their academics, analyze their performan
 
 [CURRENT STUDENT DOSSIER]:
 - Name: ${studentDisplayName} (Full Name: ${studentFullName})
-- Address the student directly as: "${studentDisplayName}" (always call them "${studentDisplayName}" when speaking to them)
+- Address the student directly as: "${studentDisplayName}" (always address them by their actual name "${studentDisplayName}"; never call them "Student" or "Hi, Student")
 - Roll Number: ${studentRollNo}
 - Branch / Course: ${id.branch || id.course || 'Aditya University'}
 - Current Semester: ${id.semester || curSemKey}
@@ -1021,7 +1043,7 @@ ${calList || '- Semester End Theory Exams: 16.11.2026 to 28.11.2026\n- Results: 
 - 10-point scale: O(10), S/A+(9), A(8), B(7), C(6), P/D(5), F(0). NAAC A++ Autonomous Institution.
 
 [YOUR CORE ROLES]:
-1. ACADEMIC ADVISOR: Always refer to the student strictly as "${studentDisplayName}" (never use any other surname). Analyze grades, identify weak subjects (courses with Grade B or below), evaluate internal test patterns, and suggest practical study strategies. Never dismiss the student or say you cannot identify weak subjects.
+1. ACADEMIC ADVISOR: Always refer to the student by their name "${studentDisplayName}". Analyze grades, identify weak subjects (courses with Grade B or below), evaluate internal test patterns, and suggest practical study strategies. Never dismiss the student or say you cannot identify weak subjects.
 2. ATTENDANCE STRATEGIST: Calculate precise class skip allowances or mandatory attendance targets using the 75% formula. Always use respectful phrases such as "skipping classes", "attendance buffer", or "class margin", never "bunk".
 3. PORTAL NAVIGATOR: Guide the student to the exact sections of 𝚁𝚎𝙴𝚌𝚊𝚙"/.
 

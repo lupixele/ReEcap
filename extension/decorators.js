@@ -506,10 +506,11 @@ function initDecorators() {
              userCluster.appendChild(ariaBtn);
           }
 
-          if (changePass) {
-             changePass.className = 'pill-btn';
-             userCluster.appendChild(changePass);
-          }
+          // 2b. Theme Manager Popout trigger in top masthead (no floating widget)
+          const themeWrap = document.createElement('div');
+          themeWrap.id = 'reecap-theme-toolbar';
+          themeWrap.className = 'reecap-theme-popout-wrap';
+          userCluster.appendChild(themeWrap);
 
           // 3. Rightmost Profile Badge: Profile icon on left, vertical grid with Name above and Logout below
           const profileBadge = document.createElement('div');
@@ -790,16 +791,32 @@ function initDecorators() {
 
 function injectThemeToolbar() {
   if (window.self !== window.top) return;
-  if (document.getElementById('reecap-theme-toolbar')) return;
 
-  const toolbar = document.createElement('div');
-  toolbar.id = 'reecap-theme-toolbar';
-  toolbar.className = 'reecap-theme-toolbar';
-  
-  const iconPalette = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.02 0 1.93-.72 2.15-1.72.07-.32-.01-.65-.24-.89l-2.02-2.02c-.22-.22-.31-.55-.24-.87.16-.76.84-1.31 1.63-1.31h1.36c3.55 0 6.4-2.85 6.4-6.4 0-4.08-4.07-7.79-9.04-7.79z"/></svg>`;
   const themeEngine = window.__reecap_theme;
   if (!themeEngine) return;
   const presets = themeEngine.PRESETS;
+
+  let toolbar = document.getElementById('reecap-theme-toolbar');
+  if (!toolbar) {
+    const userCluster = document.querySelector('.masthead .user-cluster');
+    if (userCluster) {
+      toolbar = document.createElement('div');
+      toolbar.id = 'reecap-theme-toolbar';
+      toolbar.className = 'reecap-theme-popout-wrap';
+      userCluster.appendChild(toolbar);
+    } else {
+      toolbar = document.createElement('div');
+      toolbar.id = 'reecap-theme-toolbar';
+      toolbar.className = 'reecap-theme-popout-wrap';
+      document.body.appendChild(toolbar);
+    }
+  }
+
+  if (toolbar.dataset.built === 'true') return;
+  toolbar.dataset.built = 'true';
+  toolbar.className = 'reecap-theme-popout-wrap';
+  
+  const iconPalette = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.02 0 1.93-.72 2.15-1.72.07-.32-.01-.65-.24-.89l-2.02-2.02c-.22-.22-.31-.55-.24-.87.16-.76.84-1.31 1.63-1.31h1.36c3.55 0 6.4-2.85 6.4-6.4 0-4.08-4.07-7.79-9.04-7.79z"/></svg>`;
 
   let currentPresetId = 'point';
   let currentRadius = 25;
@@ -808,8 +825,9 @@ function injectThemeToolbar() {
   let searchQuery = '';
 
   toolbar.innerHTML = `
-    <button class="reecap-toolbar-trigger" aria-label="Theme Settings" title="Theme Settings">
+    <button type="button" class="pill-btn reecap-theme-pill-btn reecap-toolbar-trigger" id="btn-open-theme-manager" title="nightTab Theme Manager (45 Presets)" aria-haspopup="true" aria-expanded="false">
        ${iconPalette}
+       <span>Theme</span>
     </button>
     <div class="reecap-toolbar-menu">
        <div class="toolbar-header">
@@ -3012,6 +3030,13 @@ function buildTimetableDashboard(tbl) {
       return label || `Period ${index + 1}`;
     });
 
+  const periodTimes = new Array(periodCount).fill('');
+  headerLabels.forEach((label, idx) => {
+    if (/\d{1,2}:\d{2}/.test(label)) {
+      periodTimes[idx] = label;
+    }
+  });
+
   // --- B. Scrape Days (1 to 6/7) ---
   const schedule = {};
   let legendStartIndex = 1;
@@ -3051,6 +3076,10 @@ function buildTimetableDashboard(tbl) {
               .replace(/\s+/g, ' ')
               .trim()
           : '';
+
+        if (timeRange && !periodTimes[j - 1] && /\d{1,2}:\d{2}/.test(timeRange)) {
+          periodTimes[j - 1] = timeRange;
+        }
 
         // Fallback to column header time if not inline
         if (!timeRange && headerLabels[j - 1]) {
@@ -3214,7 +3243,9 @@ function buildTimetableDashboard(tbl) {
 
   html += `<div class="tt-cell tt-header tt-corner" role="columnheader">Day</div>`;
   headerLabels.forEach((label, idx) => {
-    html += `<div class="tt-cell tt-header tt-period-head" role="columnheader"><span>${String(idx + 1).padStart(2, '0')}</span><time>${escapeAttr(label)}</time></div>`;
+    const periodNum = String(idx + 1).padStart(2, '0');
+    const timeText = periodTimes[idx] || (label !== String(idx + 1) && label !== periodNum && !/^period\s*\d+$/i.test(label) ? label : '');
+    html += `<div class="tt-cell tt-header tt-period-head" role="columnheader"><span>${periodNum}</span>${timeText ? `<time class="tt-period-time">${escapeAttr(timeText)}</time>` : ''}</div>`;
   });
 
   sortedDays.forEach((day, dayIndex) => {
@@ -3254,15 +3285,15 @@ function buildTimetableDashboard(tbl) {
       html += `
         <div class="tt-cell tt-class ${isToday}${slot.span > 1 ? ' tt-merged' : ''}${tooltipEdge}${tooltipDir}" style="${spanStyle} --palette: ${slot.palette};" tabindex="0" role="gridcell" aria-label="${escapeAttr(ttAriaLabel)}">
           <div class="subject-card__top">
-            <span class="subject-card__code">${escapeAttr(slot.allCodes)}</span>
+            ${slot.room ? `<span class="subject-card__room">${escapeAttr(slot.room)}</span>` : ''}
             <span class="subject-card__dot"></span>
           </div>
           <h3 class="subject-card__title">${escapeAttr(slot.details.name || slot.allCodes)}</h3>
-          ${slot.timeRange ? `<time class="subject-card__time">${escapeAttr(slot.timeRange)}</time>` : ''}
 
           <div class="tt-tooltip subject-card__details">
             <div class="detail-eyebrow">Class Details</div>
             <strong class="detail-name">${escapeAttr(slot.details.name || slot.allCodes)}</strong>
+            ${slot.allCodes && slot.details.name && slot.allCodes !== slot.details.name ? `<span class="detail-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg><span><small>Course Code</small>${escapeAttr(slot.allCodes)}</span></span>` : ''}
             ${slot.timeRange ? `<span class="detail-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span><small>Period</small>${escapeAttr(periodLabel)} (${escapeAttr(slot.timeRange)})</span></span>` : ''}
             ${slot.faculty ? `<span class="detail-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span><small>Faculty</small>${escapeAttr(slot.faculty)}</span></span>` : ''}
             ${slot.room ? `<span class="detail-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg><span><small>Location</small>${escapeAttr(slot.room)}</span></span>` : ''}
@@ -3303,7 +3334,7 @@ function buildTimetableDashboard(tbl) {
         html += `
           <article class="subject-card subject-card--compact" style="--palette: ${slot.palette};">
             <div class="subject-card__top">
-              <span class="subject-card__code">${escapeAttr(slot.allCodes)}</span>
+              <span class="subject-card__period">${escapeAttr(periodLabel)}</span>
               <span class="subject-card__dot"></span>
             </div>
             <h3 class="subject-card__title">${escapeAttr(slot.details.name || slot.allCodes)}</h3>
@@ -3857,6 +3888,10 @@ function buildProfileTabs(accordion) {
         try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'BACKLOGS' }, '*'); } catch (err) {}
       } else if (tab.id === 'divProfile_BioData') {
         try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'BIO-DATA' }, '*'); } catch (err) {}
+      } else if (tab.id === 'divProfile_Present') {
+        try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'PRESENT PERFORMANCE' }, '*'); } catch (err) {}
+      } else if (tab.id === 'divProfile_Past') {
+        try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'PAST PERFORMANCE' }, '*'); } catch (err) {}
       } else {
         try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: tab.label.toUpperCase() }, '*'); } catch (err) {}
       }
@@ -3883,6 +3918,10 @@ function buildProfileTabs(accordion) {
     const activeTab = availableTabs[defaultActiveIndex];
     if (activeTab && activeTab.id === 'divProfile_Fees') {
       try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'FEE DETAILS' }, '*'); } catch (err) {}
+    } else if (activeTab && activeTab.id === 'divProfile_Present') {
+      try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'PRESENT PERFORMANCE' }, '*'); } catch (err) {}
+    } else if (activeTab && activeTab.id === 'divProfile_Past') {
+      try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'PAST PERFORMANCE' }, '*'); } catch (err) {}
     }
   }
 
@@ -5467,9 +5506,9 @@ function buildSidebar() {
   submenus.forEach(s => s.remove());
   
   const groups = {
+    'Profile': ['BIO-DATA', 'PRESENT PERFORMANCE', 'PERFORMANCE', 'PAST PERFORMANCE', 'OUTINGS', 'COUNSELING', 'DISCIPLINARY ACTION'],
     'Academics': ['SEMESTER CALENDAR', 'ACADEMIC CALENDAR', 'ACADEMIC CALENDER', 'ATTENDANCE', 'TIMETABLE', 'COURSE REGISTRATION', 'MARKS', 'LESSON PLAN', 'EXAMS DETAILS', 'HALLTICKET', 'VIEW ANSWER SHEET', 'VIEW EXAM PAPER', 'BACKLOGS'],
     'Finance': ['FEE DETAILS', 'ONLINE PAYMENT', 'COLLEGE FEE', 'EXAM FEE', 'RE-VALUATION', 'ONLINE TRANSACTIONS', 'RECEIPTS'],
-    'Profile': ['BIO-DATA', 'PERFORMANCE', 'PAST PERFORMANCE', 'OUTINGS', 'COUNSELING', 'DISCIPLINARY ACTION'],
     'Account': ['HOSTEL ROOM BOOKING', 'LIBRARY BOOKS', 'BOOK SEARCH']
   };
   
@@ -5498,19 +5537,21 @@ function buildSidebar() {
     'RECEIPTS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
     'PROFILE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
     'BIO-DATA': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+    'PRESENT PERFORMANCE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
     'PERFORMANCE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
     'PAST PERFORMANCE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path></svg>',
     'OUTINGS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>',
     'COUNSELING': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
     'DISCIPLINARY ACTION': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
     'HOSTEL ROOM BOOKING': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
+    'CHANGE PASSWORD': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>',
     'LIBRARY BOOKS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>',
     'BOOK SEARCH': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>'
   };
 
   const genericIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
 
-  const categorized = { 'Academics': [], 'Finance': [], 'Profile': [], 'Account': [] };
+  const categorized = { 'Profile': [], 'Academics': [], 'Finance': [], 'Account': [] };
   let profileItem = null;
 
   links.forEach(link => {
@@ -5544,7 +5585,7 @@ function buildSidebar() {
   if (profileItem || isStudentRole()) {
     const profileSubTabs = [
       { text: 'BIO-DATA', tabId: 'divProfile_BioData', title: 'BIO-DATA' },
-      { text: 'PERFORMANCE', tabId: 'divProfile_Present', title: 'PERFORMANCE' },
+      { text: 'PRESENT PERFORMANCE', tabId: 'divProfile_Present', title: 'PRESENT PERFORMANCE' },
       { text: 'PAST PERFORMANCE', tabId: 'divProfile_Past', title: 'PAST PERFORMANCE' },
       { text: 'OUTINGS', tabId: 'divProfile_Outings', title: 'OUTINGS' },
       { text: 'COUNSELING', tabId: 'divProfile_Counseling', title: 'COUNSELING' },
@@ -5557,6 +5598,7 @@ function buildSidebar() {
       a.href = `Academics/StudentProfile.aspx?scrid=17#${sub.tabId}`;
       a.setAttribute('href', `Academics/StudentProfile.aspx?scrid=17#${sub.tabId}`);
       a.textContent = sub.text;
+      a.dataset.tabId = sub.tabId;
       categorized['Profile'].push({ text: sub.text, link: a, tabId: sub.tabId, title: sub.title });
     });
   }
@@ -5574,7 +5616,31 @@ function buildSidebar() {
     categorized['Academics'].unshift({ text: 'ACADEMIC CALENDAR', link: calLink });
   }
 
-  chrome.storage.sync.get({ sidebarOpen: { Academics: true, Finance: false, Profile: false, Account: false }, reecapHiddenNav: [] }, ({ sidebarOpen = {}, reecapHiddenNav = [] }) => {
+  // Ensure CHANGE PASSWORD is always present in Account category
+  const hasChangePass = categorized['Account'].some(it => it.text === 'CHANGE PASSWORD');
+  if (!hasChangePass) {
+    const cpLink = document.createElement('a');
+    cpLink.className = 'menuLink';
+    cpLink.href = 'Admin/changepassword.aspx?ctype=S';
+    cpLink.setAttribute('href', 'Admin/changepassword.aspx?ctype=S');
+    cpLink.textContent = 'CHANGE PASSWORD';
+    categorized['Account'].unshift({ text: 'CHANGE PASSWORD', link: cpLink });
+  }
+
+  const defaultSidebarOpen = { Profile: true, Academics: false, Finance: false, Account: false };
+  chrome.storage.sync.get({ sidebarOpen: defaultSidebarOpen, reecapHiddenNav: [] }, ({ sidebarOpen, reecapHiddenNav = [] }) => {
+    let currentSidebarState = (sidebarOpen && typeof sidebarOpen === 'object') ? Object.assign({}, defaultSidebarOpen, sidebarOpen) : defaultSidebarOpen;
+    // Sanitize state: strictly keep only Profile expanded on initial site open/login.
+    // If multiple categories were saved as open from legacy storage, reset to strictly Profile only.
+    const openGroups = Object.keys(categorized).filter(k => currentSidebarState[k] === true);
+    if (openGroups.length !== 1 || !currentSidebarState['Profile']) {
+      currentSidebarState = { Profile: true, Academics: false, Finance: false, Account: false };
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+          chrome.storage.sync.set({ sidebarOpen: currentSidebarState });
+        }
+      } catch (e) {}
+    }
     menu.innerHTML = '';
 
     const navigationHeading = document.createElement('li');
@@ -5713,6 +5779,8 @@ function buildSidebar() {
             }
           }
 
+          const isChangePass = item.text.trim().toUpperCase() === 'CHANGE PASSWORD' || (a.getAttribute('href') || '').toLowerCase().includes('changepassword');
+
           if (isCal) {
             e.preventDefault();
             showAcademicCalendar();
@@ -5722,6 +5790,13 @@ function buildSidebar() {
           } else if (isProfileSubTab) {
             e.preventDefault();
             navigateToProfileTab(item.tabId, item.title || item.text);
+          } else if (isChangePass) {
+            e.preventDefault();
+            if (typeof showIframe === 'function') showIframe();
+            const iframe = document.getElementById('capIframeId');
+            if (iframe) {
+              iframe.src = `${getPortalBaseUrl()}Admin/changepassword.aspx?ctype=S`;
+            }
           } else {
             if (typeof showIframe === 'function') showIframe();
           }
@@ -5746,7 +5821,8 @@ function buildSidebar() {
         sectionInner.inert = isCollapsed;
       };
 
-      setGroupCollapsed(sidebarOpen[groupName] === false);
+      const isGroupOpen = currentSidebarState[groupName] === true;
+      setGroupCollapsed(!isGroupOpen);
 
       groupHeader.addEventListener('click', () => {
         const willBeCollapsed = !groupHeader.classList.contains('is-collapsed');
@@ -5835,18 +5911,68 @@ function setActiveSidebarLink(target) {
     const raw = target.trim();
     const term = raw.toLowerCase();
 
-    // 1. Check data-route-key
-    activeEl = links.find(l => (l.getAttribute('data-route-key') || '').toLowerCase() === term);
-
-    // 2. Check exact or partial textContent
-    if (!activeEl) {
+    // 0. Explicit alias checks for Present vs Past performance to avoid any ambiguity
+    if (term === 'present performance' || term === 'divprofile_present' || term === 'performance (present)' || term === 'performance') {
       activeEl = links.find(l => {
         const txt = (l.textContent || '').trim().toLowerCase();
-        return txt === term || txt.includes(term) || term.includes(txt);
+        const tabId = (l.getAttribute('data-tab-id') || l.dataset.tabId || '').toLowerCase();
+        return txt === 'present performance' || tabId === 'divprofile_present';
+      });
+    } else if (term === 'past performance' || term === 'divprofile_past' || term === 'performance (past)') {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        const tabId = (l.getAttribute('data-tab-id') || l.dataset.tabId || '').toLowerCase();
+        return txt === 'past performance' || tabId === 'divprofile_past';
+      });
+    } else if (term === 'academic calendar' || term === 'academic calender' || term === 'calendar' || term === 'calender') {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        return txt.includes('calendar') || txt.includes('calender');
+      });
+    } else if (term === 'marks' || term === 'marks report') {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        return txt === 'marks' || txt.includes('marks');
+      });
+    } else if (term === 'exams details' || term === 'exam details' || term === 'exam timetable') {
+      activeEl = links.find(l => (l.textContent || '').trim().toLowerCase().includes('exam'));
+    } else if (term === 'hallticket' || term === 'hall ticket') {
+      activeEl = links.find(l => (l.textContent || '').trim().toLowerCase().includes('hallticket'));
+    } else if (term === 'lesson plan') {
+      activeEl = links.find(l => (l.textContent || '').trim().toLowerCase().includes('lesson plan'));
+    } else if (term.includes('answer sheet') || term.includes('view answer')) {
+      activeEl = links.find(l => (l.textContent || '').trim().toLowerCase().includes('answer sheet'));
+    }
+
+    // 1. Check data-tab-id directly
+    if (!activeEl) {
+      activeEl = links.find(l => {
+        const tabId = (l.getAttribute('data-tab-id') || l.dataset.tabId || '').toLowerCase();
+        return tabId && tabId === term;
       });
     }
 
-    // 3. Check href
+    // 2. Check data-route-key
+    if (!activeEl) {
+      activeEl = links.find(l => (l.getAttribute('data-route-key') || '').toLowerCase() === term);
+    }
+
+    // 3. Check exact textContent first (strict)
+    if (!activeEl) {
+      activeEl = links.find(l => (l.textContent || '').trim().toLowerCase() === term);
+    }
+
+    // 4. Safe partial textContent (excluding 'performance' collision)
+    if (!activeEl) {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        if (txt === 'past performance' && term !== 'past performance' && !term.includes('past')) return false;
+        if (txt === 'present performance' && term !== 'present performance' && !term.includes('present')) return false;
+        return txt.includes(term) || term.includes(txt);
+      });
+    }
+
+    // 5. Check href
     if (!activeEl) {
       activeEl = links.find(l => {
         const href = (l.getAttribute('href') || '').toLowerCase();
@@ -5878,7 +6004,7 @@ function syncSidebarActiveState(pathOrUrl) {
   const p = String(pathOrUrl).toLowerCase();
   const pageTitle = document.getElementById('reecap-page-title');
 
-  if (p.includes('studenttimetableoption.aspx')) {
+  if (p.includes('studenttimetableoption.aspx') || p.includes('timetablereport.aspx')) {
     document.documentElement.setAttribute('data-active-route', 'timetable');
     if (pageTitle) pageTitle.style.display = 'none';
     setActiveSidebarLink('TIMETABLE');
@@ -5891,29 +6017,71 @@ function syncSidebarActiveState(pathOrUrl) {
   if (p.includes('studentattendance.aspx')) {
     setActiveSidebarLink('ATTENDANCE');
     if (pageTitle) pageTitle.textContent = 'ATTENDANCE';
-  } else if (p.includes('studentmarksreport.aspx')) {
-    setActiveSidebarLink('MARKS REPORT');
-    if (pageTitle) pageTitle.textContent = 'MARKS REPORT';
+  } else if (p.includes('studentmarksreport.aspx') || p.includes('rptstudentexamresult.aspx')) {
+    setActiveSidebarLink('MARKS');
+    if (pageTitle) pageTitle.textContent = 'MARKS';
   } else if (p.includes('studentbacklogs.aspx')) {
     setActiveSidebarLink('BACKLOGS');
     if (pageTitle) pageTitle.textContent = 'BACKLOGS';
+  } else if (p.includes('academiccalenderreport.aspx') || p.includes('academiccalendar') || p.includes('academiccalender')) {
+    setActiveSidebarLink('ACADEMIC CALENDAR');
+    if (pageTitle) pageTitle.textContent = 'ACADEMIC CALENDAR';
+  } else if (p.includes('studentexamtimetable.aspx')) {
+    setActiveSidebarLink('EXAMS DETAILS');
+    if (pageTitle) pageTitle.textContent = 'EXAMS DETAILS';
+  } else if (p.includes('studenthallticket.aspx') || p.includes('hallticket')) {
+    setActiveSidebarLink('HALLTICKET');
+    if (pageTitle) pageTitle.textContent = 'HALLTICKET';
+  } else if (p.includes('lpreport.aspx')) {
+    setActiveSidebarLink('LESSON PLAN');
+    if (pageTitle) pageTitle.textContent = 'LESSON PLAN';
+  } else if (p.includes('revalutionscriptviewer.aspx') || p.includes('revaluationregistrationstudent') || p.includes('answersheet')) {
+    setActiveSidebarLink('VIEW ANSWER SHEET');
+    if (pageTitle) pageTitle.textContent = 'VIEW ANSWER SHEET';
+  } else if (p.includes('courseregistration.aspx')) {
+    setActiveSidebarLink('COURSE REGISTRATION');
+    if (pageTitle) pageTitle.textContent = 'COURSE REGISTRATION';
+  } else if (p.includes('hosteladmission.aspx') || p.includes('hostel')) {
+    setActiveSidebarLink('HOSTEL ROOM BOOKING');
+    if (pageTitle) pageTitle.textContent = 'HOSTEL ROOM BOOKING';
+  } else if (p.includes('studentsbooks.aspx')) {
+    setActiveSidebarLink('LIBRARY BOOKS');
+    if (pageTitle) pageTitle.textContent = 'LIBRARY BOOKS';
+  } else if (p.includes('booksearch1.aspx') || p.includes('booksearch')) {
+    setActiveSidebarLink('BOOK SEARCH');
+    if (pageTitle) pageTitle.textContent = 'BOOK SEARCH';
+  } else if (p.includes('changepassword.aspx')) {
+    setActiveSidebarLink('CHANGE PASSWORD');
+    if (pageTitle) pageTitle.textContent = 'CHANGE PASSWORD';
   } else if (p.includes('studentreceipts.aspx') || p.includes('studentfeereceipt.aspx')) {
     setActiveSidebarLink('RECEIPTS');
     if (pageTitle) pageTitle.textContent = 'RECEIPTS';
+  } else if (p.includes('studentpayments.aspx') || p.includes('studentfeeonline') || p.includes('onlinefee')) {
+    setActiveSidebarLink('FEE DETAILS');
+    if (pageTitle) pageTitle.textContent = 'FEE DETAILS';
   } else if (p.includes('studentprofile.aspx')) {
-    if (p.includes('view=fee') || p.includes('#divprofile_fees') || p.includes('fee')) {
+    if (p.includes('divprofile_past') || p.includes('past')) {
+      setActiveSidebarLink('PAST PERFORMANCE');
+      if (pageTitle) pageTitle.textContent = 'PAST PERFORMANCE';
+    } else if (p.includes('divprofile_present') || p.includes('present')) {
+      setActiveSidebarLink('PRESENT PERFORMANCE');
+      if (pageTitle) pageTitle.textContent = 'PRESENT PERFORMANCE';
+    } else if (p.includes('divprofile_outings')) {
+      setActiveSidebarLink('OUTINGS');
+      if (pageTitle) pageTitle.textContent = 'OUTINGS';
+    } else if (p.includes('divprofile_counseling')) {
+      setActiveSidebarLink('COUNSELING');
+      if (pageTitle) pageTitle.textContent = 'COUNSELING';
+    } else if (p.includes('divprofile_disciplinary')) {
+      setActiveSidebarLink('DISCIPLINARY ACTION');
+      if (pageTitle) pageTitle.textContent = 'DISCIPLINARY ACTION';
+    } else if (p.includes('view=fee') || p.includes('#divprofile_fees') || p.includes('fee')) {
       setActiveSidebarLink('FEE DETAILS');
       if (pageTitle) pageTitle.textContent = 'FEE DETAILS';
     } else {
       setActiveSidebarLink('BIO-DATA');
       if (pageTitle) pageTitle.textContent = 'BIO-DATA';
     }
-  } else if (p.includes('academiccalenderreport.aspx') || p.includes('academiccalendar')) {
-    setActiveSidebarLink('ACADEMIC CALENDER');
-    if (pageTitle) pageTitle.textContent = 'ACADEMIC CALENDAR';
-  } else if (p.includes('revalutionscriptviewer.aspx')) {
-    setActiveSidebarLink('EXAMS DETAILS');
-    if (pageTitle) pageTitle.textContent = 'EXAMS DETAILS';
   } else if (p.includes('optransactions.aspx')) {
     setActiveSidebarLink('ONLINE TRANSACTIONS');
     if (pageTitle) pageTitle.textContent = 'ONLINE TRANSACTIONS';
@@ -6311,13 +6479,6 @@ function showIframe() {
 
   document.documentElement.setAttribute('data-overview-active', 'false');
   document.documentElement.setAttribute('data-calendar-active', 'false');
-
-  if (typeof syncSidebarActiveState === 'function' && iframe && iframe.contentWindow) {
-    try {
-      const currentUrl = iframe.contentWindow.location.pathname.toLowerCase();
-      if (currentUrl) syncSidebarActiveState(currentUrl);
-    } catch (e) {}
-  }
 }
 
 function showAcademicCalendar() {
@@ -6354,7 +6515,10 @@ function showAcademicCalendar() {
 
   if (calendarView) {
     calendarView.style.setProperty('display', 'block', 'important');
-    renderAcademicCalendarHub(calendarView);
+    if (!calendarView.dataset.rendered) {
+      calendarView.dataset.rendered = 'true';
+      renderAcademicCalendarHub(calendarView);
+    }
   }
 
   if (pageTitle) {
@@ -6367,7 +6531,7 @@ function showAcademicCalendar() {
   document.documentElement.setAttribute('data-active-route', 'calendar');
 
   if (typeof setActiveSidebarLink === 'function') {
-    setActiveSidebarLink('CALENDAR');
+    setActiveSidebarLink('ACADEMIC CALENDAR');
   }
 
   if (typeof closeResponsiveNavigation === 'function') {
@@ -6387,7 +6551,7 @@ function initResponsiveNavigation() {
   const scrim = document.querySelector('.reecap-nav-scrim');
   if (!sidebar || !trigger || !scrim) return null;
 
-  const drawerQuery = window.matchMedia('(max-width: 1199px)');
+  const drawerQuery = window.matchMedia('(max-width: 860px)');
   let lastTrigger = null;
 
   const setOpen = (isOpen, { restoreFocus = false, focusDrawer = false } = {}) => {
@@ -6424,6 +6588,8 @@ function initResponsiveNavigation() {
     }
   });
   scrim.addEventListener('click', () => close({ restoreFocus: true }));
+  scrim.addEventListener('pointerdown', () => close({ restoreFocus: true }));
+  scrim.addEventListener('touchstart', () => close({ restoreFocus: true }), { passive: true });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && sidebar.classList.contains('is-open')) {
       event.preventDefault();
@@ -6431,6 +6597,11 @@ function initResponsiveNavigation() {
     }
   });
   drawerQuery.addEventListener('change', onViewportChange);
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 860 && (sidebar.classList.contains('is-open') || scrim.classList.contains('is-visible'))) {
+      close({ restoreFocus: false });
+    }
+  });
   setOpen(false);
 
   responsiveNavigationController = { close, sync: () => setOpen(false) };
@@ -7640,8 +7811,12 @@ function updateAriaWelcome(dossier) {
   const welcomeCard = container.querySelector('.aria-msg.msg-assistant');
   if (!welcomeCard) return;
 
-  const rawName = dossier?.identity?.name || '';
-  const name = rawName ? rawName.split(' ')[0] : 'there';
+  const rawName = dossier?.identity?.name || (window.__reecap_aria?.getActiveStudentNameFromDom?.() || '');
+  let name = 'there';
+  if (rawName && rawName.toLowerCase() !== 'student') {
+    const parts = rawName.split(/\s+/).filter(Boolean);
+    name = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+  }
   const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? dossier.academic.cgpa : '--';
   let attPct = dossier?.attendance?.overallPercent;
   if ((!attPct || attPct === '--') && dossier?.attendance?.held > 0 && dossier?.attendance?.attended !== undefined && dossier.attendance.attended !== '--') {
@@ -7922,8 +8097,12 @@ async function loadInitialWelcome() {
   if (!container || container.children.length > 0) return;
 
   const dossier = (window.__reecap_aria && isExtensionValid()) ? await window.__reecap_aria.getStudentDossier() : null;
-  const rawName = dossier?.identity?.name || '';
-  const name = rawName ? rawName.split(' ')[0] : 'there';
+  const rawName = dossier?.identity?.name || (window.__reecap_aria?.getActiveStudentNameFromDom?.() || '');
+  let name = 'there';
+  if (rawName && rawName.toLowerCase() !== 'student') {
+    const parts = rawName.split(/\s+/).filter(Boolean);
+    name = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+  }
   const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? dossier.academic.cgpa : '--';
   let attPct = dossier?.attendance?.overallPercent;
   if ((!attPct || attPct === '--') && dossier?.attendance?.held > 0 && dossier?.attendance?.attended !== undefined && dossier.attendance.attended !== '--') {

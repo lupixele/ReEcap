@@ -91,7 +91,7 @@
   --modal-space: 8;
   --modal-width: calc(var(--modal-space) * 4.5em);
 
-  /* Accent and Luma Auto-Contrast Defaults (nightTab Default blue fallback) */
+  /* Accent and Luma Auto-Contrast Defaults (Point Theme Default fallback) */
   --theme-accent-rgb-r: 0;
   --theme-accent-rgb-g: 80;
   --theme-accent-rgb-b: 255;
@@ -101,7 +101,7 @@
 
 /* ==========================================================================
    Primary Shade Scale (14 Mathematically Generated Shades)
-   Default: nightTab App (h: 222, s: 14, contrast: 17% -> 83%)
+   Default Fallback: Point Theme Scale
    ========================================================================== */
 :root {
   --theme-primary-1: 222, 14%, 17%;
