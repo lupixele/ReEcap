@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iframe Navigation Regression Test</title>
+</head>
+<body>
+  <div id="reecap-overview">Overview</div>
+  <iframe id="capIframeId" name="capIframe" src="about:blank"></iframe>
+  <pre id="test-results">Running...</pre>
+  <script>window.chrome = { runtime: { lastError: null } };</script>
+  <script src="../extension/shared/theme.js"></script>
+  <script src="../extension/decorators.js?fee=2"></script>
+  <script>
+    const iframe = document.getElementById('capIframeId');
+    const overview = document.getElementById('reecap-overview');
+    const hiddenStyles = {
+      visibility: 'hidden',
+      position: 'fixed',
+      top: '-10000px',
+      left: '-10000px',
+      width: '1px',
+      height: '1px',
+      opacity: '0',
+      'pointer-events': 'none'
+    };
+    Object.entries(hiddenStyles).forEach(([property, value]) => {
+      iframe.style.setProperty(property, value, 'important');
+    });
+    document.documentElement.setAttribute('data-overview-active', 'true');
+
+    const before = iframe.style.height;
+    showIframe();
+
+    const expectedHeight = `${Math.max(600, window.innerHeight - 180)}px`;
+    const checks = [
+      { name: 'Overview starts with a 1px iframe', pass: before === '1px' },
+      { name: 'Visible iframe height is restored immediately', pass: iframe.style.height === expectedHeight },
+      { name: 'Restored height retains important priority', pass: iframe.style.getPropertyPriority('height') === 'important' },
+      { name: 'Overview state is cleared', pass: document.documentElement.getAttribute('data-overview-active') === 'false' },
+      { name: 'Overview content is hidden', pass: overview.style.getPropertyValue('display') === 'none' },
+      ...Object.keys(hiddenStyles).filter(property => property !== 'height').map(property => ({
+        name: `${property} overview override is removed`,
+        pass: !iframe.style.getPropertyValue(property)
+      }))
+    ];
+
+    window.__navTest = {
+      pass: checks.every(check => check.pass),
+      before,
+      after: iframe.style.height,
+      checks
+    };
+    document.getElementById('test-results').textContent = JSON.stringify(window.__navTest, null, 2);
+  </script>
+</body>
+</html>

@@ -354,23 +354,19 @@ function injectThemeToolbar() {
   toolbar.className = 'reecap-theme-toolbar';
   
   const iconPalette = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.02 0 1.93-.72 2.15-1.72.07-.32-.01-.65-.24-.89l-2.02-2.02c-.22-.22-.31-.55-.24-.87.16-.76.84-1.31 1.63-1.31h1.36c3.55 0 6.4-2.85 6.4-6.4 0-4.08-4.07-7.79-9.04-7.79z"/></svg>`;
-  const iconLight = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
-  const iconDark = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-
-  const presets = (window.__reecap_theme && window.__reecap_theme.PRESETS)
-    ? window.__reecap_theme.PRESETS
-    : {};
+  const themeEngine = window.__reecap_theme;
+  if (!themeEngine) return;
+  const presets = themeEngine.PRESETS;
 
   let buttonsHtml = '';
-  for (const [id, p] of Object.entries(presets)) {
-    const rgb = p.accent?.rgb || { r: 0, g: 80, b: 255 };
-    const borderStyle = (id === 'black') ? 'border: 1px solid #444;' : (id === 'white' ? 'border: 1px solid #ccc;' : '');
-    const cat = p.category || 'core';
+  for (const [id, preset] of Object.entries(presets)) {
+    const appearance = themeEngine.getPresetAppearance(preset);
+    const swatch = themeEngine.getPresetSwatch(preset);
     buttonsHtml += `
-      <button type="button" class="toolbar-theme-btn" data-preset="${id}" data-category="${cat}" title="${p.name}">
-        <span class="theme-swatch" style="background: rgb(${rgb.r}, ${rgb.g}, ${rgb.b}); ${borderStyle}"></span>
-        <span class="theme-name">${p.name}</span>
-        <span class="toolbar-theme-cat">${cat}</span>
+      <button type="button" class="toolbar-theme-btn" data-preset="${id}" data-appearance="${appearance}" title="${preset.name}: ${appearance}">
+        <span class="theme-swatch" style="background: ${swatch.background}; box-shadow: inset 0 -3px 0 ${swatch.accent};"></span>
+        <span class="theme-name">${preset.name}</span>
+        <span class="toolbar-theme-cat">${appearance}</span>
       </button>
     `;
   }
@@ -380,29 +376,16 @@ function injectThemeToolbar() {
        ${iconPalette}
     </button>
     <div class="reecap-toolbar-menu">
-       <!-- Mode Toggles -->
-       <div class="toolbar-mode-toggles">
-         <button type="button" class="toolbar-mode-btn" data-mode="light" title="Light Style">${iconLight} <span>Light</span></button>
-         <button type="button" class="toolbar-mode-btn" data-mode="dark" title="Dark Style">${iconDark} <span>Dark</span></button>
+       <div class="toolbar-mode-toggles" aria-label="Filter original presets by appearance">
+         <button type="button" class="toolbar-mode-btn active" data-appearance="all">All</button>
+         <button type="button" class="toolbar-mode-btn" data-appearance="dark">Dark</button>
+         <button type="button" class="toolbar-mode-btn" data-appearance="light">Light</button>
        </div>
 
-       <!-- Search Box -->
        <div class="toolbar-search-wrap">
-         <input type="text" class="toolbar-theme-search" id="toolbar-theme-search" placeholder="Search 45 nightTab themes..." />
+         <input type="text" class="toolbar-theme-search" id="toolbar-theme-search" placeholder="Search 45 original nightTab themes..." />
        </div>
 
-       <!-- Category Filter Pills -->
-       <div class="toolbar-category-shelf">
-         <button type="button" class="toolbar-cat-pill is-active" data-cat="all">All (45)</button>
-         <button type="button" class="toolbar-cat-pill" data-cat="core">Core</button>
-         <button type="button" class="toolbar-cat-pill" data-cat="minimal">Minimal</button>
-         <button type="button" class="toolbar-cat-pill" data-cat="cyber">Cyber</button>
-         <button type="button" class="toolbar-cat-pill" data-cat="space">Space</button>
-         <button type="button" class="toolbar-cat-pill" data-cat="earth">Earth</button>
-         <button type="button" class="toolbar-cat-pill" data-cat="vivid">Vivid</button>
-       </div>
-       
-       <!-- nightTab Theme Presets (all 45) -->
        <div class="toolbar-family-list">
          ${buttonsHtml}
        </div>
@@ -412,24 +395,21 @@ function injectThemeToolbar() {
 
   const wrapper = document.getElementById('reecap-theme-toolbar');
   
-  // Storage Fetch and active marking
+  function markActivePreset(presetId) {
+    wrapper.querySelectorAll('.toolbar-theme-btn').forEach(button => {
+      button.classList.toggle('active', button.dataset.preset === presetId);
+    });
+  }
+
   try {
     if (chrome && chrome.storage && chrome.storage.sync) {
-       chrome.storage.sync.get(['nightTabPreset', 'nightTabStyle', 'themeFamily', 'themeMode'], (data) => {
-         if (chrome.runtime.lastError) return;
-         const preset = data.nightTabPreset || (window.__reecap_theme && window.__reecap_theme.migrateThemeStorage(data).preset) || 'app';
-         const style = data.nightTabStyle || data.themeMode || 'dark';
-         
-         wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => {
-           b.classList.toggle('active', b.dataset.mode === style);
-         });
-         wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => {
-           b.classList.toggle('active', b.dataset.preset === preset);
-         });
-       });
+      chrome.storage.sync.get(['nightTabPreset'], (data) => {
+        if (chrome.runtime.lastError) return;
+        markActivePreset(data.nightTabPreset || 'app');
+      });
     }
   } catch (e) {
-     // Silently handle context invalidated
+    // Silently handle context invalidated
   }
 
   // Toggle Open/Close
@@ -451,92 +431,70 @@ function injectThemeToolbar() {
     if (!wrapper.contains(e.target)) wrapper.classList.remove('is-open');
   });
 
-  // Filter logic (search + categories)
-  let activeCat = 'all';
+  // Filter the original catalog without mutating the selected preset.
+  let activeAppearanceFilter = 'all';
   let searchQuery = '';
 
   function filterThemeList() {
-    const q = searchQuery.toLowerCase().trim();
-    wrapper.querySelectorAll('.toolbar-theme-btn').forEach(btn => {
-      const presetId = (btn.dataset.preset || '').toLowerCase();
-      const name = (btn.querySelector('.theme-name')?.textContent || '').toLowerCase();
-      const cat = (btn.dataset.category || '').toLowerCase();
-
-      const matchesCat = (activeCat === 'all' || cat === activeCat);
-      const matchesSearch = (!q || name.includes(q) || presetId.includes(q) || cat.includes(q));
-
-      btn.style.display = (matchesCat && matchesSearch) ? 'flex' : 'none';
+    const query = searchQuery.toLowerCase().trim();
+    wrapper.querySelectorAll('.toolbar-theme-btn').forEach(button => {
+      const preset = presets[button.dataset.preset];
+      const name = preset ? preset.name.toLowerCase() : '';
+      const matchesAppearance = activeAppearanceFilter === 'all'
+        || button.dataset.appearance === activeAppearanceFilter;
+      const matchesSearch = !query || name.includes(query) || button.dataset.preset.includes(query);
+      button.style.display = matchesAppearance && matchesSearch ? 'flex' : 'none';
     });
   }
 
-  wrapper.querySelectorAll('.toolbar-cat-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      wrapper.querySelectorAll('.toolbar-cat-pill').forEach(p => p.classList.remove('is-active'));
-      pill.classList.add('is-active');
-      activeCat = pill.dataset.cat || 'all';
+  wrapper.querySelectorAll('.toolbar-mode-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      activeAppearanceFilter = button.dataset.appearance || 'all';
+      wrapper.querySelectorAll('.toolbar-mode-btn').forEach(item => {
+        item.classList.toggle('active', item === button);
+      });
       filterThemeList();
     });
   });
 
   const searchInput = wrapper.querySelector('#toolbar-theme-search');
   if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      searchQuery = e.target.value;
+    searchInput.addEventListener('input', (event) => {
+      searchQuery = event.target.value;
       filterThemeList();
     });
   }
 
-  function notifyActiveIframe(preset, style) {
+  function notifyActiveIframe(preset, options) {
     try {
       const iframe = document.getElementById('capIframeId');
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage({
           type: 'REECAP_NIGHTTAB_PRESET',
           preset,
-          style
+          options
         }, '*');
       }
     } catch (e) {}
   }
 
-  // Handle Mode setting (light/dark)
-  wrapper.querySelectorAll('.toolbar-mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-       const m = btn.dataset.mode;
-       try {
-         chrome.storage.sync.get(['nightTabPreset', 'nightTabStyle'], (d) => {
-           if (chrome.runtime.lastError) return;
-           const activePreset = d.nightTabPreset || 'app';
-           if (window.__reecap_theme && window.__reecap_theme.applyTheme) {
-             window.__reecap_theme.applyTheme(activePreset, m);
-            notifyActiveIframe(activePreset, m);
-           }
-           chrome.storage.sync.set({ nightTabStyle: m, themeMode: m });
-         });
-       } catch (e) {}
-       wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => b.classList.remove('active'));
-       btn.classList.add('active');
-    });
-  });
-
-  // Handle nightTab Preset setting
-  wrapper.querySelectorAll('.toolbar-theme-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-       const p = btn.dataset.preset;
-       try {
-         chrome.storage.sync.get(['nightTabStyle'], (d) => {
-           if (chrome.runtime.lastError) return;
-           const activeStyle = d.nightTabStyle || 'dark';
-           if (window.__reecap_theme && window.__reecap_theme.applyTheme) {
-             window.__reecap_theme.applyTheme(p, activeStyle);
-            notifyActiveIframe(p, activeStyle);
-           }
-           chrome.storage.sync.set({ nightTabPreset: p, themeFamily: p });
-         });
-       } catch (e) {}
-       
-       wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => b.classList.remove('active'));
-       btn.classList.add('active');
+  // Selecting a preset never changes its original appearance or saved options.
+  wrapper.querySelectorAll('.toolbar-theme-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const presetId = button.dataset.preset;
+      try {
+        chrome.storage.sync.get(['nightTabRadius', 'nightTabShadow'], (data) => {
+          if (chrome.runtime.lastError) return;
+          const options = {
+            radius: typeof data.nightTabRadius === 'number' ? data.nightTabRadius : undefined,
+            shadow: typeof data.nightTabShadow === 'number' ? data.nightTabShadow : undefined
+          };
+          themeEngine.applyTheme(presetId, options);
+          chrome.storage.sync.set({ nightTabPreset: presetId });
+          notifyActiveIframe(presetId, options);
+        });
+      } catch (e) {}
+      markActivePreset(presetId);
     });
   });
 }
@@ -1136,9 +1094,13 @@ function redesignOnlinePaymentPage() {
     // disabled the proceed button because there are no fees due.
     setTimeout(() => {
       observer.disconnect();
-      if (!divfees.dataset.reecapPayReady && document.getElementById('divtabs')) {
-        divfees.dataset.reecapPayReady = 'true';
-        buildOnlinePaymentUI(divfees, document.getElementById('divtabs'));
+      // Re-read both nodes together so a delayed retry cannot combine a stale
+      // divfees element with tabs from a newer portal response.
+      const latestDivfees = document.getElementById('divfees');
+      const latestTabs = document.getElementById('divtabs');
+      if (latestDivfees && latestTabs && latestDivfees.dataset.reecapPayReady !== 'true') {
+        latestDivfees.dataset.reecapPayReady = 'true';
+        buildOnlinePaymentUI(latestDivfees, latestTabs);
       }
     }, 1500);
   }
@@ -1199,8 +1161,10 @@ function buildOnlinePaymentUI(divfees, legacyTabs) {
     </div>
   `;
 
-  // Insert wrap right before legacyTabs.
-  divfees.insertBefore(wrap, legacyTabs);
+  // Insert beside the tabs through their actual parent. The portal can nest
+  // divtabs inside another wrapper, so legacyTabs need not be a divfees child.
+  if (!legacyTabs.parentNode) return;
+  legacyTabs.parentNode.insertBefore(wrap, legacyTabs);
 
   // Relocate ICICI/Paytm payment channel radios into our hero block FIRST.
   // The portal might offer different gateways per student (e.g. HDFC, BillDesk),
@@ -1940,6 +1904,14 @@ function handleAcademicCalendarPage() {
 
 function handleFeePortalPage() {
   const lowerPath = window.location.pathname.toLowerCase();
+
+  // Receipts and fee-detail pages contain official printable records and
+  // postback controls. Never replace them with the payment fallback ledger.
+  if (!lowerPath.includes('studentfeereceipt.aspx')) {
+    document.documentElement.setAttribute('data-fee-native-page', 'true');
+    return;
+  }
+
   const divfees = document.getElementById('divfees');
   const bodyText = (document.body ? document.body.textContent : '') || '';
 
@@ -1966,198 +1938,37 @@ function handleFeePortalPage() {
 }
 
 function renderStandaloneFeePage() {
-  if (document.getElementById('reecap-standalone-fee-hub')) return;
+  if (document.getElementById('reecap-fee-hub')) return;
 
-  // Hide legacy elements
-  Array.from(document.body.children).forEach(c => {
-    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
-      c.style.setProperty('display', 'none', 'important');
-    }
-  });
-
-  if (window.parent && window.parent.postMessage) {
-    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'FEE & RECEIPTS HUB' }, '*');
-  }
-
+  // Never fabricate financial records or hide the official form. If the
+  // enhanced payment UI cannot initialize, leave native controls untouched.
   const container = document.createElement('div');
-  container.id = 'reecap-standalone-fee-hub';
-  container.className = 'fee-redesign';
+  container.id = 'reecap-fee-hub';
+  container.className = 'fee-redesign fee-native-recovery';
   container.style.padding = '24px';
-  container.style.maxWidth = '1120px';
+  container.style.maxWidth = '900px';
   container.style.margin = '0 auto';
   container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
-  document.body.appendChild(container);
 
-  function renderView(prof, idData) {
-    prof = prof || {};
-    idData = idData || {};
-
-    const totals = prof.feeGrandTotals || (prof.feeLedger && prof.feeLedger.grandTotals) || {};
-    const payable = totals.payable || prof.feeCurrentSemPayable || '6,63,250.00';
-    const paid = totals.paid || '2,69,500.00';
-    const due = totals.due || prof.feeTotalDue || prof.feeDue || '3,93,750.00';
-    const balanceWords = prof.feeBalanceWords || (prof.feeLedger && prof.feeLedger.balanceWords) || 'Three Lakh Ninety Three Thousand Seven Hundred Fifty Only';
-    const semLabel = prof.feeCurrentSemLabel || 'III Semester (Current)';
-    const receipts = (prof.feeReceipts && prof.feeReceipts.length)
-      ? prof.feeReceipts
-      : [
-          { item: 'Admission Fee', payable: '15,000.00', paid: '15,000.00', recNo: '6396 (J-A/F)', recDate: '15-05-2025', due: '0.00' },
-          { item: 'Transport Fee', payable: '12,250.00', paid: '12,250.00', recNo: 'CASH/REC/2159/B, B/2500732', recDate: '06-08-2025, 08-10-2025', due: '0.00' },
-          { item: 'Tuition Fee (Sem 1)', payable: '78,750.00', paid: '78,750.00', recNo: 'AUS/CAN/REC/6746, T/2500783', recDate: '24-06-2025, 06-10-2025', due: '0.00' },
-          { item: 'Tuition Fee (Sem 2)', payable: '78,750.00', paid: '78,750.00', recNo: 'T/2509705, T/2510025', recDate: '28-01-2026, 29-01-2026', due: '0.00' },
-          { item: 'Coursera (Sem 3)', payable: '6,000.00', paid: '6,000.00', recNo: 'CE/2601475', recDate: '28-06-2026', due: '0.00' },
-          { item: 'Tuition Fee (Sem 3)', payable: '78,750.00', paid: '78,750.00', recNo: 'T/2603210', recDate: '30-06-2026', due: '0.00' }
-        ];
-
-    const isCurrentCleared = (parseFloat(String(prof.feeCurrentSem || '0').replace(/,/g, '')) === 0);
-
-    let receiptsHtml = receipts.map((r, i) => `
-      <tr>
-        <td style="padding: 12px 16px;">
-          <div style="font-weight: 600; color: var(--text-primary);">${r.item}</div>
-          <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Receipt: <span class="mono" style="color: var(--text-secondary);">${r.recNo}</span></div>
-        </td>
-        <td class="mono" style="padding: 12px 16px; text-align: right; color: var(--text-secondary);">₹${formatCurrencyAmount(r.payable)}</td>
-        <td class="mono" style="padding: 12px 16px; text-align: right; font-weight: 600; color: var(--success);">₹${formatCurrencyAmount(r.paid)}</td>
-        <td class="mono" style="padding: 12px 16px; text-align: center; color: var(--text-faint); font-size: 12px;">${r.recDate || '-'}</td>
-        <td style="padding: 12px 16px; text-align: center;">
-          <span class="status-pill status-safe" style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--success-soft); color: var(--success); font-weight: 600;">Acknowledged</span>
-        </td>
-      </tr>
-    `).join('');
-
-    container.innerHTML = `
-      <!-- Status Notice -->
-      <div style="margin-bottom: 20px; padding: 14px 18px; border-radius: var(--radius-md, 8px); background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary); flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          <div>
-            <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">Smart Fee & Receipts Ledger</div>
-            <div style="font-size: 12px; color: var(--text-secondary);">Synced directly with official university bursar records • ReEcap Secure View</div>
-          </div>
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button type="button" id="btn-retry-gateway" class="pay-btn pay-btn-secondary" style="font-size: 12px; padding: 6px 14px !important; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-            <span>Retry Official Gateway</span>
-          </button>
-          <button type="button" id="btn-print-receipts" class="pay-btn pay-btn-secondary" style="font-size: 12px; padding: 6px 14px !important; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-            <span>Print Receipts</span>
-          </button>
-        </div>
+  container.innerHTML = `
+    <section role="alert" style="background: var(--surface-card); border: var(--card-border); border-radius: var(--radius-md); padding: 24px;">
+      <h1 style="margin: 0 0 12px; color: var(--text-primary); font-size: 22px;">Official Fee Services</h1>
+      <p style="margin: 0 0 20px; color: var(--text-secondary); line-height: 1.6;">
+        The enhanced payment view could not be loaded. Your official portal form
+        has been left visible and unchanged. Reload this page or open official receipts.
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+        <button type="button" id="reecap-fee-retry" class="fee-action fee-action-primary">Reload Official Page</button>
+        <a href="/aus/Feepayments/studentreceipts.aspx?scrid=28" class="fee-action fee-action-secondary">View Official Receipts</a>
       </div>
+    </section>
+  `;
 
-      <!-- Hero Card -->
-      <div class="fee-hero is-success" style="margin-bottom: 24px;">
-        <div class="fee-hero-left">
-          <div class="fee-hero-eyebrow">TERM STATUS</div>
-          <div class="fee-hero-title">${semLabel} — ${isCurrentCleared ? 'All Settled' : 'Payment Due'}</div>
-          <div class="fee-hero-sub">Official receipt records verified against university bursar database.</div>
-        </div>
-        <div class="fee-hero-right">
-          <div class="fee-hero-status-tag" style="background: var(--success-soft); color: var(--success); font-weight: 700; padding: 4px 12px; border-radius: 999px;">${isCurrentCleared ? 'Term Cleared' : 'Due'}</div>
-          <div class="fee-hero-amount" style="font-family: var(--font-mono); font-size: 26px; font-weight: 800; color: var(--text-primary); margin-top: 6px;">₹${formatCurrencyAmount(paid)}</div>
-          <div class="fee-hero-caption" style="font-size: 12px; color: var(--text-secondary);">Total Paid to Date</div>
-        </div>
-      </div>
-
-      <!-- 3-Up Stats Strip -->
-      <div class="fee-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-        <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-          <div class="stat-label" style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Total Course Payable</div>
-          <div class="stat-value mono" style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">₹${formatCurrencyAmount(payable)}</div>
-          <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Entire 4-Year B.Tech Program</div>
-        </div>
-        <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-          <div class="stat-label" style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Total Fee Paid</div>
-          <div class="stat-value mono" style="font-size: 22px; font-weight: 700; color: var(--success); margin-top: 4px;">₹${formatCurrencyAmount(paid)}</div>
-          <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Verified Receipts Logged</div>
-        </div>
-        <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-          <div class="stat-label" style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Remaining Balance</div>
-          <div class="stat-value mono" style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">₹${formatCurrencyAmount(due)}</div>
-          <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Upcoming Semester Terms</div>
-        </div>
-      </div>
-
-      ${balanceWords ? `
-        <div style="margin-bottom: 24px; padding: 12px 18px; border-radius: var(--radius-md); background: var(--surface-sunken); border: 1px solid var(--border-subtle); font-size: 12.5px; color: var(--text-secondary);">
-          <span style="font-weight: 600; color: var(--text-primary); text-transform: uppercase; font-size: 11px; margin-right: 8px;">Balance in Words:</span>
-          <span class="mono" style="font-style: italic;">${balanceWords}</span>
-        </div>
-      ` : ''}
-
-      <!-- Receipts Table -->
-      <div class="overview-card" style="background: var(--surface-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); overflow: hidden; margin-bottom: 24px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">Official Payment Receipts</h3>
-          <span style="font-size: 12px; color: var(--text-secondary);">${receipts.length} Transactions Recorded</span>
-        </div>
-        <div class="reecap-table-wrap" style="overflow-x: auto;">
-          <table class="reecap-data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-              <tr style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle);">
-                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Fee Particulars</th>
-                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: right;">Billed</th>
-                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: right;">Paid</th>
-                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: center;">Receipt Date</th>
-                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: center;">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${receiptsHtml}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Payment Gateways & External Actions -->
-      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: flex-end; padding: 12px 0;">
-        <span style="font-size: 12.5px; color: var(--text-secondary); margin-right: auto;">Need to pay upcoming term dues?</span>
-        <button type="button" class="pay-btn pay-btn-primary" onclick="alert('Current semester fees are fully settled! Next semester dues will open prior to IV Semester commencement.')" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-          <span>Proceed to Payment</span>
-        </button>
-      </div>
-    `;
-
-    // Hook up retry button
-    const retryBtn = container.querySelector('#btn-retry-gateway');
-    if (retryBtn) {
-      retryBtn.addEventListener('click', () => {
-        window.location.href = 'Feepayments/studentfeereceipt.aspx?scrid=23';
-      });
-    }
-
-    const printBtn = container.querySelector('#btn-print-receipts');
-    if (printBtn) {
-      printBtn.addEventListener('click', () => window.print());
-    }
-  }
-
-  // Load from storage
-  if (isExtensionValid() && chrome.storage && chrome.storage.local) {
-    try {
-      chrome.storage.local.get(['reecapProfileData', 'reecapIdentity'], (data) => {
-        if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) return;
-        renderView(data?.reecapProfileData, data?.reecapIdentity);
-      });
-
-      if (chrome.storage.onChanged) {
-        chrome.storage.onChanged.addListener((changes, area) => {
-          if (!isExtensionValid()) return;
-          if (area === 'local' && changes.reecapProfileData && changes.reecapProfileData.newValue) {
-            renderView(changes.reecapProfileData.newValue);
-          }
-        });
-      }
-    } catch (e) {
-      renderView(null, null);
-    }
-  } else {
-    renderView(null, null);
-  }
+  const form = document.querySelector('form#aspnetForm, form[name="aspnetForm"]');
+  document.body.insertBefore(container, form || document.body.firstChild);
+  container.querySelector('#reecap-fee-retry').addEventListener('click', () => {
+    window.location.reload();
+  });
 }
 
 function handleBacklogsPortalPage() {
@@ -3231,7 +3042,14 @@ function buildBioDataRedesign(accordion) {
             break;
          }
 
-         // Handle key collisions by context
+         // A guardian section heading can be concatenated with the address by
+        // the legacy portal. Remove only that proven label prefix, not data.
+        if (key === 'Guardian Address'
+            || (currentSection === 'GUARDIAN' && (key === 'Address' || key === 'Correspondence Address'))) {
+          nextVal = nextVal.replace(/^[-–—\s]*Parent(?:'|’)?s\s+Details\s*/i, '');
+        }
+
+        // Handle key collisions by context
          if (key === 'Occupation') {
            if (seenOccupation === 0) data['Father Occupation'] = nextVal;
            else data['Mother Occupation'] = nextVal;
@@ -5293,6 +5111,11 @@ function showIframe() {
     iframe.style.removeProperty('width');
     iframe.style.removeProperty('opacity');
     iframe.style.removeProperty('pointer-events');
+
+    // Overview forces 1px !important. Restore a usable starting height now;
+    // the child's REECAP_RESIZE message will refine it after navigation.
+    const visibleHeight = Math.max(600, window.innerHeight - 180);
+    iframe.style.setProperty('height', `${visibleHeight}px`, 'important');
 
     // Trigger immediate resize recalculation from child iframe
     try {

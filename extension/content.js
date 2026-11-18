@@ -5,23 +5,25 @@
 const STYLE_ID = 'reecap-stylesheet';
 const TOKENS_ID = 'reecap-tokens';
 const SKIP_LINK_ID = 'reecap-skip-link';
-const THEME_STORAGE_DEFAULTS = { 
-  enabled: true, 
-  nightTabPreset: 'app', 
-  nightTabStyle: 'dark', 
-  nightTabRadius: 25, 
+const THEME_STORAGE_DEFAULTS = {
+  enabled: true,
+  nightTabPreset: null,
+  nightTabRadius: 25,
   nightTabShadow: 75,
-  themeFamily: null, 
-  themeMode: null, 
-  theme: null 
+  nightTabStyle: null,
+  themeFamily: null,
+  themeMode: null,
+  theme: null
 };
+const LEGACY_THEME_KEYS = ['nightTabStyle', 'themeFamily', 'themeMode', 'theme'];
 
 let reecapEnabled = false;
 
 const reecap = window.__reecap_theme || {};
-const resolveTheme        = reecap.resolveTheme        || ((f, m) => (f === 'amoled' ? 'amoled' : (f === 'original' ? (m || 'light') : `${f}-${m || 'light'}`)));
-const migrateThemeStorage_ = reecap.migrateThemeStorage || ((d) => ({ family: (d && d.themeFamily) || 'original', mode: (d && d.themeMode) || 'light' }));
-const matchActivePage     = reecap.matchActivePage     || (() => null);
+const migrateThemeStorage_ = reecap.migrateThemeStorage || (() => ({
+  preset: 'app', style: 'dark', appearance: 'dark', radius: 25, shadow: 75
+}));
+const matchActivePage = reecap.matchActivePage || (() => null);
 
 function ensureSkipLink() {
   if (document.getElementById(SKIP_LINK_ID)) return;
@@ -61,45 +63,57 @@ function removeStyle() {
 }
 
 function migrateThemeStorage(data) {
-  const mapped = migrateThemeStorage_(data);
-  // Migrate only once. The storage-level onChanged listener below ensures the
-  // successful write reaches every iframe — messages alone reach only the
-  // top-level document in many MV3 situations.
-  if (data && (!data.nightTabPreset || !data.themeFamily) && window === window.top) {
+  const mapped = migrateThemeStorage_(data || {});
+  const hasLegacyStorage = LEGACY_THEME_KEYS.some(key => data && data[key] != null);
+
+  // Persist one canonical preset and discard every legacy mode/family field.
+  // Storage propagation reaches the parent and every authenticated iframe.
+  if (data && window === window.top
+      && (data.nightTabPreset !== mapped.preset || hasLegacyStorage)) {
     try {
-      chrome.storage.sync.set({ 
-        nightTabPreset: mapped.preset, 
-        nightTabStyle: mapped.style,
-        themeFamily: mapped.family || mapped.preset, 
-        themeMode: mapped.mode || mapped.style, 
-        theme: null 
-      }, () => {
+      chrome.storage.sync.set({ nightTabPreset: mapped.preset }, () => {
         void chrome.runtime && chrome.runtime.lastError;
+        chrome.storage.sync.remove(LEGACY_THEME_KEYS, () => {
+          void chrome.runtime && chrome.runtime.lastError;
+        });
       });
     } catch (e) { /* extension reloaded between read and write — ignore */ }
   }
   return mapped;
 }
 
+function clearThemeAttributes() {
+  removeStyle();
+  const root = document.documentElement;
+  root.removeAttribute('data-theme');
+  root.removeAttribute('data-theme-style');
+  root.removeAttribute('data-theme-appearance');
+  root.removeAttribute('data-theme-preset');
+  root.classList.remove('is-theme-style-dark', 'is-theme-style-light');
+  root.style.removeProperty('color-scheme');
+}
+
 function applyStoredTheme(data) {
   const mapped = migrateThemeStorage(data);
   reecapEnabled = data.enabled !== false;
   if (!reecapEnabled) {
-    removeStyle();
-    document.documentElement.removeAttribute('data-theme');
-    document.documentElement.removeAttribute('data-theme-style');
-    document.documentElement.removeAttribute('data-theme-preset');
-    document.documentElement.classList.remove('is-theme-style-dark', 'is-theme-style-light');
+    clearThemeAttributes();
     return;
   }
+
   injectStyle();
+  const options = { radius: mapped.radius, shadow: mapped.shadow };
   if (reecap.applyTheme) {
-    reecap.applyTheme(mapped.preset, mapped.style, { radius: mapped.radius, shadow: mapped.shadow });
+    reecap.applyTheme(mapped.preset, options);
   } else {
-    document.documentElement.setAttribute('data-theme', resolveTheme(mapped.preset, mapped.style));
+    const root = document.documentElement;
+    root.setAttribute('data-theme', mapped.style);
+    root.setAttribute('data-theme-style', mapped.style);
+    root.setAttribute('data-theme-appearance', mapped.appearance);
+    root.setAttribute('data-theme-preset', mapped.preset);
   }
 
-  // Relay active theme tokens immediately to the authenticated child iframe
+  // Relay only canonical preset data to the authenticated child iframe.
   if (window === window.top) {
     try {
       const iframe = document.getElementById('capIframeId');
@@ -107,8 +121,7 @@ function applyStoredTheme(data) {
         iframe.contentWindow.postMessage({
           type: 'REECAP_NIGHTTAB_PRESET',
           preset: mapped.preset,
-          style: mapped.style,
-          options: { radius: mapped.radius, shadow: mapped.shadow }
+          options
         }, '*');
       }
     } catch (e) {}
@@ -120,11 +133,11 @@ function applyStoredTheme(data) {
 chrome.storage.sync.get(THEME_STORAGE_DEFAULTS, applyStoredTheme);
 
 // Storage is the source of truth and propagates across every content-script
-// frame. This fixes the old behavior where the popup message styled the shell
-// but left iframe pages on their previous theme.
+// frame. Legacy mode writes no longer trigger a separate appearance mutation.
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'sync') return;
-  if (!(changes.enabled || changes.nightTabPreset || changes.nightTabStyle || changes.nightTabRadius || changes.nightTabShadow || changes.themeFamily || changes.themeMode || changes.theme)) return;
+  const watchedKeys = ['enabled', 'nightTabPreset', 'nightTabRadius', 'nightTabShadow'];
+  if (!watchedKeys.some(key => key in changes)) return;
   chrome.storage.sync.get(THEME_STORAGE_DEFAULTS, applyStoredTheme);
 });
 
@@ -136,35 +149,32 @@ chrome.runtime.onMessage.addListener((msg) => {
       chrome.storage.sync.get(THEME_STORAGE_DEFAULTS, applyStoredTheme);
     } else {
       reecapEnabled = false;
-      removeStyle();
-      document.documentElement.removeAttribute('data-theme');
-      document.documentElement.removeAttribute('data-theme-style');
-      document.documentElement.removeAttribute('data-theme-preset');
-      document.documentElement.classList.remove('is-theme-style-dark', 'is-theme-style-light');
+      clearThemeAttributes();
     }
   } else if (msg.type === 'REECAP_NIGHTTAB_PRESET' && reecapEnabled) {
     if (reecap.applyTheme) {
-      reecap.applyTheme(msg.preset, msg.style, msg.options);
+      reecap.applyTheme(msg.preset, msg.options);
     }
     if (window === window.top) {
       try {
         const iframe = document.getElementById('capIframeId');
         if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage(msg, '*');
+          iframe.contentWindow.postMessage({
+            type: 'REECAP_NIGHTTAB_PRESET',
+            preset: msg.preset,
+            options: msg.options
+          }, '*');
         }
       } catch (e) {}
     }
-  } else if (msg.type === 'REECAP_THEME' && reecapEnabled) {
-    document.documentElement.setAttribute('data-theme', msg.theme);
   }
 });
 
-// Cross-frame listener for instant theme propagation
-window.addEventListener('message', (e) => {
-  if (e.data && e.data.type === 'REECAP_NIGHTTAB_PRESET') {
-    if (reecap.applyTheme) {
-      reecap.applyTheme(e.data.preset, e.data.style, e.data.options);
-    }
+// Only a parent portal frame may relay an instant preset update to this frame.
+window.addEventListener('message', (event) => {
+  if (window === window.top || event.source !== window.parent || !reecapEnabled) return;
+  if (event.data && event.data.type === 'REECAP_NIGHTTAB_PRESET' && reecap.applyTheme) {
+    reecap.applyTheme(event.data.preset, event.data.options);
   }
 });
 

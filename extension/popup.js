@@ -1,26 +1,24 @@
-// ReEcap popup.js — nightTab Design System Controller
-// Provides live categorized switching across all 45 nightTab presets,
-// dark/light style toggling, corner radius, and elevation shadow controls.
+// ReEcap popup.js — Original nightTab Preset Controller
+// Dark/Light controls filter the original catalog by rendered background
+// tokens. Selecting a preset never generates or applies an opposite variant.
 
 (function () {
   'use strict';
 
-  const themeEngine = window.__reecap_theme || {};
-  const PRESETS = themeEngine.PRESETS || {};
+  const themeEngine = window.__reecap_theme;
+  const PRESETS = themeEngine.PRESETS;
+  const LEGACY_STORAGE_KEYS = ['nightTabStyle', 'themeFamily', 'themeMode', 'theme'];
 
   let currentPresetId = 'app';
-  let currentStyle = 'dark';
   let currentRadius = 25;
   let currentShadow = 75;
   let isEnabled = true;
-  let activeCategory = 'all';
+  let activeAppearance = 'all';
 
-  // Elements
   const masterToggle = document.getElementById('masterToggle');
-  const btnModeDark = document.getElementById('btnModeDark');
-  const btnModeLight = document.getElementById('btnModeLight');
-  const activeStyleLabel = document.getElementById('activeStyleLabel');
-  const categoryShelf = document.getElementById('categoryShelf');
+  const appearanceButtons = Array.from(document.querySelectorAll('[data-appearance]'));
+  const activeAppearanceLabel = document.getElementById('activeAppearanceLabel');
+  const activePresetCount = document.getElementById('activePresetCount');
   const presetsGrid = document.getElementById('presetsGrid');
   const radiusSlider = document.getElementById('radiusSlider');
   const radiusVal = document.getElementById('radiusVal');
@@ -28,163 +26,194 @@
   const shadowVal = document.getElementById('shadowVal');
   const statusLabel = document.getElementById('statusLabel');
 
-  function sendMessageToPortal(msg) {
+  function sendMessageToPortal(message) {
     try {
       chrome.tabs.query({ url: '*://info.aec.edu.in/*' }, (tabs) => {
         if (!tabs || !tabs.length) {
           chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-            if (tab && tab.id) chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+            if (tab && tab.id) chrome.tabs.sendMessage(tab.id, message).catch(() => {});
           });
           return;
         }
         tabs.forEach(tab => {
-          chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+          chrome.tabs.sendMessage(tab.id, message).catch(() => {});
         });
       });
     } catch (e) {}
   }
 
   function applyAndBroadcast() {
-    // Apply locally to popup
-    if (themeEngine.applyTheme) {
-      themeEngine.applyTheme(currentPresetId, currentStyle, {
-        radius: currentRadius,
-        shadow: currentShadow
-      });
-    }
+    const options = { radius: currentRadius, shadow: currentShadow };
+    themeEngine.applyTheme(currentPresetId, options);
 
-    // Persist to storage
     chrome.storage.sync.set({
       enabled: isEnabled,
       nightTabPreset: currentPresetId,
-      nightTabStyle: currentStyle,
       nightTabRadius: currentRadius,
-      nightTabShadow: currentShadow,
-      // Backward compatibility mappings
-      themeFamily: currentPresetId,
-      themeMode: currentStyle
+      nightTabShadow: currentShadow
     });
 
-    // Broadcast to portal tab
     sendMessageToPortal({
       type: 'REECAP_NIGHTTAB_PRESET',
       preset: currentPresetId,
-      style: currentStyle,
-      options: { radius: currentRadius, shadow: currentShadow }
+      options
     });
   }
 
-  function renderPresets() {
+  function renderPresetGrid() {
     presetsGrid.innerHTML = '';
-    const presetEntries = Object.entries(PRESETS);
-
-    const filtered = presetEntries.filter(([id, p]) => {
-      if (activeCategory === 'all') return true;
-      return p.category === activeCategory;
+    const query = (document.getElementById('presetSearch').value || '').trim().toLowerCase();
+    const presets = Object.values(PRESETS).filter(preset => {
+      const appearanceMatches = activeAppearance === 'all'
+        || themeEngine.getPresetAppearance(preset) === activeAppearance;
+      const searchMatches = !query || preset.name.toLowerCase().includes(query);
+      return appearanceMatches && searchMatches;
     });
 
-    for (const [id, preset] of filtered) {
+    presets.forEach(preset => {
+      const appearance = themeEngine.getPresetAppearance(preset);
+      const swatch = themeEngine.getPresetSwatch(preset);
       const card = document.createElement('div');
-      card.className = 'preset-card' + (id === currentPresetId ? ' is-selected' : '');
-      card.dataset.id = id;
+      card.className = 'preset-card' + (preset.id === currentPresetId ? ' is-selected' : '');
+      card.dataset.preset = preset.id;
+      card.dataset.appearance = appearance;
+      card.style.setProperty('--swatch-bg', swatch.background);
+      card.style.setProperty('--swatch-fg', swatch.foreground);
+      card.style.setProperty('--swatch-accent', swatch.accent);
 
-      const pRange = preset.color.range.primary;
-      const bgLightness = currentStyle === 'dark' ? 20 : 85;
-      const previewBg = `hsl(${pRange.h}, ${pRange.s}%, ${bgLightness}%)`;
-      const dotColor = `rgb(${preset.accent.rgb.r}, ${preset.accent.rgb.g}, ${preset.accent.rgb.b})`;
+      const swatchElement = document.createElement('div');
+      swatchElement.className = 'preset-swatch';
+      swatchElement.textContent = 'Aa';
 
-      card.innerHTML = `
-        <div class="preset-preview" style="background-color: ${previewBg};">
-          <div class="preset-dot" style="background-color: ${dotColor};"></div>
-        </div>
-        <div class="preset-name" title="${preset.name}">${preset.name}</div>
-      `;
+      const accentDot = document.createElement('div');
+      accentDot.className = 'preset-accent-dot';
+      swatchElement.appendChild(accentDot);
 
+      const name = document.createElement('span');
+      name.className = 'preset-name';
+      name.textContent = preset.name;
+
+      const badge = document.createElement('span');
+      badge.className = 'preset-style-badge';
+      badge.textContent = appearance === 'light' ? 'Light' : 'Dark';
+
+      card.append(swatchElement, name, badge);
       card.addEventListener('click', () => {
-        currentPresetId = id;
-        document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('is-selected'));
-        card.classList.add('is-selected');
+        currentPresetId = preset.id;
         applyAndBroadcast();
+        renderPresetGrid();
       });
-
       presetsGrid.appendChild(card);
-    }
+    });
+
+    activePresetCount.textContent = `${presets.length} / ${themeEngine.CATEGORIES.all}`;
   }
 
-  function updateModeUI() {
-    btnModeDark.classList.toggle('is-selected', currentStyle === 'dark');
-    btnModeLight.classList.toggle('is-selected', currentStyle === 'light');
-    activeStyleLabel.textContent = currentStyle === 'dark' ? 'Dark Mode' : 'Light Mode';
-    renderPresets();
+  function updateAppearanceFilter() {
+    appearanceButtons.forEach(button => {
+      button.classList.toggle('is-selected', button.dataset.appearance === activeAppearance);
+    });
+    activeAppearanceLabel.textContent = activeAppearance === 'all'
+      ? 'All original presets'
+      : `${activeAppearance === 'light' ? 'Light' : 'Dark'} original presets`;
+    renderPresetGrid();
   }
 
-  // Event Listeners
-  btnModeDark.addEventListener('click', () => {
-    currentStyle = 'dark';
-    updateModeUI();
+  appearanceButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      activeAppearance = button.dataset.appearance || 'all';
+      updateAppearanceFilter();
+    });
+  });
+
+  document.getElementById('presetSearch').addEventListener('input', renderPresetGrid);
+
+  radiusSlider.addEventListener('input', () => {
+    currentRadius = Number(radiusSlider.value);
+    radiusVal.textContent = `${currentRadius}%`;
     applyAndBroadcast();
   });
 
-  btnModeLight.addEventListener('click', () => {
-    currentStyle = 'light';
-    updateModeUI();
-    applyAndBroadcast();
-  });
-
-  categoryShelf.addEventListener('click', (e) => {
-    const pill = e.target.closest('.category-pill');
-    if (!pill) return;
-    document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('is-active'));
-    pill.classList.add('is-active');
-    activeCategory = pill.dataset.cat || 'all';
-    renderPresets();
-  });
-
-  radiusSlider.addEventListener('input', (e) => {
-    currentRadius = parseInt(e.target.value, 10);
-    radiusVal.textContent = currentRadius + 'px';
-    applyAndBroadcast();
-  });
-
-  shadowSlider.addEventListener('input', (e) => {
-    currentShadow = parseInt(e.target.value, 10);
-    shadowVal.textContent = currentShadow + '%';
+  shadowSlider.addEventListener('input', () => {
+    currentShadow = Number(shadowSlider.value);
+    shadowVal.textContent = `${currentShadow}%`;
     applyAndBroadcast();
   });
 
   masterToggle.addEventListener('click', () => {
     isEnabled = !isEnabled;
     masterToggle.classList.toggle('is-active', isEnabled);
-    chrome.storage.sync.set({ enabled: isEnabled });
-    sendMessageToPortal({ type: 'REECAP_TOGGLE', enabled: isEnabled });
-    statusLabel.textContent = isEnabled ? 'AEC Portal Synchronized' : 'ReEcap Disabled';
-  });
-
-  // Initialize
-  chrome.storage.sync.get({
-    enabled: true,
-    nightTabPreset: 'app',
-    nightTabStyle: 'dark',
-    nightTabRadius: 25,
-    nightTabShadow: 75,
-    themeFamily: null,
-    themeMode: null,
-    theme: null
-  }, (data) => {
-    const migrated = themeEngine.migrateThemeStorage ? themeEngine.migrateThemeStorage(data) : { preset: 'app', style: 'dark' };
-    isEnabled = data.enabled !== false;
-    currentPresetId = data.nightTabPreset || migrated.preset || 'app';
-    currentStyle = data.nightTabStyle || migrated.style || 'dark';
-    currentRadius = typeof data.nightTabRadius === 'number' ? data.nightTabRadius : 25;
-    currentShadow = typeof data.nightTabShadow === 'number' ? data.nightTabShadow : 75;
-
-    masterToggle.classList.toggle('is-active', isEnabled);
-    radiusSlider.value = currentRadius;
-    radiusVal.textContent = currentRadius + 'px';
-    shadowSlider.value = currentShadow;
-    shadowVal.textContent = currentShadow + '%';
-
-    updateModeUI();
+    statusLabel.textContent = isEnabled ? 'Active' : 'Disabled';
+    document.body.classList.toggle('is-enabled', isEnabled);
     applyAndBroadcast();
+    sendMessageToPortal({ type: 'REECAP_TOGGLE', enabled: isEnabled });
   });
+
+  function updateControls() {
+    masterToggle.classList.toggle('is-active', isEnabled);
+    statusLabel.textContent = isEnabled ? 'Active' : 'Disabled';
+    document.body.classList.toggle('is-enabled', isEnabled);
+    radiusSlider.value = currentRadius;
+    radiusVal.textContent = `${currentRadius}%`;
+    shadowSlider.value = currentShadow;
+    shadowVal.textContent = `${currentShadow}%`;
+    updateAppearanceFilter();
+  }
+
+  function loadInitialState() {
+    chrome.storage.sync.get({
+      enabled: true,
+      nightTabPreset: null,
+      nightTabRadius: 25,
+      nightTabShadow: 75,
+      nightTabStyle: null,
+      themeFamily: null,
+      themeMode: null,
+      theme: null
+    }, data => {
+      const migrated = themeEngine.migrateThemeStorage(data);
+      currentPresetId = migrated.preset;
+      currentRadius = migrated.radius;
+      currentShadow = migrated.shadow;
+      isEnabled = data.enabled !== false;
+
+      themeEngine.applyTheme(currentPresetId, {
+        radius: currentRadius,
+        shadow: currentShadow
+      });
+      updateControls();
+
+      const hasLegacyStorage = LEGACY_STORAGE_KEYS.some(key => data[key] != null);
+      if (data.nightTabPreset !== currentPresetId || hasLegacyStorage) {
+        chrome.storage.sync.set({ nightTabPreset: currentPresetId }, () => {
+          chrome.storage.sync.remove(LEGACY_STORAGE_KEYS);
+        });
+      }
+    });
+  }
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'sync') return;
+    const watchedKeys = ['enabled', 'nightTabPreset', 'nightTabRadius', 'nightTabShadow'];
+    if (!watchedKeys.some(key => key in changes)) return;
+
+    chrome.storage.sync.get({
+      enabled: true,
+      nightTabPreset: 'app',
+      nightTabRadius: 25,
+      nightTabShadow: 75
+    }, data => {
+      currentPresetId = PRESETS[data.nightTabPreset] ? data.nightTabPreset : 'app';
+      currentRadius = data.nightTabRadius;
+      currentShadow = data.nightTabShadow;
+      isEnabled = data.enabled !== false;
+      themeEngine.applyTheme(currentPresetId, {
+        radius: currentRadius,
+        shadow: currentShadow
+      });
+      updateControls();
+    });
+  });
+
+  loadInitialState();
 })();

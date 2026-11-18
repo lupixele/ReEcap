@@ -126,43 +126,6 @@
   border-color: var(--accent);
 }
 
-.toolbar-category-shelf {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  scrollbar-width: none;
-}
-
-.toolbar-category-shelf::-webkit-scrollbar {
-  display: none;
-}
-
-.toolbar-cat-pill {
-  padding: 3px 8px;
-  font-size: 10.5px;
-  font-weight: 600;
-  border-radius: 999px;
-  background: var(--surface-sunken);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-light);
-  cursor: pointer;
-  white-space: nowrap;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  transition: all 0.15s ease;
-}
-
-.toolbar-cat-pill:hover {
-  color: var(--text-primary);
-  border-color: var(--accent);
-}
-
-.toolbar-cat-pill.is-active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
 .toolbar-family-list {
   display: flex;
   flex-direction: column;
@@ -2611,12 +2574,14 @@ table[width="100%"]:has(iframe#capIframeId) {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  min-width: 0;
 }
 
 .biodata-section {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 .identity-block {
@@ -2699,17 +2664,20 @@ table[width="100%"]:has(iframe#capIframeId) {
 
 .biodata-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
   gap: 20px;
+  min-width: 0;
 }
 
 .biodata-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .biodata-label {
+  overflow-wrap: anywhere;
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   text-transform: uppercase;
@@ -2718,6 +2686,11 @@ table[width="100%"]:has(iframe#capIframeId) {
 }
 
 .biodata-value {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 14px;
   color: var(--text-primary);

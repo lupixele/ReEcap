@@ -1,14 +1,16 @@
 // ReEcap — shared/theme.js
 // nightTab Design System Theme Engine
-// Single source of truth for all 45 nightTab color presets, mathematical 14-shade HSL scales,
-// sRGB Luma auto-contrast text, radius/shadow controls, and portal navigation matching.
+// Single source of truth for the 45 original nightTab presets, mathematical
+// 14-shade HSL scales, token-derived appearance filters, auto-contrast text,
+// independent radius/shadow controls, and portal navigation matching.
 //
 // Exposes:
 //   window.__reecap_theme.PRESETS
-//   window.__reecap_theme.CATEGORIES
-//   window.__reecap_theme.applyTheme(presetId, styleMode, customOptions)
+//   window.__reecap_theme.CATEGORIES ({ all, dark, light })
+//   window.__reecap_theme.applyTheme(presetId, customOptions)
 //   window.__reecap_theme.migrateThemeStorage(data)
-//   window.__reecap_theme.resolveTheme(family, mode)
+//   window.__reecap_theme.getPresetAppearance(preset)
+//   window.__reecap_theme.getPresetSwatch(preset)
 //   window.__reecap_theme.hslToRgb(h, s, l)
 //   window.__reecap_theme.calculateShades(preset)
 //   window.__reecap_theme.PATH_MATCH_TABLE
@@ -51,22 +53,17 @@
     return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
   }
 
-  // ─── 45 nightTab Presets Catalog ─────────────────────────────────────────
+  // ─── 45 Original nightTab Presets ────────────────────────────────────────
 
-  const CATEGORIES = [
-    { id: 'core', name: 'Core & Modern' },
-    { id: 'minimal', name: 'Minimal & Nordic' },
-    { id: 'cyber', name: 'Cyberpunk & Neon' },
-    { id: 'space', name: 'Space & Midnight' },
-    { id: 'earth', name: 'Organic & Earth' },
-    { id: 'vivid', name: 'Vivid & Creative' }
-  ];
+  // Each preset retains its upstream HSL range, contrast endpoints, accent,
+  // font, radius, shadow, and initial style. The initial style controls the
+  // direction of the original CSS scale mapping; it is not a user override.
+  // Appearance filters are derived later from the rendered background token.
 
   const PRESETS = {
   "acrid": {
     "id": "acrid",
     "name": "Acrid",
-    "category": "vivid",
     "color": {
       "range": {
         "primary": {
@@ -110,7 +107,6 @@
   "aerial": {
     "id": "aerial",
     "name": "Aerial",
-    "category": "vivid",
     "color": {
       "range": {
         "primary": {
@@ -154,7 +150,6 @@
   "app": {
     "id": "app",
     "name": "nightTab (default)",
-    "category": "core",
     "color": {
       "range": {
         "primary": {
@@ -199,7 +194,6 @@
   "azure": {
     "id": "azure",
     "name": "Azure",
-    "category": "vivid",
     "color": {
       "range": {
         "primary": {
@@ -243,7 +237,6 @@
   "bean": {
     "id": "bean",
     "name": "Bean",
-    "category": "earth",
     "color": {
       "range": {
         "primary": {
@@ -287,7 +280,6 @@
   "black": {
     "id": "black",
     "name": "Black",
-    "category": "core",
     "color": {
       "range": {
         "primary": {
@@ -331,7 +323,6 @@
   "comet": {
     "id": "comet",
     "name": "Comet",
-    "category": "minimal",
     "color": {
       "range": {
         "primary": {
@@ -375,7 +366,6 @@
   "corsair": {
     "id": "corsair",
     "name": "Corsair",
-    "category": "space",
     "color": {
       "range": {
         "primary": {
@@ -419,7 +409,6 @@
   "dash": {
     "id": "dash",
     "name": "Dash",
-    "category": "minimal",
     "color": {
       "range": {
         "primary": {
@@ -463,7 +452,6 @@
   "deco": {
     "id": "deco",
     "name": "Deco",
-    "category": "minimal",
     "color": {
       "range": {
         "primary": {
@@ -507,7 +495,6 @@
   "earthquake": {
     "id": "earthquake",
     "name": "Earthquake",
-    "category": "vivid",
     "color": {
       "range": {
         "primary": {
@@ -551,7 +538,6 @@
   "funkadelic": {
     "id": "funkadelic",
     "name": "Funkadelic",
-    "category": "cyber",
     "color": {
       "range": {
         "primary": {
@@ -595,7 +581,6 @@
   "grimm": {
     "id": "grimm",
     "name": "Grimm",
-    "category": "space",
     "color": {
       "range": {
         "primary": {
@@ -639,7 +624,6 @@
   "hive": {
     "id": "hive",
     "name": "Hive",
-    "category": "space",
     "color": {
       "range": {
         "primary": {
@@ -683,7 +667,6 @@
   "hypnos": {
     "id": "hypnos",
     "name": "Hypnos",
-    "category": "space",
     "color": {
       "range": {
         "primary": {
@@ -727,7 +710,6 @@
   "infrared": {
     "id": "infrared",
     "name": "Infrared",
-    "category": "cyber",
     "color": {
       "range": {
         "primary": {
@@ -771,7 +753,6 @@
   "kapow": {
     "id": "kapow",
     "name": "Kapow",
-    "category": "cyber",
     "color": {
       "range": {
         "primary": {
@@ -815,7 +796,6 @@
   "koto": {
     "id": "koto",
     "name": "Koto",
-    "category": "cyber",
     "color": {
       "range": {
         "primary": {
@@ -859,7 +839,6 @@
   "lex": {
     "id": "lex",
     "name": "Lex",
-    "category": "cyber",
     "color": {
       "range": {
         "primary": {
@@ -903,7 +882,6 @@
   "macaroon": {
     "id": "macaroon",
     "name": "Macaroon",
-    "category": "vivid",
     "color": {
       "range": {
         "primary": {
@@ -947,7 +925,6 @@
   "marker": {
     "id": "marker",
     "name": "Marker",
-    "category": "core",
     "color": {
       "range": {
         "primary": {
@@ -991,7 +968,6 @@
   "midnight": {
     "id": "midnight",
     "name": "Midnight",
-    "category": "space",
     "color": {
       "range": {
         "primary": {
@@ -1035,7 +1011,6 @@
   "mint": {
     "id": "mint",
     "name": "Mint",
-    "category": "earth",
     "color": {
       "range": {
         "primary": {
@@ -1079,7 +1054,6 @@
   "neon": {
     "id": "neon",
     "name": "Neon",
-    "category": "cyber",
     "color": {
       "range": {
         "primary": {
@@ -1124,7 +1098,6 @@
   "nord": {
     "id": "nord",
     "name": "Nord",
-    "category": "minimal",
     "color": {
       "range": {
         "primary": {
@@ -1168,7 +1141,6 @@
   "obsidian": {
     "id": "obsidian",
     "name": "Obsidian",
-    "category": "minimal",
     "color": {
       "range": {
         "primary": {
@@ -1212,7 +1184,6 @@
   "origin": {
     "id": "origin",
     "name": "Origin",
-    "category": "minimal",
     "color": {
       "range": {
         "primary": {
@@ -1256,7 +1227,6 @@
   "outrun": {
     "id": "outrun",
     "name": "Outrun",
-    "category": "cyber",
     "color": {
       "range": {
         "primary": {
@@ -1300,7 +1270,6 @@
   "pepper": {
     "id": "pepper",
     "name": "Pepper",
-    "category": "earth",
     "color": {
       "range": {
         "primary": {
@@ -1344,7 +1313,6 @@
   "point": {
     "id": "point",
     "name": "Point",
-    "category": "core",
     "color": {
       "range": {
         "primary": {
@@ -1389,7 +1357,6 @@
   "pumpkin": {
     "id": "pumpkin",
     "name": "Pumpkin",
-    "category": "earth",
     "color": {
       "range": {
         "primary": {
@@ -1433,7 +1400,6 @@
   "replica": {
     "id": "replica",
     "name": "Replica",
-    "category": "minimal",
     "color": {
       "range": {
         "primary": {
@@ -1477,7 +1443,6 @@
   "rumble": {
     "id": "rumble",
     "name": "Rumble",
-    "category": "space",
     "color": {
       "range": {
         "primary": {
@@ -1521,7 +1486,6 @@
   "savage": {
     "id": "savage",
     "name": "Savage",
-    "category": "earth",
     "color": {
       "range": {
         "primary": {
@@ -1565,7 +1529,6 @@
   "scoria": {
     "id": "scoria",
     "name": "Scoria",
-    "category": "vivid",
     "color": {
       "range": {
         "primary": {
@@ -1609,7 +1572,6 @@
   "snow": {
     "id": "snow",
     "name": "Snow",
-    "category": "core",
     "color": {
       "range": {
         "primary": {
@@ -1653,7 +1615,6 @@
   "sol": {
     "id": "sol",
     "name": "Sol",
-    "category": "earth",
     "color": {
       "range": {
         "primary": {
@@ -1697,7 +1658,6 @@
   "steel": {
     "id": "steel",
     "name": "Steel",
-    "category": "core",
     "color": {
       "range": {
         "primary": {
@@ -1741,7 +1701,6 @@
   "stria": {
     "id": "stria",
     "name": "Stria",
-    "category": "minimal",
     "color": {
       "range": {
         "primary": {
@@ -1785,7 +1744,6 @@
   "terra": {
     "id": "terra",
     "name": "Terra",
-    "category": "earth",
     "color": {
       "range": {
         "primary": {
@@ -1829,7 +1787,6 @@
   "trine": {
     "id": "trine",
     "name": "Trine",
-    "category": "vivid",
     "color": {
       "range": {
         "primary": {
@@ -1873,7 +1830,6 @@
   "umbra": {
     "id": "umbra",
     "name": "Umbra",
-    "category": "space",
     "color": {
       "range": {
         "primary": {
@@ -1917,7 +1873,6 @@
   "vanadium": {
     "id": "vanadium",
     "name": "Vanadium",
-    "category": "core",
     "color": {
       "range": {
         "primary": {
@@ -1961,7 +1916,6 @@
   "viper": {
     "id": "viper",
     "name": "Viper",
-    "category": "earth",
     "color": {
       "range": {
         "primary": {
@@ -2005,7 +1959,6 @@
   "white": {
     "id": "white",
     "name": "White",
-    "category": "core",
     "color": {
       "range": {
         "primary": {
@@ -2048,12 +2001,20 @@
   }
 };
 
-  // ─── 14-Shade Math Engine ────────────────────────────────────────────────
+  // ─── Original Scale and Appearance Derivation ────────────────────────────
+
+  function srgbLuma(rgb) {
+    return ((rgb.r * 0.2721) + (rgb.g * 0.7152) + (rgb.b * 0.1255)) / 255;
+  }
+
+  function getPresetStyle(preset) {
+    return preset && preset.style === 'light' ? 'light' : 'dark';
+  }
 
   function calculateShades(preset) {
     const shades = [];
-    const contrast = preset.color.contrast || { start: 17, end: 83 };
-    const range = preset.color.range.primary || { h: 222, s: 14 };
+    const contrast = preset.color.contrast;
+    const range = preset.color.range.primary;
     const step = (contrast.end - contrast.start) / 13;
 
     for (let i = 0; i < 14; i++) {
@@ -2069,12 +2030,43 @@
     return shades;
   }
 
+  function getPresetBackground(preset) {
+    const shades = calculateShades(preset);
+    return shades[getPresetStyle(preset) === 'light' ? shades.length - 1 : 0];
+  }
+
+  function getPresetAppearance(preset) {
+    return srgbLuma(getPresetBackground(preset).rgb) > 0.55 ? 'light' : 'dark';
+  }
+
+  function getPresetSwatch(preset) {
+    const background = getPresetBackground(preset);
+    const foreground = getPresetAppearance(preset) === 'light' ? 0 : 100;
+    const accent = preset.accent.hsl;
+    return {
+      background: `hsl(${background.hslString})`,
+      foreground: `hsl(0, 0%, ${foreground}%)`,
+      accent: `hsl(${accent.h}, ${accent.s}%, ${accent.l}%)`
+    };
+  }
+
+  const CATEGORIES = Object.values(PRESETS).reduce((counts, preset) => {
+    counts.all += 1;
+    counts[getPresetAppearance(preset)] += 1;
+    return counts;
+  }, { all: 0, dark: 0, light: 0 });
+
   // ─── Theme Application ───────────────────────────────────────────────────
 
-  function applyTheme(presetId, styleMode, customOptions) {
+  function applyTheme(presetId, customOptions, legacyOptions) {
     const preset = PRESETS[presetId] || PRESETS.app;
-    const mode = styleMode || preset.style || 'dark';
-    const isDark = (mode === 'dark');
+    // Legacy callers can still pass (preset, style, options), but the style
+    // argument is deliberately ignored. Only the original preset style applies.
+    const options = customOptions && typeof customOptions === 'object'
+      ? customOptions
+      : (legacyOptions && typeof legacyOptions === 'object' ? legacyOptions : {});
+    const mode = getPresetStyle(preset);
+    const appearance = getPresetAppearance(preset);
     const shades = calculateShades(preset);
     const root = document.documentElement;
 
@@ -2089,9 +2081,9 @@
       root.style.setProperty(`--theme-primary-${s.index}-l`, s.hsl.l);
     }
 
-    // 2. Inject 010-140 mapped shade scale directly on root
+    // 2. Map the scale exactly as the original preset's initial style requires.
     for (let i = 0; i < 14; i++) {
-      const shadeIdx = isDark ? i : (13 - i);
+      const shadeIdx = mode === 'dark' ? i : (13 - i);
       const s = shades[shadeIdx];
       const keyNum = String((i + 1) * 10).padStart(3, '0');
       root.style.setProperty(`--theme-primary-${keyNum}`, s.hslString);
@@ -2103,9 +2095,9 @@
       root.style.setProperty(`--theme-primary-${keyNum}-l`, s.hsl.l);
     }
 
-    // 3. Inject Accent Colors and Auto-Contrast Luma
-    const accentRgb = (customOptions && customOptions.accentRgb) || preset.accent.rgb || { r: 0, g: 80, b: 255 };
-    const accentLuma = ((accentRgb.r * 0.2721) + (accentRgb.g * 0.7152) + (accentRgb.b * 0.1255)) / 255;
+    // 3. Inject the original accent and its sRGB auto-contrast color.
+    const accentRgb = preset.accent.rgb;
+    const accentLuma = srgbLuma(accentRgb);
     const isLightAccent = accentLuma > 0.55;
     const accentColor = `rgb(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b})`;
     const accentSoft = `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.16)`;
@@ -2125,45 +2117,19 @@
     root.style.setProperty('--action-primary-hover', accentColor);
     root.style.setProperty('--action-soft', accentSoft);
 
-    // 4. Inject Comprehensive Semantic Surfaces & Fallbacks directly
-    const pageShade = shades[isDark ? 0 : 13];
-    const cardShade = shades[isDark ? 1 : 12];
-    const sunkenShade = shades[isDark ? 0 : 13];
-    const elevatedShade = shades[isDark ? 2 : 11];
-    const borderShade = shades[isDark ? 3 : 10];
+    // 4. Semantic surfaces and text belong to tokens.css and the original
+    // auto-contrast scale. Remove inline values written by older versions.
+    [
+      '--surface-page', '--surface-page-glow', '--surface-bg', '--surface-card',
+      '--surface-sunken', '--surface-hover', '--surface-elevated', '--surface-raised',
+      '--surface-strip', '--surface-strip-text', '--surface-strip-text-muted',
+      '--border', '--border-light', '--border-subtle', '--card-border',
+      '--text-primary', '--text-secondary', '--text-faint'
+    ].forEach(property => root.style.removeProperty(property));
 
-    const textPrimary = isDark ? '#F1F1EE' : '#111827';
-    const textSecondary = isDark ? '#C7C7D0' : '#4B5563';
-    const textFaint = isDark ? '#8E8E99' : '#6B7280';
-
-    const pageGlow = isDark
-      ? `radial-gradient(ellipse 900px 500px at 20% -10%, hsla(${cardShade.hslString}, 0.5) 0%, transparent 60%), hsl(${pageShade.hslString})`
-      : `radial-gradient(circle at 12% 0%, hsl(${pageShade.hslString}) 0%, hsl(${cardShade.hslString}) 55%)`;
-
-    root.style.setProperty('--surface-page', `hsl(${pageShade.hslString})`);
-    root.style.setProperty('--surface-page-glow', pageGlow);
-    root.style.setProperty('--surface-bg', `hsl(${pageShade.hslString})`);
-    root.style.setProperty('--surface-card', `hsl(${cardShade.hslString})`);
-    root.style.setProperty('--surface-sunken', `hsl(${sunkenShade.hslString})`);
-    root.style.setProperty('--surface-hover', `hsl(${elevatedShade.hslString})`);
-    root.style.setProperty('--surface-elevated', `hsl(${elevatedShade.hslString})`);
-    root.style.setProperty('--surface-raised', `hsl(${cardShade.hslString})`);
-    root.style.setProperty('--surface-strip', `hsl(${pageShade.hslString})`);
-    root.style.setProperty('--surface-strip-text', textPrimary);
-    root.style.setProperty('--surface-strip-text-muted', textSecondary);
-
-    root.style.setProperty('--border', `hsl(${borderShade.hslString})`);
-    root.style.setProperty('--border-light', `hsla(${borderShade.hslString}, 0.45)`);
-    root.style.setProperty('--border-subtle', `hsl(${elevatedShade.hslString})`);
-    root.style.setProperty('--card-border', `1px solid hsl(${borderShade.hslString})`);
-
-    root.style.setProperty('--text-primary', textPrimary);
-    root.style.setProperty('--text-secondary', textSecondary);
-    root.style.setProperty('--text-faint', textFaint);
-
-    // 5. Inject Radius and Shadow Constants
-    const radius = (customOptions && typeof customOptions.radius === 'number') ? customOptions.radius : (preset.radius ?? 25);
-    const shadow = (customOptions && typeof customOptions.shadow === 'number') ? customOptions.shadow : (preset.shadow ?? 75);
+    // 5. Preserve independent user radius and shadow options.
+    const radius = typeof options.radius === 'number' ? options.radius : (preset.radius ?? 25);
+    const shadow = typeof options.shadow === 'number' ? options.shadow : (preset.shadow ?? 75);
     root.style.setProperty('--theme-radius', radius);
     root.style.setProperty('--theme-shadow', shadow);
     root.style.setProperty('--radius', `calc(${radius} * 0.01em)`);
@@ -2186,69 +2152,57 @@
       root.style.setProperty('--theme-font-ui-name', `"Open Sans", "Inter", system-ui, -apple-system, sans-serif`);
     }
 
-    // 7. Update Style Class and Attributes
+    // 7. Expose both the original scale direction and derived appearance.
     root.classList.remove('is-theme-style-dark', 'is-theme-style-light');
     root.classList.add(`is-theme-style-${mode}`);
     root.setAttribute('data-theme-style', mode);
+    root.setAttribute('data-theme-appearance', appearance);
     root.setAttribute('data-theme-preset', preset.id);
+    root.setAttribute('data-theme', mode);
+    root.style.colorScheme = appearance;
 
-    // Backward compatibility attribute for legacy styles
-    root.setAttribute('data-theme', mode === 'dark' ? (preset.id === 'black' ? 'amoled' : 'dark') : 'light');
-
-    return { preset, mode, radius, shadow };
+    return { preset, mode, appearance, radius, shadow };
   }
 
   // ─── Legacy Storage Migration ────────────────────────────────────────────
 
+  // Old family/mode combinations migrate to one real preset. Their mode suffix
+  // is intentionally discarded instead of becoming a synthetic light/dark variant.
   const LEGACY_PRESET_MAP = {
-    'light':            { preset: 'app',      style: 'light' },
-    'dark':             { preset: 'app',      style: 'dark'  },
-    'amoled':           { preset: 'black',    style: 'dark'  },
-    'cappuccino-light': { preset: 'terra',    style: 'light' },
-    'cappuccino-dark':  { preset: 'terra',    style: 'dark'  },
-    'cappuccino':       { preset: 'terra',    style: 'dark'  },
-    'evergreen-light':  { preset: 'mint',     style: 'light' },
-    'evergreen-dark':   { preset: 'mint',     style: 'dark'  },
-    'evergreen':        { preset: 'mint',     style: 'dark'  },
-    'midnight':         { preset: 'midnight', style: 'dark'  },
-    'rosewood-light':   { preset: 'koto',     style: 'light' },
-    'rosewood-dark':    { preset: 'koto',     style: 'dark'  },
-    'rosewood':         { preset: 'koto',     style: 'dark'  },
-    'original':         { preset: 'app',      style: 'dark'  }
+    'light': 'app',
+    'dark': 'app',
+    'amoled': 'black',
+    'cappuccino-light': 'terra',
+    'cappuccino-dark': 'terra',
+    'cappuccino': 'terra',
+    'evergreen-light': 'mint',
+    'evergreen-dark': 'mint',
+    'evergreen': 'mint',
+    'midnight': 'midnight',
+    'rosewood-light': 'koto',
+    'rosewood-dark': 'koto',
+    'rosewood': 'koto',
+    'original': 'app'
   };
 
   function migrateThemeStorage(data) {
-    if (data && data.nightTabPreset && PRESETS[data.nightTabPreset]) {
-      const p = data.nightTabPreset;
-      const s = data.nightTabStyle || PRESETS[p].style || 'dark';
-      return {
-        preset: p,
-        style: s,
-        family: p,
-        mode: s,
-        radius: typeof data.nightTabRadius === 'number' ? data.nightTabRadius : undefined,
-        shadow: typeof data.nightTabShadow === 'number' ? data.nightTabShadow : undefined
-      };
+    const source = data || {};
+    let presetId = PRESETS[source.nightTabPreset] ? source.nightTabPreset : null;
+
+    if (!presetId) {
+      const legacyKey = source.themeFamily || source.theme;
+      const mappedPreset = LEGACY_PRESET_MAP[legacyKey];
+      presetId = PRESETS[mappedPreset] ? mappedPreset : 'app';
     }
 
-    const legacyKey = (data && data.themeFamily) || (data && data.theme) || 'app';
-    const mapped = LEGACY_PRESET_MAP[legacyKey] || { preset: 'app', style: data?.themeMode || 'dark' };
-    const finalPreset = PRESETS[mapped.preset] ? mapped.preset : 'app';
-    const finalStyle = data?.themeMode || mapped.style || 'dark';
+    const preset = PRESETS[presetId];
     return {
-      preset: finalPreset,
-      style: finalStyle,
-      family: finalPreset,
-      mode: finalStyle,
-      radius: typeof data?.nightTabRadius === 'number' ? data.nightTabRadius : undefined,
-      shadow: typeof data?.nightTabShadow === 'number' ? data.nightTabShadow : undefined
+      preset: presetId,
+      style: getPresetStyle(preset),
+      appearance: getPresetAppearance(preset),
+      radius: typeof source.nightTabRadius === 'number' ? source.nightTabRadius : undefined,
+      shadow: typeof source.nightTabShadow === 'number' ? source.nightTabShadow : undefined
     };
-  }
-
-  function resolveTheme(family, mode) {
-    if (PRESETS[family]) return family;
-    const mapped = LEGACY_PRESET_MAP[family];
-    return mapped ? mapped.preset : 'app';
   }
 
   // ─── Navigation Route Matching ───────────────────────────────────────────
@@ -2329,7 +2283,10 @@
     CATEGORIES,
     applyTheme,
     migrateThemeStorage,
-    resolveTheme,
+    getPresetStyle,
+    getPresetBackground,
+    getPresetAppearance,
+    getPresetSwatch,
     hslToRgb,
     rgbToHsl,
     calculateShades,

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fee Services Regression Test</title>
+  <link rel="stylesheet" href="../extension/shared/tokens.css">
+  <link rel="stylesheet" href="../extension/style.css">
+</head>
+<body>
+  <pre id="test-status">Running...</pre>
+  <script>
+    window.chrome = { runtime: { lastError: null } };
+    window.__nativeReceiptCalls = 0;
+    window.__nativeProceedCalls = 0;
+    window.__unexpectedAlerts = 0;
+    window.alert = () => { window.__unexpectedAlerts += 1; };
+  </script>
+  <script src="../extension/shared/theme.js"></script>
+  <script src="../extension/decorators.js?fee=2"></script>
+  <script>
+    (async () => {
+      const checks = [];
+      const check = (name, pass) => checks.push({ name, pass: Boolean(pass) });
+
+      history.replaceState(null, '', '/aus/Feepayments/studentreceipts.aspx?scrid=28');
+      document.body.innerHTML = `
+        <form id="aspnetForm" onsubmit="return false;">
+          <table id="official-receipts">
+            <tr><td>Official receipt 123</td><td><input id="native-print" type="submit" value="Print Receipt" onclick="window.__nativeReceiptCalls += 1;"></td></tr>
+          </table>
+        </form>
+        <pre id="test-status"></pre>
+      `;
+      const receiptForm = document.getElementById('aspnetForm');
+      handleFeePortalPage();
+      await new Promise(resolve => setTimeout(resolve, 1350));
+
+      check('Official receipts remain visible after the old fallback delay', !document.getElementById('reecap-fee-hub') && getComputedStyle(document.getElementById('official-receipts')).display !== 'none');
+      check('Receipt page does not contain fabricated fallback records', !document.body.textContent.includes('INDIAN OVERSEAS BANK') && !document.body.textContent.includes('HDFC-2025'));
+      document.getElementById('native-print').click();
+      check('Native receipt submit control still runs', window.__nativeReceiptCalls === 1 && document.getElementById('native-print').form === receiptForm);
+
+      history.replaceState(null, '', '/aus/Feepayments/studentfeereceipt.aspx?scrid=23');
+      document.body.innerHTML = `
+        <form id="aspnetForm" onsubmit="return false;">
+          <div id="divfees">
+            <span>Official gateway form</span>
+            <input id="native-proceed" type="submit" value="Proceed to Payment" onclick="window.__nativeProceedCalls += 1;">
+          </div>
+        </form>
+        <pre id="test-status"></pre>
+      `;
+      const paymentForm = document.getElementById('aspnetForm');
+      handleFeePortalPage();
+      await new Promise(resolve => setTimeout(resolve, 1350));
+
+      const recovery = document.getElementById('reecap-fee-hub');
+      check('Payment recovery is available when tabs are missing', Boolean(recovery));
+      check('Official payment form remains visible', getComputedStyle(paymentForm).display !== 'none' && getComputedStyle(document.getElementById('divfees')).display !== 'none');
+      check('Recovery does not fabricate financial values', recovery && !/HDFC-2025|INDIAN OVERSEAS BANK|40,000|78,750/.test(recovery.textContent));
+      check('Recovery has no alert-only payment button', recovery && !recovery.querySelector('#btn-proceed-gateway') && window.__unexpectedAlerts === 0);
+      check('Reload action is available', Boolean(recovery?.querySelector('#reecap-fee-retry')));
+      check('Official receipt route is absolute and direct', recovery?.querySelector('a[href="/aus/Feepayments/studentreceipts.aspx?scrid=28"]') !== null);
+
+      document.getElementById('native-proceed').click();
+      check('Native payment Proceed control still runs', window.__nativeProceedCalls === 1 && document.getElementById('native-proceed').form === paymentForm);
+
+      window.__nativeFeeChanges = 0;
+      window.__nativeGatewayChanges = 0;
+      window.__nativeCancelCalls = 0;
+      document.body.innerHTML = `
+        <form id="aspnetForm" onsubmit="return false;">
+          <div id="divfees">
+            <div id="divtabs">
+              <ul class="ui-tabs-nav"><li><a href="#year1">Ist Year (Due:1,000.00)</a></li></ul>
+              <div id="year1"><table><tbody><tr name="fee-row">${Array.from({ length: 17 }, () => '<td></td>').join('')}</tr></tbody></table></div>
+            </div>
+            <div id="native-channels">
+              <label><input id="icici" type="radio" name="gateway" value="ICICI" checked> ICICI</label>
+              <label><input id="paytm" type="radio" name="gateway" value="Paytm" onchange="window.__nativeGatewayChanges += 1;"> Paytm</label>
+            </div>
+            <input id="enhanced-proceed" type="submit" value="Proceed to Payment" onclick="window.__nativeProceedCalls += 1;">
+            <input id="enhanced-cancel" type="button" value="Cancel" onclick="window.__nativeCancelCalls += 1;">
+          </div>
+        </form>
+        <pre id="test-status"></pre>
+      `;
+      const enhancedForm = document.getElementById('aspnetForm');
+      const cells = document.querySelector('tr[name="fee-row"]').querySelectorAll('td');
+      cells[0].textContent = '1';
+      cells[1].innerHTML = '<input id="native-fee-check" type="checkbox" onchange="window.__nativeFeeChanges += 1;">';
+      cells[4].textContent = 'Tuition Fee';
+      cells[5].textContent = '1,000.00';
+      cells[7].textContent = '0.00';
+      cells[9].textContent = '0.00';
+      cells[11].textContent = '0.00';
+      cells[13].textContent = '0.00';
+      cells[16].innerHTML = '<input id="native-amount" type="text" value="100.00">';
+
+      const proceedCallsBeforeEnhanced = window.__nativeProceedCalls;
+      redesignOnlinePaymentPage();
+      for (let attempt = 0; attempt < 20 && !document.querySelector('.pay-items-table #native-fee-check'); attempt += 1) {
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+
+      check('Enhanced payment UI is built from official controls', Boolean(document.querySelector('.reecap-payment-page')));
+      check('Fee checkbox is moved into the visible item table', Boolean(document.querySelector('.pay-items-table #native-fee-check')));
+      check('Amount input remains inside the official form', document.getElementById('native-amount').form === enhancedForm);
+      document.getElementById('native-fee-check').click();
+      check('Native fee checkbox behavior still runs', window.__nativeFeeChanges === 1 && document.getElementById('native-fee-check').checked);
+      document.getElementById('paytm').click();
+      check('Native gateway radio behavior still runs', window.__nativeGatewayChanges === 1 && document.getElementById('paytm').checked);
+      document.getElementById('enhanced-cancel').click();
+      check('Native Cancel control remains functional', window.__nativeCancelCalls === 1 && document.getElementById('enhanced-cancel').form === enhancedForm);
+      document.getElementById('enhanced-proceed').click();
+      check('Enhanced Proceed retains its native submit handler', window.__nativeProceedCalls === proceedCallsBeforeEnhanced + 1 && document.getElementById('enhanced-proceed').form === enhancedForm);
+
+      window.__feeTest = { pass: checks.every(item => item.pass), checks };
+      document.getElementById('test-status').textContent = JSON.stringify(window.__feeTest, null, 2);
+    })().catch(error => {
+      window.__feeTest = { pass: false, error: error.stack || String(error) };
+      document.getElementById('test-status').textContent = window.__feeTest.error;
+    });
+  </script>
+</body>
+</html>

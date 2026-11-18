@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bio-data Overlap Regression Test</title>
+  <link rel="stylesheet" href="../extension/shared/tokens.css">
+  <link rel="stylesheet" href="../extension/style.css">
+  <style>
+    body { margin: 20px; background: #20242d; }
+    #divProfile_BioData { width: 900px; max-width: 100%; }
+    #test-results { white-space: pre-wrap; color: #ffffff; font: 12px/1.5 monospace; }
+  </style>
+</head>
+<body>
+  <div id="divProfile_BioData">
+    <table>
+      <tr>
+        <td>RollNo</td><td>:</td><td>25B11DS190</td>
+        <td>Name</td><td>:</td><td>lupel</td>
+      </tr>
+      <tr>
+        <td>Phone.No</td><td>:</td><td></td>
+        <td>Email</td><td>:</td><td>25B11DS190@adityauniversity.in</td>
+      </tr>
+      <tr>
+        <td>Father Name</td><td>:</td><td>RAJENDRA KUMAR (9912331156) - teacher</td>
+        <td>Mother Name</td><td>:</td><td>RAJA KUMARI (9912162167) - HOUSE WIFE</td>
+      </tr>
+      <tr>
+        <td>Correspondence Address</td><td>:</td><td></td>
+        <td>Permanent Address</td><td>:</td><td>4-3-39/RKBOJJA VARI THOTAPITHAPURAMA_PithapuramA_KakinadaA_Andhra PradeshA_INDIA533450</td>
+      </tr>
+      <tr>
+        <td>Guardian Address</td><td>:</td><td>-Parent's Details4-3-39/RKBOJJA VARI THOTAPITHAPURAMA_PithapuramA_KakinadaA_Andhra PradeshA_INDIA533450</td>
+      </tr>
+    </table>
+  </div>
+  <pre id="test-results">Running...</pre>
+  <script>
+    window.chrome = { runtime: { lastError: null } };
+  </script>
+  <script src="../extension/shared/theme.js"></script>
+  <script src="../extension/decorators.js"></script>
+  <script>
+    buildBioDataRedesign(null);
+
+    const pane = document.getElementById('divProfile_BioData');
+    const root = pane.querySelector('.reecap-biodata');
+    const checks = [];
+    const check = (name, pass) => checks.push({ name, pass: Boolean(pass) });
+    const valueFor = label => [...root.querySelectorAll('.biodata-field')]
+      .find(field => field.querySelector('.biodata-label')?.textContent === label)
+      ?.querySelector('.biodata-value');
+
+    check('Production renderer creates one redesigned biodata view', root && pane.querySelectorAll('.reecap-biodata').length === 1);
+    check('Legacy table is hidden only after successful parsing', getComputedStyle(pane.querySelector('table')).display === 'none');
+    check('Roll number is preserved', valueFor('Roll No')?.textContent === '25B11DS190');
+
+    const guardianText = valueFor('Guardian Details')?.textContent || '';
+    check('Guardian section label is removed', !/Parent(?:'|’)?s\s+Details/i.test(guardianText));
+    check('Guardian address data is preserved', guardianText.startsWith('4-3-39/RKBOJJA VARI'));
+
+    const responsive = [900, 320, 180].map(requestedWidth => {
+      pane.style.width = `${requestedWidth}px`;
+      const values = [...root.querySelectorAll('.biodata-value')];
+      const overflowing = values.filter(value => value.scrollWidth > value.clientWidth + 1)
+        .map(value => value.parentElement.querySelector('.biodata-label')?.textContent || 'Unknown');
+      const contact = [...root.querySelectorAll('.biodata-section')]
+        .find(section => section.querySelector('.biodata-section-title')?.textContent === 'Contact & Guardians');
+      return {
+        requestedWidth,
+        actualWidth: pane.clientWidth,
+        columns: getComputedStyle(contact.querySelector('.biodata-grid')).gridTemplateColumns,
+        overflowing
+      };
+    });
+
+    responsive.forEach(result => {
+      check(`${result.requestedWidth}px container has no value overflow`, result.overflowing.length === 0);
+    });
+    check('Narrow containers collapse to one grid column', responsive.slice(1).every(result => !result.columns.includes(' ')));
+
+    const results = { pass: checks.every(item => item.pass), checks, responsive };
+    window.__bioTestResults = results;
+    document.getElementById('test-results').textContent = JSON.stringify(results, null, 2);
+  </script>
+</body>
+</html>
