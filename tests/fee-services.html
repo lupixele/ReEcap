@@ -17,7 +17,7 @@
     window.alert = () => { window.__unexpectedAlerts += 1; };
   </script>
   <script src="../extension/shared/theme.js"></script>
-  <script src="../extension/decorators.js?fee=2"></script>
+  <script src="../extension/decorators.js?fee=5"></script>
   <script>
     (async () => {
       const checks = [];
@@ -69,13 +69,34 @@
       window.__nativeFeeChanges = 0;
       window.__nativeGatewayChanges = 0;
       window.__nativeCancelCalls = 0;
+      window.__nativeAmountBlurs = 0;
+      // Faithful stand-in for the portal's onFeeCheckBoxClick/calculateAmounts:
+      // traverses the ORIGINAL row positionally and alerts when its row context
+      // is missing (the live portal alerts "undefined" in exactly this case).
+      window.__nativeCalculate = function(sourceEl) {
+        const row = sourceEl.parentNode.parentNode;
+        const amountCell = row.cells && row.cells[16];
+        const amountInput = amountCell ? amountCell.querySelector('input[name="txtamount"]') : null;
+        if (!amountInput) { window.alert(undefined); return; }
+        const chkCell = row.cells[1];
+        const chk = chkCell ? chkCell.querySelector('input[type="checkbox"]') : null;
+        const value = (chk && chk.checked) ? (parseFloat(amountInput.value) || 0) : 0;
+        document.querySelector('#year1 input[name="txtpaying"]').value = value.toFixed(2);
+        document.getElementById('spnfeepaying').textContent = value.toFixed(2);
+        document.getElementById('spntotal').textContent = value.toFixed(2);
+      };
       document.body.innerHTML = `
         <form id="aspnetForm" onsubmit="return false;">
           <div id="divfees">
             <div id="divtabs">
               <ul class="ui-tabs-nav"><li><a href="#year1">Ist Year (Due:1,000.00)</a></li></ul>
-              <div id="year1"><table><tbody><tr name="fee-row">${Array.from({ length: 17 }, () => '<td></td>').join('')}</tr></tbody></table></div>
+              <div id="year1"><table><tbody><tr name="fee-row">${Array.from({ length: 17 }, () => '<td></td>').join('')}</tr></tbody></table>
+                <input name="txtfee" type="hidden" value="0.00">
+                <input name="txtfine" type="hidden" value="0.00">
+                <input name="txtpaying" type="hidden" value="0.00">
+              </div>
             </div>
+            <span id="spnfeepaying">0.00</span><span id="spnfine">0.00</span><span id="spntotal">0.00</span>
             <div id="native-channels">
               <label><input id="icici" type="radio" name="gateway" value="ICICI" checked> ICICI</label>
               <label><input id="paytm" type="radio" name="gateway" value="Paytm" onchange="window.__nativeGatewayChanges += 1;"> Paytm</label>
@@ -89,32 +110,58 @@
       const enhancedForm = document.getElementById('aspnetForm');
       const cells = document.querySelector('tr[name="fee-row"]').querySelectorAll('td');
       cells[0].textContent = '1';
-      cells[1].innerHTML = '<input id="native-fee-check" type="checkbox" onchange="window.__nativeFeeChanges += 1;">';
+      cells[1].innerHTML = '<input id="native-fee-check" type="checkbox" onchange="window.__nativeFeeChanges += 1; window.__nativeCalculate(this);">';
       cells[4].textContent = 'Tuition Fee';
       cells[5].textContent = '1,000.00';
       cells[7].textContent = '0.00';
       cells[9].textContent = '0.00';
       cells[11].textContent = '0.00';
       cells[13].textContent = '0.00';
-      cells[16].innerHTML = '<input id="native-amount" type="text" value="100.00">';
+      cells[16].innerHTML = '<input id="native-amount" name="txtamount" type="text" value="100.00" onblur="window.__nativeAmountBlurs += 1; window.__nativeCalculate(this);">';
 
       const proceedCallsBeforeEnhanced = window.__nativeProceedCalls;
       redesignOnlinePaymentPage();
-      for (let attempt = 0; attempt < 20 && !document.querySelector('.pay-items-table #native-fee-check'); attempt += 1) {
+      for (let attempt = 0; attempt < 20 && !document.querySelector('.pay-items-table input[type="checkbox"]'); attempt += 1) {
         await new Promise(resolve => setTimeout(resolve, 25));
       }
 
       check('Enhanced payment UI is built from official controls', Boolean(document.querySelector('.reecap-payment-page')));
-      check('Fee checkbox is moved into the visible item table', Boolean(document.querySelector('.pay-items-table #native-fee-check')));
-      check('Amount input remains inside the official form', document.getElementById('native-amount').form === enhancedForm);
-      document.getElementById('native-fee-check').click();
-      check('Native fee checkbox behavior still runs', window.__nativeFeeChanges === 1 && document.getElementById('native-fee-check').checked);
+      const proxyChk = document.querySelector('.pay-items-table input[type="checkbox"]');
+      check('Visible proxy checkbox is rendered in the item table', Boolean(proxyChk) && proxyChk.id !== 'native-fee-check');
+      check('Native checkbox stays in its original hidden row', document.querySelector('#year1 tr[name="fee-row"] #native-fee-check') !== null);
+      check('Native amount input stays in its original cell', document.querySelector('#year1 tr[name="fee-row"] #native-amount') !== null);
+      if (proxyChk) proxyChk.click();
+      const syncedProxy = document.querySelector('.pay-items-table input[type="checkbox"]');
+      check('Selecting a fee raises no alert', window.__unexpectedAlerts === 0);
+      check('Native fee checkbox behavior runs in its original row', window.__nativeFeeChanges === 1 && document.getElementById('native-fee-check').checked);
+      check('Proxy checkbox syncs to native checked state', Boolean(syncedProxy) && syncedProxy.checked);
+      check('Native totals update after selection', document.querySelector('#year1 input[name="txtpaying"]').value === '100.00');
+      check('Visible totals update after selection', document.getElementById('reecap-live-total')?.textContent === '₹100.00');
+      const proxyAmount = document.querySelector('.pay-items-table .reecap-pay-input');
+      check('Amount proxy is rendered while native input remains in the form', Boolean(proxyAmount) && document.getElementById('native-amount').form === enhancedForm);
+      if (proxyAmount) {
+        proxyAmount.value = '250.00';
+        proxyAmount.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      check('Amount proxy forwards value to the native input', document.getElementById('native-amount').value === '250.00');
+      check('Native amount blur handler runs from proxy edit', window.__nativeAmountBlurs >= 1);
+      check('Totals recalculate from the edited amount', document.querySelector('#year1 input[name="txtpaying"]').value === '250.00' && document.getElementById('reecap-live-total')?.textContent === '₹250.00');
+      await new Promise(resolve => setTimeout(resolve, 350));
+      check('Live totals mirror the native spans', document.getElementById('reecap-live-total')?.textContent === '₹250.00');
+      const proxyAfterEdit = document.querySelector('.pay-items-table input[type="checkbox"]');
+      if (proxyAfterEdit) proxyAfterEdit.click();
+      check('Deselecting raises no alert and zeroes totals', window.__unexpectedAlerts === 0 && document.querySelector('#year1 input[name="txtpaying"]').value === '0.00' && document.getElementById('reecap-live-total')?.textContent === '₹0.00');
       document.getElementById('paytm').click();
       check('Native gateway radio behavior still runs', window.__nativeGatewayChanges === 1 && document.getElementById('paytm').checked);
       document.getElementById('enhanced-cancel').click();
       check('Native Cancel control remains functional', window.__nativeCancelCalls === 1 && document.getElementById('enhanced-cancel').form === enhancedForm);
       document.getElementById('enhanced-proceed').click();
       check('Enhanced Proceed retains its native submit handler', window.__nativeProceedCalls === proceedCallsBeforeEnhanced + 1 && document.getElementById('enhanced-proceed').form === enhancedForm);
+
+      check('Payment content height is measurable for iframe resize', getPaymentContentHeight() >= document.querySelector('.reecap-payment-page').offsetHeight);
+      let resizeThrew = false;
+      try { sendPaymentResize(); } catch (e) { resizeThrew = true; }
+      check('Resize send is a safe no-op outside an iframe', !resizeThrew);
 
       window.__feeTest = { pass: checks.every(item => item.pass), checks };
       document.getElementById('test-status').textContent = JSON.stringify(window.__feeTest, null, 2);

@@ -6033,102 +6033,6 @@ table#tblquestions input[type="text"]:not([value]) {
   transform: translateY(-1px) !important;
 }
 
-/* ── 4. ContextCards Grid (beautifului.dev ContextCards Primitive) ── */
-.aria-student-strip {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-  padding: 14px 18px !important;
-  background: color-mix(in srgb, var(--surface-sunken) 50%, var(--surface-card)) !important;
-  border-bottom: 1px solid var(--border-light) !important;
-  flex-shrink: 0 !important;
-}
-
-.aria-context-card {
-  display: flex !important;
-  flex-direction: column !important;
-  padding: 10px 12px !important;
-  background: var(--surface-card) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-.aria-context-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--border-light)) !important;
-  transform: translateY(-1.5px) !important;
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08) !important;
-}
-
-.context-card-top {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 4px !important;
-}
-
-.context-card-label {
-  font-family: var(--font-mono, monospace) !important;
-  font-size: 9.5px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.07em !important;
-  color: var(--text-faint) !important;
-}
-
-.context-card-badge {
-  font-size: 9.5px !important;
-  font-weight: 700 !important;
-  padding: 1px 6px !important;
-  border-radius: 9999px !important;
-  letter-spacing: 0.02em !important;
-}
-
-.badge-accent {
-  background: color-mix(in srgb, var(--accent) 14%, transparent) !important;
-  color: var(--accent) !important;
-  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent) !important;
-}
-
-.badge-success {
-  background: color-mix(in srgb, var(--success, #10b981) 14%, transparent) !important;
-  color: var(--success, #10b981) !important;
-  border: 1px solid color-mix(in srgb, var(--success, #10b981) 25%, transparent) !important;
-}
-
-.badge-danger {
-  background: color-mix(in srgb, var(--danger, #ef4444) 14%, transparent) !important;
-  color: var(--danger, #ef4444) !important;
-  border: 1px solid color-mix(in srgb, var(--danger, #ef4444) 25%, transparent) !important;
-}
-
-.badge-neutral {
-  background: var(--surface-sunken) !important;
-  color: var(--text-secondary) !important;
-  border: 1px solid var(--border-light) !important;
-}
-
-.context-card-value {
-  font-size: 18px !important;
-  font-weight: 800 !important;
-  color: var(--text-primary) !important;
-  letter-spacing: -0.03em !important;
-  margin-top: 4px !important;
-  line-height: 1.2 !important;
-}
-
-.context-card-meta {
-  font-size: 10.5px !important;
-  color: var(--text-faint) !important;
-  margin-top: 3px !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
 /* ── 5. Suggestions & InsightCards (beautifului.dev InsightCards Primitive) ── */
 .aria-suggestions-panel {
   display: flex !important;
@@ -8163,32 +8067,6 @@ table[id*="grid"] tr:hover td {
   font-weight: 600 !important;
 }
 
-.aria-student-strip {
-  background-color: hsl(var(--theme-primary-020)) !important;
-  border-bottom: 1px solid hsl(var(--theme-primary-030)) !important;
-}
-
-.aria-context-card {
-  background-color: hsl(var(--theme-primary-010)) !important;
-  border: 1px solid hsl(var(--theme-primary-030)) !important;
-  border-radius: calc(var(--theme-radius, 25) * 0.01em) !important;
-  box-shadow: var(--theme-shadow-bottom-small) !important;
-}
-
-.aria-context-card:hover {
-  background-color: hsl(var(--theme-primary-030)) !important;
-  border-color: rgb(var(--theme-accent)) !important;
-}
-
-.context-card-label {
-  color: hsl(var(--theme-primary-text-040)) !important;
-}
-
-.context-card-value {
-  color: hsl(var(--theme-primary-text-010)) !important;
-  font-family: var(--theme-font-display-name), sans-serif !important;
-}
-
 .aria-msg.msg-user {
   background-color: rgb(var(--theme-accent)) !important;
   color: hsl(var(--theme-accent-text)) !important;
@@ -8223,19 +8101,17 @@ table[id*="grid"] tr:hover td {
 }
 
 #aria-input {
-  background-color: hsl(var(--theme-primary-020)) !important;
+  background: transparent !important;
   color: hsl(var(--theme-primary-text-010)) !important;
-  border: 1px solid hsl(var(--theme-primary-040)) !important;
-  border-radius: calc(var(--theme-radius, 25) * 0.01em) !important;
+  border: none !important;
+  border-radius: 0 !important;
   font-family: var(--theme-font-ui-name), sans-serif !important;
 }
-
 #aria-input:focus {
-  border-color: rgb(var(--theme-accent)) !important;
-  box-shadow: var(--form-ring-accent) !important;
   outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
-
 .prompt-model-badge,
 .prompt-context-pill {
   background-color: hsl(var(--theme-primary-020)) !important;
@@ -8307,3 +8183,157 @@ table[id*="grid"] tr:hover td {
 .calendar-hero-card {
   box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.25);
 }
+
+/* ==========================================================================
+   Aria Rich Markdown Blocks + Composer Refinements
+   All colors flow from theme tokens so every preset renders correctly.
+   ========================================================================== */
+
+/* Headings */
+.aria-msg.msg-assistant h1.aria-md-h1,
+.aria-msg.msg-assistant h2.aria-md-h2,
+.aria-msg.msg-assistant h3.aria-md-h3,
+.aria-msg.msg-assistant h4.aria-md-h4,
+.aria-msg.msg-assistant h5.aria-md-h5,
+.aria-msg.msg-assistant h6.aria-md-h6 {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  margin: 2px 0 8px !important;
+  line-height: 1.35 !important;
+}
+.aria-msg.msg-assistant h1.aria-md-h1 { font-size: 17px !important; }
+.aria-msg.msg-assistant h2.aria-md-h2 { font-size: 15.5px !important; }
+.aria-msg.msg-assistant h3.aria-md-h3 { font-size: 14.5px !important; }
+.aria-msg.msg-assistant h4.aria-md-h4,
+.aria-msg.msg-assistant h5.aria-md-h5,
+.aria-msg.msg-assistant h6.aria-md-h6 { font-size: 13.5px !important; }
+
+/* Lists: nesting, ordered, tasks */
+.aria-msg.msg-assistant ol {
+  margin: 4px 0 10px 20px !important;
+  padding: 0 !important;
+}
+.aria-msg.msg-assistant li > ul,
+.aria-msg.msg-assistant li > ol {
+  margin: 4px 0 4px 16px !important;
+}
+.aria-msg.msg-assistant li.aria-md-task {
+  list-style: none !important;
+  margin-left: -16px !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 7px !important;
+}
+.aria-md-task input[type="checkbox"] {
+  accent-color: var(--accent) !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Inline code (fenced blocks reset these below) */
+.aria-msg.msg-assistant p code,
+.aria-msg.msg-assistant li code,
+.aria-msg.msg-assistant td code,
+.aria-msg.msg-assistant th code,
+.aria-msg.msg-assistant blockquote code,
+.aria-msg.msg-assistant h1 code,
+.aria-msg.msg-assistant h2 code,
+.aria-msg.msg-assistant h3 code,
+.aria-msg.msg-assistant h4 code {
+  font-family: var(--font-mono), monospace !important;
+  font-size: 12px !important;
+  background: var(--surface-sunken) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 6px !important;
+  padding: 1.5px 5px !important;
+}
+
+/* Fenced code blocks */
+.aria-code-block {
+  background: var(--surface-sunken) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  margin: 0 0 10px !important;
+  overflow-x: auto !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+}
+.aria-code-block[data-lang]::before {
+  content: attr(data-lang) !important;
+  display: block !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.09em !important;
+  text-transform: uppercase !important;
+  color: var(--text-faint) !important;
+  margin-bottom: 6px !important;
+}
+.aria-code-block code {
+  display: block !important;
+  white-space: pre !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  color: var(--text-primary) !important;
+}
+
+/* Blockquotes, links, strikethrough */
+.aria-md-quote {
+  margin: 0 0 10px !important;
+  padding: 2px 0 2px 12px !important;
+  border-left: 3px solid var(--accent) !important;
+  color: var(--text-secondary) !important;
+  background: color-mix(in srgb, var(--accent) 5%, transparent) !important;
+  border-radius: 0 8px 8px 0 !important;
+}
+.aria-msg.msg-assistant a {
+  color: var(--accent) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+}
+.aria-msg.msg-assistant del { opacity: 0.65 !important; }
+
+/* Tables */
+.aria-table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  font-size: 12.5px !important;
+}
+.aria-table th {
+  text-align: left !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  padding: 7px 10px !important;
+  border-bottom: 2px solid var(--border) !important;
+  background: var(--surface-sunken) !important;
+}
+.aria-table td {
+  padding: 7px 10px !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  color: var(--text-secondary) !important;
+}
+.aria-table tbody tr:last-child td { border-bottom: none !important; }
+
+/* Composer: one clean visual box, aligned controls, clear states */
+.prompt-bar-container { padding: 12px 14px 10px !important; }
+.prompt-bar-container:has(textarea:disabled) { opacity: 0.6 !important; }
+.prompt-bar-input-wrapper textarea {
+  padding: 2px 0 8px !important;
+  line-height: 1.5 !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--border) 45%, transparent) transparent !important;
+}
+.prompt-bar-actions { align-items: center !important; }
+.prompt-send-pill {
+  width: 32px !important;
+  height: 32px !important;
+  align-self: center !important;
+}
+.prompt-bar-footer { padding-top: 2px !important; }

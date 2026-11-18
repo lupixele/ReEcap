@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aria View Regression Test</title>
+  <link rel="stylesheet" href="../extension/shared/tokens.css">
+  <link rel="stylesheet" href="../extension/style.css">
+  <style>*, *::before, *::after { transition: none !important; animation: none !important; }</style>
+  <style>
+    body { margin: 0; background: var(--surface-page); }
+    #harness-controls { position: fixed; top: 10px; left: 12px; z-index: 300000; display: flex; gap: 8px; }
+    #harness-controls button { font: 12px monospace; padding: 4px 10px; }
+  </style>
+</head>
+<body>
+  <div id="harness-controls">
+    <button id="theme-dark" type="button">Dark preset</button>
+    <button id="theme-light" type="button">Light preset</button>
+  </div>
+  <pre id="test-status">Running...</pre>
+  <script>window.chrome = { runtime: { lastError: null } };</script>
+  <script src="../extension/shared/theme.js"></script>
+  <script src="../extension/decorators.js?aria=2"></script>
+  <script>
+    (async () => {
+      const checks = [];
+      const check = (name, pass) => checks.push({ name, pass: Boolean(pass) });
+
+      initAriaSidebar();
+      const root = document.getElementById('reecap-aria-sidebar');
+      check('Aria shell is created', Boolean(root));
+      check('Stat cards strip is gone', !document.getElementById('aria-student-strip'));
+      check('No context cards remain', document.querySelectorAll('.aria-context-card').length === 0);
+
+      // Rich assistant message through the production parser.
+      const container = document.getElementById('aria-messages');
+      container.innerHTML = '';
+      const rich = document.createElement('div');
+      rich.className = 'aria-msg msg-assistant';
+      rich.innerHTML = parseMarkdownAndActions([
+        '## Semester Report',
+        'Here is your **standing** with *live* data and [the portal](https://info.aec.edu.in).',
+        '',
+        '| Subject | Mark |',
+        '| --- | --- |',
+        '| Math | 90 |',
+        '| Sci | |',
+        '',
+        '1. First step',
+        '2. Second step',
+        '',
+        '- Outer item',
+        '  - Nested item',
+        '- [ ] Pending task',
+        '- [x] Done task',
+        '',
+        '> Attendance above 75% is safe.',
+        '',
+        '```js',
+        'const cgpa = 7.56;',
+        '```',
+        '',
+        'Inline `x < y` code and ***bold italic*** and ~~old~~.'
+      ].join('\n'));
+      container.appendChild(rich);
+      check('Table renders with empty cell', rich.querySelectorAll('table td').length === 4);
+      check('Fenced code block renders', Boolean(rich.querySelector('pre.aria-code-block[data-lang="js"]')));
+      check('Nested list renders', rich.querySelectorAll('ul ul').length === 1);
+      check('Task checkboxes render', rich.querySelectorAll('.aria-md-task input:checked').length === 1);
+      check('Blockquote renders', Boolean(rich.querySelector('blockquote.aria-md-quote')));
+      check('Link renders safely', Boolean(rich.querySelector('a[rel="noopener noreferrer"]')));
+      check('Ordered list renders', Boolean(rich.querySelector('ol')));
+
+      // Streaming simulation: partial tokens must never flash raw.
+      const streamMsg = document.createElement('div');
+      streamMsg.className = 'aria-msg msg-assistant';
+      container.appendChild(streamMsg);
+      const full = 'Working on it [action:nav:attendance|View Attendance] with `code` tail';
+      for (let n = 0; n <= full.length; n += 3) {
+        streamMsg.innerHTML = parseMarkdownAndActions(full.slice(0, n), { streaming: true });
+        if (/\[action:[^\]]*$/.test(streamMsg.textContent)) {
+          check('No partial chip flashes during streaming', false);
+          break;
+        }
+      }
+      check('No partial chip flashes during streaming', true);
+      streamMsg.innerHTML = parseMarkdownAndActions(full);
+
+      // Composer behavior: auto-grow, disabled state, single visual box.
+      const input = document.getElementById('aria-input');
+      const send = document.getElementById('aria-send-btn');
+      check('Send starts disabled on empty input', send.disabled === true);
+      const singleLineHeight = input.getBoundingClientRect().height;
+      input.value = 'line one\nline two\nline three\nline four\nline five\nline six';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      check('Textarea auto-grows with content', input.getBoundingClientRect().height > singleLineHeight);
+      check('Send enables with content', send.disabled === false);
+      const inputStyles = getComputedStyle(input);
+      check('Textarea has no own border (container owns the box)', inputStyles.borderTopWidth === '0px');
+      check('Textarea background is transparent', inputStyles.backgroundColor === 'rgba(0, 0, 0, 0)' || inputStyles.backgroundColor === 'transparent');
+
+      const themes = window.__reecap_theme;
+      const ids = Object.keys(themes.PRESETS);
+      const darkId = ids.find(id => themes.getPresetAppearance(themes.PRESETS[id]) === 'dark');
+      const lightId = ids.find(id => themes.getPresetAppearance(themes.PRESETS[id]) === 'light');
+      document.getElementById('theme-dark').addEventListener('click', () => themes.applyTheme(darkId));
+      document.getElementById('theme-light').addEventListener('click', () => themes.applyTheme(lightId));
+      themes.applyTheme(darkId);
+      const darkToken = getComputedStyle(document.querySelector('.prompt-bar-container')).getPropertyValue('--surface-sunken');
+      themes.applyTheme(lightId);
+      const lightToken = getComputedStyle(document.querySelector('.prompt-bar-container')).getPropertyValue('--surface-sunken');
+      check('Composer tokens restyle across dark and light presets', darkToken !== lightToken && darkToken.length > 0);
+      check('Markdown code block restyles across presets', await (async () => {
+        themes.applyTheme(lightId);
+        await new Promise(r => setTimeout(r, 60));
+        const a = getComputedStyle(rich.querySelector('pre.aria-code-block')).backgroundColor;
+        themes.applyTheme(darkId);
+        await new Promise(r => setTimeout(r, 60));
+        const b = getComputedStyle(rich.querySelector('pre.aria-code-block')).backgroundColor;
+        return a !== b;
+      })());
+
+      window.__ariaTest = { pass: checks.every(c => c.pass), checks, darkId, lightId };
+      document.getElementById('test-status').textContent = JSON.stringify(window.__ariaTest, null, 2);
+    })().catch(error => {
+      window.__ariaTest = { pass: false, error: error.stack || String(error) };
+      document.getElementById('test-status').textContent = window.__ariaTest.error;
+    });
+  </script>
+</body>
+</html>

@@ -1276,26 +1276,56 @@ function buildOnlinePaymentUI(divfees, legacyTabs) {
   });
 
   // ---- Live totals mirror ----------------------------------------------
-  function updateLiveTotals() {
-    const fpText = (document.getElementById('spnfeepaying') || {}).textContent || '0.00';
-    const fnText = (document.getElementById('spnfine')      || {}).textContent || '0.00';
-    const totText= (document.getElementById('spntotal')     || {}).textContent || '0.00';
-    const elFp  = document.getElementById('reecap-live-feepaying');
-    const elFn  = document.getElementById('reecap-live-fine');
-    const elTot = document.getElementById('reecap-live-total');
-    if (elFp)  elFp.textContent  = '₹' + fpText;
-    if (elFn)  elFn.textContent  = '₹' + fnText;
-    if (elTot) elTot.textContent = '₹' + totText;
-  }
-
   setInterval(updateLiveTotals, 300);
   updateLiveTotals();
+
+  // Report our real content height so the parent iframe shrinks to fit
+  // instead of leaving a viewport-sized empty gap under the payment card.
+  if (!wrap.dataset.reecapResizeBound) {
+    wrap.dataset.reecapResizeBound = 'true';
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'REECAP_REQUEST_RESIZE') sendPaymentResize();
+    });
+  }
+  setTimeout(sendPaymentResize, 60);
+  setTimeout(sendPaymentResize, 350);
+}
+
+// Content height for the payment page: the card plus room for the fixed
+// totals bar (the card's 90px bottom padding already reserves most of it).
+function getPaymentContentHeight() {
+  const wrap = document.querySelector('.reecap-payment-page');
+  if (!wrap) return 0;
+  return Math.ceil(wrap.offsetHeight + 48);
+}
+
+function sendPaymentResize() {
+  try {
+    if (!window.parent || window.parent === window) return;
+    const height = getPaymentContentHeight();
+    if (height > 0) window.parent.postMessage({ type: 'REECAP_RESIZE', height }, '*');
+  } catch (e) {}
+}
+
+// Mirror the portal's own totals spans into the sticky bar. Top-level so both
+// buildOnlinePaymentUI and renderYearPanel's proxy handlers can call it.
+function updateLiveTotals() {
+  const fpText = (document.getElementById('spnfeepaying') || {}).textContent || '0.00';
+  const fnText = (document.getElementById('spnfine')      || {}).textContent || '0.00';
+  const totText= (document.getElementById('spntotal')     || {}).textContent || '0.00';
+  const elFp  = document.getElementById('reecap-live-feepaying');
+  const elFn  = document.getElementById('reecap-live-fine');
+  const elTot = document.getElementById('reecap-live-total');
+  if (elFp)  elFp.textContent  = '₹' + fpText;
+  if (elFn)  elFn.textContent  = '₹' + fnText;
+  if (elTot) elTot.textContent = '₹' + totText;
 }
 
 // Render a single year's fee table in our clean 6-column itemised structure.
-// Keeps the original checkboxes and amount inputs connected to the portal DOM
-// so when the user clicks our visible row, the portal's checkboxes toggle and
-// trigger onFeeCheckBoxClick / calculateAmounts natively.
+// PROXY-ONLY: native checkboxes and amount inputs are NEVER moved out of the
+// original hidden rows — onFeeCheckBoxClick / calculateAmounts traverse the
+// original row positionally and alert(undefined) when that context is gone.
+// Our visible controls forward clicks/values to the native ones and re-sync.
 function renderYearPanel(panel, container) {
   if (!panel || !container) return;
   container.innerHTML = '';
@@ -1346,13 +1376,25 @@ function renderYearPanel(panel, container) {
     const tr = document.createElement('tr');
     tr.className = isPaid ? 'row-paid' : (isDisabled ? 'row-disabled' : 'row-payable');
 
-    // Col 1: Checkbox (we move the real checkbox node here so clicks stay bound).
+    // Col 1: Checkbox. The native checkbox STAYS in its original hidden row;
+    // we render a proxy and forward the click so the portal's onchange runs
+    // with its original row context intact, then re-render to sync state.
     const tdChk = document.createElement('td');
     tdChk.className = 'col-chk';
     if (chk) {
-      tdChk.appendChild(chk);
-      // Give the checkbox a clean custom wrapper style without overriding rules.
-      chk.classList.add('reecap-native-chk');
+      const proxyChk = document.createElement('input');
+      proxyChk.type = 'checkbox';
+      proxyChk.className = 'reecap-native-chk';
+      proxyChk.checked = chk.checked;
+      proxyChk.disabled = chk.disabled;
+      proxyChk.setAttribute('aria-label', `Select ${title}`);
+      proxyChk.addEventListener('click', (e) => {
+        e.preventDefault(); // visual state always comes from the native control
+        chk.click();
+        renderYearPanel(panel, container);
+        updateLiveTotals();
+      });
+      tdChk.appendChild(proxyChk);
     } else {
       tdChk.innerHTML = '—';
     }
@@ -1383,13 +1425,32 @@ function renderYearPanel(panel, container) {
     tdBal.style.color = numBal > 0 ? 'var(--error)' : 'var(--text-faint)';
     tdBal.textContent = '₹' + numBal.toLocaleString('en-IN');
 
-    // Col 6: Amount Paying input (relocate real input so onblur handlers fire).
+    // Col 6: Amount Paying input — proxy only; the native txtamount input
+    // stays in its original cell so the portal's onblur calculation still
+    // finds it. Edits are forwarded, native events dispatched, and the
+    // native-normalised value read back.
     const tdPay = document.createElement('td');
     tdPay.className = 'col-pay';
     tdPay.style.textAlign = 'right';
     if (payingInp) {
-      payingInp.classList.add('reecap-pay-input');
-      tdPay.appendChild(payingInp);
+      const proxyPay = document.createElement('input');
+      proxyPay.type = 'text';
+      proxyPay.className = 'reecap-pay-input';
+      proxyPay.value = payingInp.value;
+      proxyPay.placeholder = '0.00';
+      const pushToNative = () => {
+        if (proxyPay.dataset.pushedValue === proxyPay.value) return;
+        proxyPay.dataset.pushedValue = proxyPay.value;
+        payingInp.value = proxyPay.value;
+        payingInp.dispatchEvent(new Event('input', { bubbles: true }));
+        payingInp.dispatchEvent(new Event('change', { bubbles: true }));
+        payingInp.dispatchEvent(new FocusEvent('blur'));
+        proxyPay.value = payingInp.value;
+        updateLiveTotals();
+      };
+      proxyPay.addEventListener('change', pushToNative);
+      proxyPay.addEventListener('blur', pushToNative);
+      tdPay.appendChild(proxyPay);
     } else {
       tdPay.innerHTML = '—';
     }
@@ -1402,14 +1463,20 @@ function renderYearPanel(panel, container) {
     tr.appendChild(tdPay);
     tbody.appendChild(tr);
 
-    // Make clicking the row toggle the checkbox if it isn't disabled.
+    // Make clicking the row toggle the native checkbox if it isn't disabled.
+    // Clicks on our proxy inputs are handled by their own listeners only.
     tr.addEventListener('click', (e) => {
-      if (e.target === chk || e.target === payingInp) return;
-      if (chk && !chk.disabled) chk.click();
+      if (e.target.closest('input')) return;
+      if (chk && !chk.disabled) {
+        chk.click();
+        renderYearPanel(panel, container);
+        updateLiveTotals();
+      }
     });
   });
 
   container.appendChild(table);
+  sendPaymentResize();
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -6422,7 +6489,6 @@ async function refreshAriaDossier() {
     const dossier = await window.__reecap_aria.getStudentDossier();
     if (!dossier) return;
     ariaDossierCache = dossier;
-    updateAriaStrip(dossier);
     updateAriaSuggestions(dossier);
     updateAriaWelcome(dossier);
   } catch (e) {
@@ -6464,75 +6530,6 @@ function updateAriaWelcome(dossier) {
         <button type="button" class="aria-action-chip" data-action="nav:marks"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg><span class="chip-label">Detailed Grades</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         <button type="button" class="aria-action-chip" data-action="nav:fees"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg><span class="chip-label">Tuition Fee Ledger</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
       </div>
-    </div>
-  `;
-}
-
-function updateAriaStrip(dossier) {
-  const strip = document.getElementById('aria-student-strip');
-  if (!strip || !dossier) return;
-
-  const cgpa = dossier.academic?.cgpa || '7.56';
-  let att = dossier.attendance?.overallPercent;
-  if ((!att || att === '--') && dossier.attendance?.held > 0 && dossier.attendance?.attended !== undefined && dossier.attendance.attended !== '--') {
-    att = Number(((parseFloat(dossier.attendance.attended) / parseFloat(dossier.attendance.held)) * 100).toFixed(1));
-  }
-  if (!att) att = '93.1';
-
-  const rawBacklogs = dossier.backlogs || '0';
-  let cleanBacklogs = '0';
-  if (rawBacklogs) {
-    const raw = String(rawBacklogs).toLowerCase();
-    if (raw.includes('no backlog') || raw.includes('no records') || raw.includes('have no backlogs') || raw.trim() === '0') {
-      cleanBacklogs = '0';
-    } else {
-      const match = raw.match(/\d+/);
-      cleanBacklogs = match ? match[0] : rawBacklogs;
-    }
-  }
-
-  const feeDue = dossier.feeDue || '0.00';
-  const feeLabel = (feeDue === '0' || feeDue === '0.00' || feeDue === '--') ? 'Settled' : `₹${feeDue}`;
-
-  const cgpaVal = parseFloat(cgpa);
-  const cgpaBadge = !isNaN(cgpaVal) ? (cgpaVal >= 8.0 ? 'Distinction' : (cgpaVal >= 7.5 ? 'First Class' : 'Pass')) : 'Academic';
-  const attVal = parseFloat(att);
-  const safeBunks = dossier.attendance?.subjects?.reduce((acc, s) => acc + (s.bunks || 0), 0) || 18;
-  const attBadge = !isNaN(attVal) ? (attVal >= 75 ? `+${safeBunks} Bunks` : 'Shortage') : 'Status';
-  const credits = dossier.academic?.credits || '41/41';
-
-  strip.innerHTML = `
-    <div class="aria-context-card" data-card="cgpa">
-      <div class="context-card-top">
-        <span class="context-card-label">CGPA</span>
-        <span class="context-card-badge badge-accent">${cgpaBadge}</span>
-      </div>
-      <div class="context-card-value">${cgpa}</div>
-      <div class="context-card-meta">${credits} Credits</div>
-    </div>
-    <div class="aria-context-card" data-card="attendance">
-      <div class="context-card-top">
-        <span class="context-card-label">ATTENDANCE</span>
-        <span class="context-card-badge ${attVal >= 75 ? 'badge-success' : 'badge-danger'}">${attBadge}</span>
-      </div>
-      <div class="context-card-value">${!isNaN(attVal) ? `${attVal}%` : att}</div>
-      <div class="context-card-meta">${dossier.attendance?.held || 87} Classes Held</div>
-    </div>
-    <div class="aria-context-card" data-card="backlogs">
-      <div class="context-card-top">
-        <span class="context-card-label">BACKLOGS</span>
-        <span class="context-card-badge badge-success">Zero</span>
-      </div>
-      <div class="context-card-value">${cleanBacklogs}</div>
-      <div class="context-card-meta">All Passed</div>
-    </div>
-    <div class="aria-context-card" data-card="fees">
-      <div class="context-card-top">
-        <span class="context-card-label">TERM FEES</span>
-        <span class="context-card-badge badge-neutral">Term Clear</span>
-      </div>
-      <div class="context-card-value">${feeLabel}</div>
-      <div class="context-card-meta">${(dossier.feeReceipts && dossier.feeReceipts.length) || 6} Receipts</div>
     </div>
   `;
 }
@@ -6618,25 +6615,6 @@ function initAriaSidebar(layoutWrapper) {
         <button type="button" class="aria-close-btn" aria-label="Close Aria">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
-      </div>
-    </div>
-
-    <div class="aria-student-strip" id="aria-student-strip">
-      <div class="aria-context-card">
-        <div class="context-card-top"><span class="context-card-label">CGPA</span></div>
-        <div class="context-card-value stat-cgpa">--</div>
-      </div>
-      <div class="aria-context-card">
-        <div class="context-card-top"><span class="context-card-label">ATTENDANCE</span></div>
-        <div class="context-card-value stat-attendance">--</div>
-      </div>
-      <div class="aria-context-card">
-        <div class="context-card-top"><span class="context-card-label">BACKLOGS</span></div>
-        <div class="context-card-value stat-backlogs">--</div>
-      </div>
-      <div class="aria-context-card">
-        <div class="context-card-top"><span class="context-card-label">TERM FEES</span></div>
-        <div class="context-card-value stat-fees">--</div>
       </div>
     </div>
 
@@ -6756,12 +6734,14 @@ function initAriaSidebar(layoutWrapper) {
   // Auto-resize input textarea and toggle send button active glow
   const input = document.getElementById('aria-input');
   const sendBtn = document.getElementById('aria-send-btn');
+  if (sendBtn) sendBtn.disabled = true;
   if (input) {
     input.addEventListener('input', () => {
       input.style.height = 'auto';
       input.style.height = Math.min(input.scrollHeight, 120) + 'px';
       if (sendBtn) {
         sendBtn.classList.toggle('is-active', input.value.trim().length > 0);
+        sendBtn.disabled = input.value.trim().length === 0;
       }
     });
 
@@ -6825,70 +6805,185 @@ async function loadInitialWelcome() {
   container.innerHTML = welcomeHtml;
 }
 
-function parseMarkdownAndActions(text) {
-  if (!text) return '';
-  let out = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+function parseMarkdownAndActions(text, options) {
+  const streaming = Boolean(options && options.streaming);
+  let input = String(text || '');
+  const inlineCode = [];
+  const chips = [];
+  const TOKEN = (n) => `${n}`;
 
-  // Action chips [action:domain:target|Label]
-  out = out.replace(/\[action:([a-zA-Z0-9_:-]+)\|([^\]]+)\]/g, (match, act, label) => {
-    return `<button type="button" class="aria-action-chip" data-action="${act}"><svg class="chip-glyph" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"></polyline></svg><span class="chip-label">${label}</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>`;
+  const escapeHtml = (s) => s
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+  // Incomplete trailing constructs are hidden while streaming so partial
+  // tokens never flash as raw text mid-response.
+  if (streaming) {
+    input = input.replace(/\[(?:action|tool):[^\]\n]*$/i, '');
+    input = input.replace(/\[[^\]\n]*\]\([^)\n]*$/, '');
+  }
+  input = input.replace(/&lt;br\s*\/?&gt;/gi, '\n');
+
+  // Action chips and tool badges become placeholders so block/inline parsing
+  // can never mangle them.
+  input = input.replace(/\[action:([a-z0-9_:-]+)\|([^\]]+?)\]/gi, (m, route, label) => {
+    chips.push(`<button type="button" class="aria-action-chip" data-action="${route.trim()}">${escapeHtml(label.trim())}</button>`);
+    return TOKEN(chips.length - 1 + 100000);
+  });
+  input = input.replace(/\[tool:([a-z0-9_().]+)\]/gi, (m, call) => {
+    chips.push(`<div class="aria-thinking-card"><div class="thinking-header"><span>Syncing telemetry: ${escapeHtml(call)}</span><svg class="chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg></div><div class="thinking-body">Called internal tool <code>${escapeHtml(call)}</code> to fetch live records.</div></div>`);
+    return TOKEN(chips.length - 1 + 100000);
   });
 
-  // Tool chips [tool:name|Label]
-  out = out.replace(/\[tool:([a-zA-Z0-9_:-]+)\|([^\]]+)\]/g, (match, tool, label) => {
-    return `<span class="aria-tool-chip"><span class="tool-chip-dot"></span><span class="tool-chip-name">${label}</span></span>`;
-  });
-
-  // Markdown Tables -> RecordsTable (beautifului.dev RecordsTable primitive)
-  out = out.replace(/(?:^|\n)((?:\|.+?\|\r?\n)+)/g, (match) => {
-    const lines = match.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) return match;
-    if (!/^\|(?:\s*[-:]+[-| :]*)\|$/.test(lines[1])) return match;
-    const headerCells = lines[0].split('|').map(s => s.trim()).filter(Boolean);
-    const bodyRows = lines.slice(2);
-    let tableHtml = '<div class="aria-table-wrapper"><table class="aria-records-table"><thead><tr>';
-    headerCells.forEach(h => {
-      tableHtml += `<th>${h}</th>`;
+  // Inline code spans are extracted before escaping; an unclosed trailing
+  // span auto-closes while streaming so the style stays stable.
+  const extractInlineCode = (line) => {
+    let out = line.replace(/`([^`\n]+)`/g, (m, code) => {
+      inlineCode.push(`<code>${escapeHtml(code)}</code>`);
+      return TOKEN(inlineCode.length - 1);
     });
-    tableHtml += '</tr></thead><tbody>';
-    bodyRows.forEach(row => {
-      const cells = row.split('|').map(s => s.trim()).filter(Boolean);
-      if (cells.length > 0) {
-        tableHtml += '<tr>';
-        cells.forEach(c => {
-          tableHtml += `<td>${c}</td>`;
-        });
-        tableHtml += '</tr>';
+    if (streaming) {
+      out = out.replace(/`([^`\n]*)$/, (m, code) => {
+        inlineCode.push(`<code>${escapeHtml(code)}</code>`);
+        return TOKEN(inlineCode.length - 1);
+      });
+    }
+    return out;
+  };
+
+  const renderInline = (line) => {
+    let s = escapeHtml(extractInlineCode(line));
+    s = s.replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, (m, label, url) => {
+      const clean = url.replace(/&amp;/g, '&');
+      return /^(https?:|mailto:)/i.test(clean)
+        ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`
+        : label;
+    });
+    s = s.replace(/\*\*\*(\S(?:[^*\n]*\S)?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    s = s.replace(/\*\*(\S(?:[^*\n]*\S)?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/(?<![\w*])\*(\S[^*\n]*?)\*(?![\w*])/g, '<em>$1</em>');
+    s = s.replace(/(?<![\w_])_(\S[^_\n]*?)_(?![\w_])/g, '<em>$1</em>');
+    s = s.replace(/~~(\S(?:[^~\n]*\S)?)~~/g, '<del>$1</del>');
+    return s;
+  };
+
+  const splitRow = (line) => {
+    let t = line.trim();
+    if (t.startsWith('|')) t = t.slice(1);
+    if (t.endsWith('|')) t = t.slice(0, -1);
+    return t.split('|').map(c => c.trim());
+  };
+  const isTableDivider = (line) => /^\|?[\s:|-]+\|[\s:|-]*$/.test(line.trim())
+    && /-/.test(line) && splitRow(line).every(c => /^:?-{2,}:?$/.test(c) || c === '');
+  const isTableRow = (line) => /^\s*\|.*\|\s*$/.test(line);
+
+  const lines = input.replace(/\r\n/g, '\n').split('\n');
+  const out = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Fenced code blocks (an unclosed trailing fence renders as a full block
+    // while streaming, so the content never flickers back to raw backticks).
+    const fence = line.match(/^\s*```([^\s`]*)\s*$/);
+    if (fence) {
+      const lang = fence[1];
+      const body = [];
+      i += 1;
+      while (i < lines.length && !/^\s*```\s*$/.test(lines[i])) { body.push(lines[i]); i += 1; }
+      i += 1; // skip closing fence (or EOF)
+      out.push(`<pre class="aria-code-block"${lang ? ` data-lang="${escapeHtml(lang)}"` : ''}><code>${escapeHtml(body.join('\n'))}</code></pre>`);
+      continue;
+    }
+
+    if (/^\s*$/.test(line)) { i += 1; continue; }
+
+    const heading = line.match(/^\s{0,3}(#{1,6})\s+(.*)$/);
+    if (heading) {
+      const level = heading[1].length;
+      out.push(`<h${level} class="aria-md-h${level}">${renderInline(heading[2])}</h${level}>`);
+      i += 1;
+      continue;
+    }
+
+    if (isTableRow(line) && i + 1 < lines.length && isTableDivider(lines[i + 1])) {
+      const headers = splitRow(line);
+      let html = '<div class="aria-table-wrapper"><table class="aria-table"><thead><tr>';
+      headers.forEach(h => { html += `<th>${renderInline(h)}</th>`; });
+      html += '</tr></thead><tbody>';
+      i += 2;
+      while (i < lines.length && /^\s*\|/.test(lines[i]) && lines[i].trim() !== '') {
+        if (!isTableRow(lines[i])) { if (streaming) { i += 1; continue; } break; }
+        const cells = splitRow(lines[i]);
+        html += '<tr>';
+        for (let c = 0; c < headers.length; c += 1) html += `<td>${renderInline(cells[c] || '')}</td>`;
+        html += '</tr>';
+        i += 1;
       }
-    });
-    tableHtml += '</tbody></table></div>';
-    return '\n' + tableHtml + '\n';
+      out.push(html + '</tbody></table></div>');
+      continue;
+    }
+
+    if (/^\s*>\s?/.test(line)) {
+      const quote = [];
+      while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+        quote.push(lines[i].replace(/^\s*>\s?/, ''));
+        i += 1;
+      }
+      out.push(`<blockquote class="aria-md-quote">${quote.map(renderInline).join('<br>')}</blockquote>`);
+      continue;
+    }
+
+    const listMatch = line.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+    if (listMatch) {
+      const items = [];
+      while (i < lines.length) {
+        const m = lines[i].match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+        if (!m) break;
+        items.push({ indent: m[1].replace(/\t/g, '  ').length, ordered: /\d/.test(m[2]), text: m[3] });
+        i += 1;
+      }
+      const state = { j: 0 };
+      const renderList = (indent) => {
+        const ordered = items[state.j].ordered;
+        let html = ordered ? '<ol>' : '<ul>';
+        while (state.j < items.length && items[state.j].indent >= indent) {
+          if (items[state.j].indent > indent) { html += renderList(items[state.j].indent); continue; }
+          const it = items[state.j];
+          state.j += 1;
+          const task = it.text.match(/^\[([ xX])\]\s+(.*)$/);
+          if (task) {
+            html += `<li class="aria-md-task"><input type="checkbox" disabled${task[1].toLowerCase() === 'x' ? ' checked' : ''}> <span>${renderInline(task[2])}</span></li>`;
+          } else {
+            html += `<li>${renderInline(it.text)}`;
+            if (state.j < items.length && items[state.j].indent > indent) html += renderList(items[state.j].indent);
+            html += '</li>';
+          }
+        }
+        return html + (ordered ? '</ol>' : '</ul>');
+      };
+      out.push(renderList(items[0].indent));
+      continue;
+    }
+
+    const paragraph = [line];
+    i += 1;
+    while (i < lines.length && /^\s*\S/.test(lines[i])
+      && !/^\s*(#{1,6}\s|```|>|\s*[-*+]\s|\s*\d+[.)]\s|\|)/.test(lines[i])) {
+      paragraph.push(lines[i]);
+      i += 1;
+    }
+    out.push(`<p>${paragraph.map(renderInline).join('<br>')}</p>`);
+  }
+
+  let safe = out.join('');
+  safe = safe.replace(/(\d+)/g, (m, n) => {
+    const idx = Number(n);
+    if (idx >= 100000) return chips[idx - 100000] || '';
+    return inlineCode[idx] || '';
   });
-
-  // Headers
-  out = out.replace(/^### (.*$)/gim, '<h3 class="aria-heading">$1</h3>');
-  out = out.replace(/^## (.*$)/gim, '<h3 class="aria-heading">$1</h3>');
-
-  // Code spans
-  out = out.replace(/`([^`]+)`/g, '<code class="aria-code">$1</code>');
-
-  // Bold & Italic
-  out = out.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  out = out.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-  // Lists
-  out = out.replace(/^\s*-\s+(.*$)/gim, '<li>$1</li>');
-  out = out.replace(/(<li>.*<\/li>)/gms, '<ul>$1</ul>');
-
-  // Paragraphs & Linebreaks
-  out = out.replace(/\n\n+/g, '</p><p>');
-  out = `<p>${out}</p>`;
-  out = out.replace(/<p>\s*<\/p>/g, '');
-
-  return out;
+  return safe;
 }
 
 async function submitAriaMessage() {
@@ -6902,7 +6997,10 @@ async function submitAriaMessage() {
 
   input.value = '';
   input.style.height = 'auto';
-  if (sendBtn) sendBtn.classList.remove('is-active');
+  if (sendBtn) {
+    sendBtn.classList.remove('is-active');
+    sendBtn.disabled = true;
+  }
 
   // Append user message
   const userMsgEl = document.createElement('div');
@@ -7024,7 +7122,7 @@ async function submitAriaMessage() {
       onChunk: (delta, fullText) => {
         settleThinking();
         if (streamingBody) {
-          streamingBody.innerHTML = parseMarkdownAndActions(fullText) + '<span class="aria-stream-cursor"></span>';
+          streamingBody.innerHTML = parseMarkdownAndActions(fullText, { streaming: true }) + '<span class="aria-stream-cursor"></span>';
         }
         container.scrollTop = container.scrollHeight;
       },
