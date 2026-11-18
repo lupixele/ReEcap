@@ -1862,15 +1862,19 @@ tr:has(td[height="1000"]) {
 .reecap-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 8px;
+  gap: 8px;
+  margin-top: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 4px;
   max-width: 100%;
 }
 
 .reecap-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 16px;
-  background: transparent;
+  background: var(--surface-card);
   color: var(--text-secondary);
   font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 600;
@@ -1883,6 +1887,13 @@ tr:has(td[height="1000"]) {
   flex-shrink: 0;
 }
 
+.reecap-tab-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reecap-tab-btn {
     transition: none;
@@ -1892,6 +1903,7 @@ tr:has(td[height="1000"]) {
 .reecap-tab-btn:hover {
   background: var(--surface-sunken);
   color: var(--text-primary);
+  border-color: var(--border-focus);
 }
 
 .reecap-tab-btn.active {
@@ -1902,8 +1914,12 @@ tr:has(td[height="1000"]) {
   box-shadow: var(--card-shadow), var(--ambient-glow);
 }
 
+.reecap-tab-btn.active svg {
+  stroke: #FFFFFF !important;
+}
+
 /* Hide the old accordion headers entirely */
-#tblReport > h1, #tblReport > h3 {
+#tblReport > h1, #tblReport > h3, #tblReport > [role="tab"], #tblReport > .ui-accordion-header {
   display: none !important;
 }
 

@@ -302,8 +302,8 @@ function initDecorators() {
       observeExamViewer();
     }
     
-    // 7. Inject DOM-integrated Theme Toolbar Sidebar
-    if (!window.location.pathname.toLowerCase().includes('default.aspx')) {
+    // 7. Inject DOM-integrated Theme Toolbar Sidebar (top-level window only to prevent duplicate icons in iframes)
+    if (window.self === window.top && !window.location.pathname.toLowerCase().includes('default.aspx')) {
       injectThemeToolbar();
     }
   });
@@ -315,6 +315,7 @@ function initDecorators() {
 }
 
 function injectThemeToolbar() {
+  if (window.self !== window.top) return;
   if (document.getElementById('reecap-theme-toolbar')) return;
 
   const toolbar = document.createElement('div');
@@ -2365,8 +2366,9 @@ function renderTimetableLegend(schedule, legendMap) {
 }
 
 function observeProfileDashboard() {
+  const bioPane = document.getElementById('divProfile_BioData');
   const existingReport = document.getElementById('tblReport');
-  if (existingReport && !document.getElementById('reecap-profile-dashboard')) {
+  if (existingReport && bioPane && !document.getElementById('reecap-profile-dashboard')) {
     buildProfileDashboard(existingReport);
     return;
   }
@@ -2376,7 +2378,8 @@ function observeProfileDashboard() {
   
   const observer = new MutationObserver((mutations, obs) => {
     const tblReport = document.getElementById('tblReport');
-    if (tblReport && !document.getElementById('reecap-profile-dashboard')) {
+    const hasBio = document.getElementById('divProfile_BioData') || document.querySelector('div[id^="divProfile_"]');
+    if (tblReport && hasBio && !document.getElementById('reecap-profile-dashboard')) {
       obs.disconnect();
       buildProfileDashboard(tblReport);
     }
@@ -2480,183 +2483,173 @@ function extractAttendanceProfileData(pane) {
   return { held, attended, percent, subjects };
 }
 function buildProfileDashboard(accordion) {
-  // --- A. Scrape Data ---
-  const attendance = extractAttendanceProfileData(accordion);
-  const held = attendance.held;
-  const attended = attendance.attended;
-  const percent = attendance.percent;
-  const attendanceSubjects = attendance.subjects;
+  if (!accordion || accordion.dataset.reecapBuilding === 'true') return;
+  accordion.dataset.reecapBuilding = 'true';
+
+  let held = 0, attended = 0, percent = 0, attendanceSubjects = [];
   let backlogsText = "No data";
   let feeDue = "0.00";
-
-  const tds = accordion.querySelectorAll('td');
-
-  // 2. Backlogs
-  const backlogsDiv = document.getElementById('divProfile_Backlogs');
-  if (backlogsDiv) {
-    backlogsText = backlogsDiv.textContent.trim();
-  }
-
-  // 3. Fee Details
-  for (let td of tds) {
-    if (td.textContent.trim() === 'GRAND TOTALS') {
-      const row = td.parentElement;
-      const cells = row.querySelectorAll('td');
-      // Structure: [GRAND TOTALS, Total, Paid, empty, empty, Due, Excess, Refund]
-      if (cells.length >= 6) {
-        feeDue = cells[4].textContent.trim() || cells[5].textContent.trim(); // handle varying column counts due to colspans/empties
-        // Safer approach: iterate siblings to find the Due column.
-        // Actually, in the HTML provided: [GRAND TOTALS (colspan=2), Total, Paid, space, space, Due, Excess, Refund]
-        // Which is: [GRAND TOTALS, Total, Paid, space, space, Due] -> Due is index 5 or 6 depending on dom.
-      }
-      // Let's refine fee Due extraction:
-      const dueCell = row.children[5]; 
-      if (dueCell) feeDue = dueCell.textContent.trim();
-      break;
-    }
-  }
-
-  // --- B. Send Data to Parent ---
-  // Use the same robust ledger scraper that the Fees-tab rebuild now relies
-  // on. The "Current Semester" label is sourced from the BioData pane text
-  // (e.g. "Regular(III Semester- 2025)") — that is the term the student
-  // is *enrolled* in, not the term whose bill happens to be open. The amount
-  // comes from the matching fee summary if the portal has already posted the
-  // assessment for that term; otherwise the row reads "—" / pending.
   let feeCurrentSem = '--';
   let feeCurrentSemLabel = 'Current Semester';
   let feeCurrentSemPayable = '--';
-  let feeCurrentSemStatus = 'pending'; // 'pending' | 'paid' | 'due'
+  let feeCurrentSemStatus = 'pending';
   let feeTotalDue = '--';
   let feeBalanceWords = '';
-  // Read the active semester text from the BioData pane on this same page.
-  // The BioData parse ran earlier in this function and saved it into
-  // `data.Semester`. If for any reason that's empty (e.g., a manual
-  // refresh after navigation) read it directly from the DOM.
-  let activeSemRaw = '';
-  if (typeof data !== 'undefined' && data && data.Semester) {
-    activeSemRaw = data.Semester;
-  }
-  if (!activeSemRaw) {
+  let parsedFees = null;
+  let cgpa = '--';
+  let academicSummary = null;
+
+  try {
+    // --- A. Scrape Data ---
+    const attendance = extractAttendanceProfileData(accordion);
+    held = attendance.held;
+    attended = attendance.attended;
+    percent = attendance.percent;
+    attendanceSubjects = attendance.subjects;
+
+    const tds = accordion.querySelectorAll('td');
+
+    // 2. Backlogs
+    const backlogsDiv = document.getElementById('divProfile_Backlogs');
+    if (backlogsDiv) {
+      backlogsText = backlogsDiv.textContent.trim();
+    }
+
+    // 3. Fee Details
+    for (let td of tds) {
+      if (td.textContent.trim() === 'GRAND TOTALS') {
+        const row = td.parentElement;
+        const dueCell = row.children[5]; 
+        if (dueCell) feeDue = dueCell.textContent.trim();
+        break;
+      }
+    }
+
+    let activeSemRaw = '';
+    if (typeof data !== 'undefined' && data && data.Semester) {
+      activeSemRaw = data.Semester;
+    }
+    if (!activeSemRaw) {
+      try {
+        const bioPane = document.getElementById('divProfile_BioData');
+        const semCell = bioPane ? bioPane.querySelector('td[style*="color:Blue"]') : null;
+        if (semCell) activeSemRaw = (semCell.textContent || '').trim();
+      } catch (e) { /* ignore */ }
+    }
+    if (!activeSemRaw) {
+      try {
+        const id = (chrome.storage && chrome.storage.local) || null;
+        if (id && id.get) {
+          id.get(['reecapIdentity'], (data2) => {
+            if (data2 && data2.reecapIdentity && data2.reecapIdentity.Semester) {
+              activeSemRaw = data2.reecapIdentity.Semester;
+            }
+          });
+        }
+      } catch (e) { /* ignore — fall through to "--" label */ }
+    }
+    const activeLabel = extractActiveSemesterLabel(activeSemRaw);
+    if (activeLabel) feeCurrentSemLabel = activeLabel;
+
     try {
-      const bioPane = document.getElementById('divProfile_BioData');
-      const semCell = bioPane ? bioPane.querySelector('td[style*="color:Blue"]') : null;
-      if (semCell) activeSemRaw = (semCell.textContent || '').trim();
-    } catch (e) { /* ignore */ }
-  }
-  if (!activeSemRaw) {
+      const feesPane = document.getElementById('divProfile_Fees');
+      if (feesPane && !feesPane.dataset.reecapEnhanced) rebuildFeeDetailsTab();
+      parsedFees = parseFeeLedger(feesPane);
+      if (parsedFees) {
+        feeBalanceWords = parsedFees.balanceWords || '';
+        if (parsedFees.grandTotals) {
+          const td = parseFloat((parsedFees.grandTotals.due || '0').replace(/,/g, '')) || 0;
+          feeTotalDue = isFinite(td) && !isNaN(td) ? td.toFixed(2) : '--';
+        }
+
+        const romanKey = activeLabel ? activeLabel.split(' ')[0].toUpperCase() : null;
+        const match = parsedFees.semesterSummaries.find((s) =>
+          romanKey && (s.sem.toUpperCase() === activeLabel || s.sem.toUpperCase().startsWith(romanKey + ' '))
+        );
+        if (match) {
+          const d = parseFloat((match.due || '0').replace(/,/g, '')) || 0;
+          feeCurrentSem = d.toFixed(2);
+          feeCurrentSemPayable = match.payable;
+          feeCurrentSemStatus = d > 0 ? 'due' : 'paid';
+        } else {
+          feeCurrentSemStatus = 'pending';
+        }
+      }
+    } catch (e) { /* fee breakdown is best-effort — fall back to feeDue */ }
+
+    // Extract CGPA and academic record from Performance (Past)
     try {
-      const id = (chrome.storage && chrome.storage.local) || null;
-      if (id && id.get) {
-        id.get(['reecapIdentity'], (data2) => {
-          if (data2 && data2.reecapIdentity && data2.reecapIdentity.Semester) {
-            activeSemRaw = data2.reecapIdentity.Semester;
+      const pastPane = document.getElementById('divProfile_Past') || document.getElementById('divProfile_PastSem');
+      if (pastPane) {
+        const pastTables = pastPane.querySelectorAll('table');
+        for (const t of pastTables) {
+          const text = t.textContent.toUpperCase();
+          if (text.includes('OVER ALL SUMMARY') || text.includes('CGPA')) {
+            academicSummary = { cgpa: '--', passed: '--', failed: '--', credits: '--', result: '--' };
+            Array.from(t.rows).forEach(r => {
+              const cells = Array.from(r.cells).map(c => c.textContent.trim());
+              if (cells.length >= 2) {
+                const k = cells[0].toUpperCase();
+                const v = cells[1];
+                if (k.includes('CGPA')) academicSummary.cgpa = v;
+                if (k.includes('PASSED')) academicSummary.passed = v;
+                if (k.includes('FAILED')) academicSummary.failed = v;
+                if (k.includes('CREDITS')) academicSummary.credits = v;
+                if (k.includes('RESULT')) academicSummary.result = v;
+              }
+            });
+            if (academicSummary.cgpa !== '--') {
+              cgpa = academicSummary.cgpa;
+            }
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('ReEcap: Failed to extract CGPA from past profile table:', e);
+    }
+
+    const profileData = {
+      held, attended, percent, attendanceSubjects, backlogsText, feeDue,
+      cgpa, academicSummary,
+      feeCurrentSem, feeCurrentSemLabel,
+      feeCurrentSemPayable,
+      feeCurrentSemStatus,
+      feeTotalDue, feeBalanceWords,
+      feeLedger: parsedFees || null,
+      feeReceipts: (parsedFees?.items || []).filter(it => it.receipt && it.receipt !== '-' && it.receipt !== ''),
+      feeGrandTotals: parsedFees?.grandTotals || null,
+      lastUpdated: Date.now()
+    };
+    if (isExtensionValid()) {
+      chrome.storage.local.set({ reecapProfileData: profileData });
+
+      if (academicSummary && academicSummary.cgpa !== '--') {
+        chrome.storage.local.get(['reecapAcademicData'], (existing) => {
+          if (!isExtensionValid()) return;
+          const cur = existing?.reecapAcademicData || {};
+          const updated = {
+            ...cur,
+            overallStats: { ...(cur.overallStats || {}), ...academicSummary },
+            lastUpdated: Date.now()
+          };
+          chrome.storage.local.set({ reecapAcademicData: updated });
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'REECAP_ACADEMIC_DATA', data: updated }, '*');
           }
         });
       }
-    } catch (e) { /* ignore — fall through to "--" label */ }
-  }
-  const activeLabel = extractActiveSemesterLabel(activeSemRaw);
-  if (activeLabel) feeCurrentSemLabel = activeLabel;
-
-  try {
-    const feesPane = document.getElementById('divProfile_Fees');
-    if (feesPane && !feesPane.dataset.reecapEnhanced) rebuildFeeDetailsTab();
-    const parsedFees = parseFeeLedger(feesPane);
-    if (parsedFees) {
-      feeBalanceWords = parsedFees.balanceWords || '';
-      if (parsedFees.grandTotals) {
-        const td = parseFloat((parsedFees.grandTotals.due || '0').replace(/,/g, '')) || 0;
-        feeTotalDue = isFinite(td) && !isNaN(td) ? td.toFixed(2) : '--';
-      }
-
-      // Look up the matching semester summary by the enrollment label
-      // (e.g. "III SEMESTER"). Search by exact roman prefix to tolerate the
-      // summary strings being lowercase vs. uppercase.
-      const romanKey = activeLabel ? activeLabel.split(' ')[0].toUpperCase() : null;
-      const match = parsedFees.semesterSummaries.find((s) =>
-        romanKey && (s.sem.toUpperCase() === activeLabel || s.sem.toUpperCase().startsWith(romanKey + ' '))
-      );
-      if (match) {
-        const d = parseFloat((match.due || '0').replace(/,/g, '')) || 0;
-        feeCurrentSem = d.toFixed(2);
-        feeCurrentSemPayable = match.payable;
-        feeCurrentSemStatus = d > 0 ? 'due' : 'paid';
-      } else {
-        // Enrollment semester was not found in the ledger. The portal likely
-        // hasn't posted an assessment row for this term yet.
-        feeCurrentSemStatus = 'pending';
-      }
     }
-  } catch (e) { /* fee breakdown is best-effort — fall back to feeDue */ }
 
-  // Extract CGPA and academic record from Performance (Past)
-  let cgpa = '--';
-  let academicSummary = null;
-  try {
-    const pastPane = document.getElementById('divProfile_Past') || document.getElementById('divProfile_PastSem');
-    if (pastPane) {
-      const pastTables = pastPane.querySelectorAll('table');
-      for (const t of pastTables) {
-        const text = t.textContent.toUpperCase();
-        if (text.includes('OVER ALL SUMMARY') || text.includes('CGPA')) {
-          academicSummary = { cgpa: '--', passed: '--', failed: '--', credits: '--', result: '--' };
-          Array.from(t.rows).forEach(r => {
-            const cells = Array.from(r.cells).map(c => c.textContent.trim());
-            if (cells.length >= 2) {
-              const k = cells[0].toUpperCase();
-              const v = cells[1];
-              if (k.includes('CGPA')) academicSummary.cgpa = v;
-              if (k.includes('PASSED')) academicSummary.passed = v;
-              if (k.includes('FAILED')) academicSummary.failed = v;
-              if (k.includes('CREDITS')) academicSummary.credits = v;
-              if (k.includes('RESULT')) academicSummary.result = v;
-            }
-          });
-          if (academicSummary.cgpa !== '--') {
-            cgpa = academicSummary.cgpa;
-          }
-          break;
-        }
-      }
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'REECAP_PROFILE_DATA',
+        data: profileData
+      }, '*');
     }
-  } catch (e) {
-    console.warn('ReEcap: Failed to extract CGPA from past profile table:', e);
+  } catch (err) {
+    console.warn('ReEcap: Profile dashboard scraping error:', err);
   }
-
-  const profileData = {
-    held, attended, percent, attendanceSubjects, backlogsText, feeDue,
-    cgpa, academicSummary,
-    feeCurrentSem, feeCurrentSemLabel,
-    feeCurrentSemPayable,
-    feeCurrentSemStatus,
-    feeTotalDue, feeBalanceWords,
-    feeLedger: parsedFees || null,
-    feeReceipts: (parsedFees?.items || []).filter(it => it.receipt && it.receipt !== '-' && it.receipt !== ''),
-    feeGrandTotals: parsedFees?.grandTotals || null,
-    lastUpdated: Date.now()
-  };
-  chrome.storage.local.set({ reecapProfileData: profileData });
-
-  if (academicSummary && academicSummary.cgpa !== '--') {
-    chrome.storage.local.get(['reecapAcademicData'], (existing) => {
-      const cur = existing?.reecapAcademicData || {};
-      const updated = {
-        ...cur,
-        overallStats: { ...(cur.overallStats || {}), ...academicSummary },
-        lastUpdated: Date.now()
-      };
-      chrome.storage.local.set({ reecapAcademicData: updated });
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ type: 'REECAP_ACADEMIC_DATA', data: updated }, '*');
-      }
-    });
-  }
-
-  window.parent.postMessage({
-    type: 'REECAP_PROFILE_DATA',
-    data: profileData
-  }, '*');
 
   // Zero all ancestor top padding/margin inside the iframe so the tab section
   // sits flush at the iframe top boundary (no empty gap below the parent-rendered cards).
@@ -2670,65 +2663,187 @@ function buildProfileDashboard(accordion) {
   document.documentElement.style.setProperty('padding', '0', 'important');
 
   // 4. Build Profile Tabs
-  buildProfileTabs(accordion);
+  try {
+    buildProfileTabs(accordion);
+  } catch (err) {
+    console.warn('ReEcap: Profile tabs creation error:', err);
+  }
+}
+
+function sendProfileResize() {
+  try {
+    const h = Math.max(
+      document.body.scrollHeight || 0,
+      document.documentElement.scrollHeight || 0,
+      (document.getElementById('tblReport')?.scrollHeight || 0) + 120
+    );
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'REECAP_RESIZE', height: h }, '*');
+    }
+  } catch (e) {}
 }
 
 function buildProfileTabs(accordion) {
-  const headers = accordion.querySelectorAll('h1');
-  const panes = accordion.querySelectorAll('div[id^="divProfile_"]');
-  
-  if (headers.length === 0 || panes.length === 0) return;
-  
+  if (document.getElementById('reecap-profile-dashboard')) return;
+
+  // Profile tabs specification with clean vector glyph icons
+  const TAB_SPECS = [
+    {
+      id: 'divProfile_BioData',
+      label: 'Bio-Data',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'
+    },
+    {
+      id: 'divProfile_Present',
+      fallbackId: 'divProfile_PresentSem',
+      label: 'Performance (Present)',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
+    },
+    {
+      id: 'divProfile_Past',
+      fallbackId: 'divProfile_PastSem',
+      label: 'Performance (Past)',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path></svg>'
+    },
+    {
+      id: 'divProfile_Fees',
+      label: 'Fee Details',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>'
+    },
+    {
+      id: 'divProfile_Backlogs',
+      label: 'Backlogs',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+    },
+    {
+      id: 'divProfile_Outings',
+      label: 'Outings',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>'
+    },
+    {
+      id: 'divProfile_Counseling',
+      label: 'Counseling Details',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>'
+    },
+    {
+      id: 'divProfile_DisciplinaryAction',
+      fallbackId: 'divProfile_Disciplinary',
+      label: 'Disciplinary Action',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>'
+    }
+  ];
+
+  // Resolve panes in DOM
+  const availableTabs = [];
+  const allPanes = [];
+
+  for (const spec of TAB_SPECS) {
+    const pane = document.getElementById(spec.id) || (spec.fallbackId ? document.getElementById(spec.fallbackId) : null);
+    if (pane) {
+      availableTabs.push({ ...spec, pane });
+      allPanes.push(pane);
+    }
+  }
+
+  // Fallback: check any remaining divProfile_* panes
+  const existingDivs = Array.from(accordion.querySelectorAll('div[id^="divProfile_"]'));
+  for (const div of existingDivs) {
+    if (!allPanes.includes(div)) {
+      const rawTitle = div.id.replace('divProfile_', '').replace(/([A-Z])/g, ' $1').trim();
+      availableTabs.push({
+        id: div.id,
+        label: rawTitle.toUpperCase(),
+        icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>',
+        pane: div
+      });
+      allPanes.push(div);
+    }
+  }
+
+  if (availableTabs.length === 0) return;
+
   const tabContainer = document.createElement('div');
+  tabContainer.id = 'reecap-profile-dashboard';
   tabContainer.className = 'reecap-tabs';
-  
-  headers.forEach((h1, index) => {
+
+  availableTabs.forEach((tab, index) => {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'reecap-tab-btn';
-    btn.textContent = h1.textContent.trim();
     if (index === 0) btn.classList.add('active');
-    
+    btn.innerHTML = `${tab.icon}<span>${tab.label}</span>`;
+
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
-      // Update buttons
+
+      // Update button styles
       tabContainer.querySelectorAll('.reecap-tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      
-      // Update panes
-      panes.forEach(p => p.classList.remove('reecap-pane-active'));
-      panes[index].classList.add('reecap-pane-active');
-      
-      // Post message to parent to resize iframe (since content height changed)
-      window.parent.postMessage({ type: 'REECAP_RESIZE', height: document.body.scrollHeight }, '*');
+
+      // Update panes visibility
+      allPanes.forEach(p => {
+        p.classList.remove('reecap-pane-active');
+        p.style.setProperty('display', 'none', 'important');
+      });
+      tab.pane.classList.add('reecap-pane-active');
+      tab.pane.style.setProperty('display', 'block', 'important');
+
+      sendProfileResize();
+      setTimeout(sendProfileResize, 150);
     });
-    
+
     tabContainer.appendChild(btn);
   });
-  
-  // Set first pane as active initially
-  panes[0].classList.add('reecap-pane-active');
-  
-  // Insert tabs before accordion
+
+  // Ensure first pane is active and displayed
+  allPanes.forEach((p, index) => {
+    if (index === 0) {
+      p.classList.add('reecap-pane-active');
+      p.style.setProperty('display', 'block', 'important');
+    } else {
+      p.classList.remove('reecap-pane-active');
+      p.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  // Insert tabs container before accordion
   accordion.parentElement.insertBefore(tabContainer, accordion);
 
-  // Simulate click after a tiny delay to ensure jQuery UI or async scripts don't override the initial state
-  setTimeout(() => {
-    const firstBtn = tabContainer.querySelector('.reecap-tab-btn');
-    if (firstBtn) firstBtn.click();
-  }, 150);
+  // Unbind vanilla jQuery UI accordion click traps to avoid collapsing
+  try {
+    if (window.$ && typeof window.$.fn?.unbind === 'function') {
+      window.$(accordion).unbind('accordionchange');
+    }
+  } catch (e) {}
 
-  // 5. Redesign the BioData Table
-  buildBioDataRedesign(accordion);
+  // Trigger pane redesigns safely
+  try {
+    buildBioDataRedesign(accordion);
+  } catch (err) {
+    console.warn('ReEcap: BioData redesign failed, preserving raw table:', err);
+    const bioPane = document.getElementById('divProfile_BioData');
+    if (bioPane) {
+      const legacyTable = bioPane.querySelector('table');
+      if (legacyTable) legacyTable.style.removeProperty('display');
+    }
+  }
 
-  // 6. Redesign remaining 7 Profile Tabs
-  buildProfilePanesRedesign(accordion);
+  try {
+    buildProfilePanesRedesign(accordion);
+  } catch (err) {
+    console.warn('ReEcap: Profile panes redesign error:', err);
+  }
+
+  sendProfileResize();
+  setTimeout(sendProfileResize, 150);
+  setTimeout(sendProfileResize, 500);
 }
 
 function buildBioDataRedesign(accordion) {
   const bioPane = document.getElementById('divProfile_BioData');
   if (!bioPane) return;
+  if (bioPane.querySelector('.reecap-biodata')) return;
   
   const legacyTable = bioPane.querySelector('table');
   if (!legacyTable) return;
@@ -2821,14 +2936,16 @@ function buildBioDataRedesign(accordion) {
   }
 
   // Save for Status Strip Header
-  chrome.storage.local.set({
-    reecapIdentity: {
-      RollNo: data['RollNo'],
-      Course: data['Course'],
-      Branch: data['Branch'],
-      Semester: data['Semester']
-    }
-  });
+  if (isExtensionValid()) {
+    chrome.storage.local.set({
+      reecapIdentity: {
+        RollNo: data['RollNo'],
+        Course: data['Course'],
+        Branch: data['Branch'],
+        Semester: data['Semester']
+      }
+    });
+  }
 
   // A tiny in-page cache so downstream rebuilders (Fees, Overview) can read
   // the active semester synchronously without awaiting chrome.storage.local.
