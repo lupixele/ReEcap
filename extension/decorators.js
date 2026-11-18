@@ -5310,7 +5310,7 @@ function renderDashboardCards(slot, profileData) {
     <!-- 1. Attendance Card -->
     <div class="overview-metric-card metric-card-attendance">
       <div class="metric-ring-box">
-        <svg width="60" height="60" viewBox="0 0 60 60">
+        <svg width="56" height="56" viewBox="0 0 60 60">
           <circle class="ring-bg" cx="30" cy="30" r="${ringRadius}" stroke-width="5.5"></circle>
           <circle class="ring-fg" cx="30" cy="30" r="${ringRadius}"
                   stroke-width="5.5"
@@ -5341,7 +5341,7 @@ function renderDashboardCards(slot, profileData) {
       <div class="metric-info-col">
         <div class="metric-eyebrow">ACTIVE BACKLOGS</div>
         <div class="metric-main-val" style="color: ${isBacklogsClear ? 'var(--success)' : 'var(--warning)'};">
-          ${isBacklogsClear ? 'Zero Backlogs' : backlogsText}
+          ${isBacklogsClear ? '0 Backlogs' : `${backlogsText} Backlogs`}
         </div>
         <div class="metric-sub-caption">${isBacklogsClear ? 'Academic standing in good health' : syncedCaption}</div>
       </div>
@@ -5355,21 +5355,23 @@ function renderDashboardCards(slot, profileData) {
           <line x1="1" y1="10" x2="23" y2="10"></line>
         </svg>
       </div>
-      <div class="metric-info-col" style="flex: 1;">
+      <div class="metric-info-col">
         <div class="metric-eyebrow-row">
           <span class="metric-eyebrow">TERM FEES</span>
-          <span class="fee-status-chip ${haveTotalNumber ? 'is-warn' : 'is-good'}">${haveTotalNumber ? 'Due' : 'Cleared'}</span>
+          <span class="fee-status-chip ${haveTotalNumber ? 'chip-due' : 'chip-cleared'}">${haveTotalNumber ? 'Due' : 'Cleared'}</span>
         </div>
         <div class="metric-main-val">${totalDisplay}</div>
-        <div class="metric-bottom-row">
-          <span class="metric-sub-caption">${totalCaption}</span>
-          <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="fee-pay-pill">Pay Online</a>
-        </div>
+        <div class="metric-sub-caption">${totalCaption}</div>
       </div>
+      ${haveTotalNumber ? `
+        <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="fee-pay-action-btn">
+          Pay Online
+        </a>
+      ` : ''}
     </div>
   `;
 
-  const payBtn = slot.querySelector('.fee-pay-pill');
+  const payBtn = slot.querySelector('.fee-pay-action-btn');
   if (payBtn) {
     payBtn.addEventListener('click', () => {
       showIframe();
