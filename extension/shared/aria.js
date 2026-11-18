@@ -268,6 +268,24 @@ const ADITYA_ACADEMIC_CALENDAR = {
   }
 
   /**
+   * Helper to retrieve active student name directly from the DOM as a resilient fallback.
+   */
+  function getActiveStudentNameFromDom() {
+    try {
+      const lbl = document.getElementById('lblUser') || window.parent?.document?.getElementById('lblUser');
+      if (lbl) {
+        const txt = (lbl.querySelector('b, strong')?.textContent || lbl.textContent || '').replace(/^Hi[\.\s]*/i, '').trim();
+        if (txt) return txt;
+      }
+    } catch (e) {}
+    try {
+      const td = document.getElementById('tdstudentname') || window.parent?.document?.getElementById('tdstudentname');
+      if (td && td.textContent.trim()) return td.textContent.trim();
+    } catch (e) {}
+    return '';
+  }
+
+  /**
    * Collects all student profile, attendance, timetable, and academic records from chrome.storage.local.
    */
   function getStudentDossier() {
@@ -294,7 +312,11 @@ const ADITYA_ACADEMIC_CALENDAR = {
             const academic = data?.reecapAcademicData || {};
 
             const rollNo = id.RollNo || id.rollNo || '';
-            const name = id.Name || id.name || '';
+            const rawParsedName = id.Name || id.name || getActiveStudentNameFromDom() || '';
+            const isLupelUser = (rollNo && rollNo.toUpperCase() === '25B11DS190') ||
+                                rawParsedName.toUpperCase().includes('RATAN TEJA') ||
+                                rawParsedName.toUpperCase().includes('GURALA');
+            const name = isLupelUser ? 'lupel' : rawParsedName;
             const course = id.Course || '';
             const branch = id.Branch || '';
             const sem = id.Semester || '';
@@ -956,14 +978,20 @@ const ADITYA_ACADEMIC_CALENDAR = {
 - Differential Equations & Vector Calculus (Grade A, 8.0 pts)`;
     }
 
-    const rawName = id.name || 'Student';
-    const studentName = rawName.toUpperCase().includes('RATAN TEJA') ? 'Ratan Teja' : (rawName ? rawName.split(' ')[0] : 'Student');
+    const rawName = id.name || getActiveStudentNameFromDom() || '';
+    const isLupelUser = (id.rollNo && id.rollNo.toUpperCase() === '25B11DS190') ||
+                        rawName.toUpperCase().includes('RATAN TEJA') ||
+                        rawName.toUpperCase().includes('GURALA');
+
+    const studentDisplayName = isLupelUser ? 'lupel' : (rawName ? rawName.split(' ')[0] : 'Student');
+    const studentFullName = isLupelUser ? 'lupel' : (rawName || 'Student');
 
     return `You are Aria, an intelligent academic co-pilot and portal assistant embedded directly into ReEcap for Aditya University students.
-You are built by lupel (${studentName}) to guide students through their academics, analyze their performance, and help them navigate their student portal.
+You were built by lupel (an Aditya University Data Science student) to guide students through their academics, analyze their performance, and help them navigate their student portal.
 
 [CURRENT STUDENT DOSSIER]:
-- Name: ${studentName}
+- Name: ${studentDisplayName} (Full Name: ${studentFullName})
+- Address the student directly as: "${studentDisplayName}" (always call them "${studentDisplayName}" when speaking to them)
 - Roll Number: ${id.rollNo || 'Not specified'}
 - Branch / Course: ${id.branch || id.course || 'Aditya University'}
 - Current Semester: ${id.semester || 'Current'}
@@ -1314,8 +1342,11 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       return resp;
     }
 
-    const rawName = dossier.identity?.name || 'Student';
-    const cleanName = rawName.toUpperCase().includes('RATAN TEJA') ? 'Ratan Teja' : (rawName.split(' ')[0] || 'Student');
+    const rawName = dossier.identity?.name || getActiveStudentNameFromDom() || '';
+    const isLupelUser = (dossier.identity?.rollNo && dossier.identity.rollNo.toUpperCase() === '25B11DS190') ||
+                        rawName.toUpperCase().includes('RATAN TEJA') ||
+                        rawName.toUpperCase().includes('GURALA');
+    const cleanName = isLupelUser ? 'lupel' : (rawName ? rawName.split(' ')[0] : 'Student');
 
     return `Hello ${cleanName}! I am **Aria**, your academic co-pilot in ReEcap.\n\n` +
       `Here is a quick snapshot of your records:\n` +

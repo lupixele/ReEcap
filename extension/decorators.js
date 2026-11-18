@@ -163,6 +163,17 @@ function initDecorators() {
             // Prefer the first <b>/<strong> child because the legacy "Hi..." prefix
             // has been known to mutate to "Welcome," or other tokens across portal versions.
             const inner = lblUser.querySelector('b, strong');
+            const rawUserName = (inner?.textContent || lblUser.textContent || '').replace(/^Hi[\.\s]*/i, '').trim();
+            if (rawUserName && isExtensionValid() && chrome?.storage?.local) {
+              chrome.storage.local.get(['reecapIdentity'], (cur) => {
+                const prev = cur?.reecapIdentity || {};
+                if (!prev.Name || prev.Name !== rawUserName) {
+                  chrome.storage.local.set({
+                    reecapIdentity: { ...prev, Name: rawUserName }
+                  });
+                }
+              });
+            }
             if (inner) {
               inner.className = 'user-name';
               // Wipe the wrapper's other text nodes so the role prefix doesn't leak.
@@ -2963,6 +2974,7 @@ function buildBioDataRedesign(accordion) {
     chrome.storage.local.set({
       reecapIdentity: {
         RollNo: data['RollNo'],
+        Name: data['Name'] || '',
         Course: data['Course'],
         Branch: data['Branch'],
         Semester: data['Semester']
