@@ -6650,38 +6650,51 @@ table#tblquestions input[type="text"]:not([value]) {
 }
 
 .metric-ring-box {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative !important;
+  width: 60px !important;
+  height: 60px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.metric-ring {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: conic-gradient(var(--accent) calc(var(--val) * 1%), var(--surface-sunken) 0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+.metric-ring-box svg {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 60px !important;
+  height: 60px !important;
+  transform: rotate(-90deg) !important;
 }
 
-.metric-ring::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  background: var(--surface-elevated);
-  border-radius: 50%;
+.metric-ring-box .ring-bg {
+  fill: none !important;
+  stroke: var(--surface-sunken, rgba(255, 255, 255, 0.08)) !important;
 }
 
-.metric-ring span {
-  position: relative;
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-primary);
+.metric-ring-box .ring-fg {
+  fill: none !important;
+  stroke-linecap: round !important;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.metric-ring-center {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.metric-ring-text {
+  font-family: var(--font-mono), monospace !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  text-align: center !important;
 }
 
 .metric-badge-box {
