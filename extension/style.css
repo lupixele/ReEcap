@@ -271,9 +271,9 @@ tr:has(span[style*="color: blue"]) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 76px;
-  padding: 0 0 24px 0;
-  margin-bottom: 24px;
+  min-height: 52px;
+  padding: 0 0 14px 0;
+  margin-bottom: 14px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -535,14 +535,14 @@ li.is-expanded .reecap-submenu-container {
   background: var(--surface-strip);
   color: var(--surface-strip-text);
   border-radius: var(--radius);
-  padding: clamp(16px, 2.4vw, 24px);
+  padding: 12px 18px;
   grid-template-columns: 1fr auto auto;
-  gap: clamp(16px, 3vw, 36px);
+  gap: 20px;
   align-items: center;
   box-shadow: var(--card-shadow), var(--ambient-glow);
   position: relative;
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
 }
 .status-content { display: flex; flex-direction: column; text-align: left; min-width: 0; }
 .status-identity { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding-right: clamp(16px, 3vw, 36px); border-right: 1px solid rgba(255,255,255,0.1); text-align: right; }
@@ -616,11 +616,11 @@ body.bodyStyle > form > center > br {
 
 .reecap-page-title {
   font-family: var(--font-sans), system-ui, sans-serif !important;
-  font-size: 24px !important;
+  font-size: 18px !important;
   font-weight: 800 !important;
   color: var(--text-primary) !important;
-  letter-spacing: -0.02em;
-  margin: 0 0 16px 0 !important;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px 0 !important;
   padding: 0 !important;
   line-height: 1.2;
   text-transform: uppercase;
@@ -3214,24 +3214,12 @@ table.popupTable th a:hover {
   }
 }
 
-/* (d) Wide-screen overview — summary cards left, full schedule right. */
-@media (min-width: 900px) {
-  .overview-grid {
-    display: grid !important;
-    grid-template-columns: minmax(260px, 0.72fr) minmax(420px, 1.58fr) !important;
-    grid-template-areas:
-      "metrics schedule"
-      "quicklinks schedule";
-    gap: 24px !important;
-    align-items: start;
-  }
-  .overview-section-metrics {
-    grid-area: metrics;
-    grid-template-columns: 1fr;
-    display: grid;
-  }
-  .overview-schedule-card  { grid-area: schedule; margin-top: 0; min-width: 0; }
-  .overview-quicklinks-card { grid-area: quicklinks; align-self: stretch; min-width: 0; }
+/* (d) Overview responsive auto-layout — seamless single-screen view */
+.overview-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  width: 100% !important;
 }
 
 /* (e) Elevated-card color-mix helper — kept as a 0-off guard. The previous
@@ -6620,4 +6608,332 @@ table#tblquestions input[type="text"]:not([value]) {
   border-radius: 4px !important;
   padding: 1px 4px !important;
   font-size: 9px !important;
+}
+
+
+/* ==========================================================================
+   Auto-Layout & Screen Fit Optimizations (Overview & Child Iframes)
+   ========================================================================== */
+
+/* 1. Horizontal KPI Shelf (Attendance, Backlogs, Fee Balance) */
+.overview-section-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  width: 100% !important;
+}
+
+@media (max-width: 860px) {
+  .overview-section-metrics {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.overview-metric-card {
+  background: var(--surface-elevated);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  padding: 14px 18px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px !important;
+  box-shadow: var(--card-shadow), var(--ambient-glow);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  min-height: 88px;
+  box-sizing: border-box;
+}
+
+.overview-metric-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.metric-ring-box {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-ring {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--val) * 1%), var(--surface-sunken) 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.metric-ring::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  background: var(--surface-elevated);
+  border-radius: 50%;
+}
+
+.metric-ring span {
+  position: relative;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.metric-badge-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.metric-badge-box.badge-pass {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.metric-badge-box.badge-danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.metric-badge-box.badge-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.metric-main-val {
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.fee-status-chip {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.fee-status-chip.chip-cleared {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.fee-status-chip.chip-due {
+  background: #f59e0b;
+  color: #000000;
+}
+
+.metric-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.metric-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.metric-status-sub {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-subtext {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* 2. Overview Main Split (Today's Schedule & Semester Calendar) */
+.overview-main-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .overview-main-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.schedule-free-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  margin-bottom: 8px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.schedule-free-banner svg {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.overview-calendar-card {
+  min-height: 240px;
+}
+
+.overview-calendar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.calendar-milestone-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--border-light);
+  transition: all 0.2s ease;
+}
+
+.calendar-milestone-row:hover {
+  background: var(--surface-page);
+  border-left-color: var(--accent);
+}
+
+.milestone-date-col {
+  flex-shrink: 0;
+  min-width: 115px;
+}
+
+.milestone-date {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.milestone-info-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.milestone-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.milestone-badge-col {
+  flex-shrink: 0;
+}
+
+.card-action-link {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.card-action-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Compact schedule scroll */
+.overview-schedule-card .schedule-list {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.overview-schedule-card .schedule-list::-webkit-scrollbar {
+  width: 5px;
+}
+.overview-schedule-card .schedule-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+/* 3. Child Frame (Iframe) Natural Height & Layout Optimizations */
+html.reecap-child-frame,
+html.reecap-child-frame body {
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-y: visible !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+/* Eradicate the duplicate MainHead in child iframes because parent shell displays page title */
+html.reecap-child-frame .MainHead {
+  display: none !important;
+}
+
+/* Ensure ASP.NET form container doesn't force artificial minimum heights */
+html.reecap-child-frame form {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: auto !important;
+}
+
+/* Remove huge table spacers inside child frames */
+html.reecap-child-frame td[style*="1000px"],
+html.reecap-child-frame td[height="1000"],
+html.reecap-child-frame tr[style*="1000px"],
+html.reecap-child-frame tr[style*="2000px"],
+html.reecap-child-frame td[style*="2000px"] {
+  display: none !important;
+}
+
+/* Responsive table styling inside child iframes so content isn't cropped */
+html.reecap-child-frame table {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* The parent shell capIframe adapts smoothly */
+#capIframeId {
+  transition: height 0.15s ease-out;
 }

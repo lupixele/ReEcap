@@ -4170,9 +4170,11 @@ if (document.readyState === 'loading') {
 
 // Accurate dynamic content height reporting from inside all child iframes
 if (window.self !== window.top) {
+  document.documentElement.classList.add('reecap-child-frame');
+
   function getTrueContentHeight() {
-    // Purge legacy ASP.NET 1000px/spacer elements from DOM immediately
-    document.querySelectorAll('td[style*="1000px"], td[height="1000"], tr[style*="1000px"]').forEach(td => {
+    // Purge legacy ASP.NET 1000px/2000px spacer elements from DOM immediately
+    document.querySelectorAll('td[style*="1000px"], td[height="1000"], tr[style*="1000px"], td[style*="2000px"], tr[style*="2000px"]').forEach(td => {
       const tr = td.closest('tr');
       if (tr) {
         tr.style.setProperty('display', 'none', 'important');
@@ -4183,25 +4185,21 @@ if (window.self !== window.top) {
     });
 
     const body = document.body;
-    if (!body) return 300;
+    const docEl = document.documentElement;
+    if (!body || !docEl) return 400;
 
-    // Scan visible content elements
-    let maxBottom = 0;
-    const candidates = body.querySelectorAll('div, table, form, main, section, ul, ol');
-    for (let i = 0; i < candidates.length; i++) {
-      const el = candidates[i];
-      const s = window.getComputedStyle(el);
-      if (s.display === 'none' || s.visibility === 'hidden') continue;
-      if (s.position === 'fixed') continue;
-      const rect = el.getBoundingClientRect();
-      if (rect.height > 0) {
-        const bottom = el.offsetTop + rect.height;
-        if (bottom > maxBottom) maxBottom = bottom;
-      }
-    }
+    // Purge legacy empty br spacers
+    document.querySelectorAll('form > center > div > br, form > center > br, form > br').forEach(br => br.remove());
 
-    let h = maxBottom > 0 ? maxBottom : body.scrollHeight;
-    return Math.max(250, Math.ceil(h + 16));
+    // Compute standard document height accurately without offsetTop truncation
+    const h = Math.max(
+      body.scrollHeight || 0,
+      docEl.scrollHeight || 0,
+      body.offsetHeight || 0,
+      docEl.offsetHeight || 0
+    );
+
+    return Math.max(350, Math.ceil(h + 24));
   }
 
   function reportIframeHeight() {
@@ -5021,11 +5019,6 @@ function buildOverviewPage(container) {
   stripSlot.id = 'reecap-strip-slot';
   stripSlot.className = 'reecap-strip-slot';
   container.appendChild(stripSlot);
-  // Phase 3 (2026-07-26): the strip slot is now ALWAYS populated by
-  // initStatusStrip with a real DOM node carrying data-reecap-state. The
-  // shimmer skeleton has been removed — it was getting stuck visible
-  // because the legacy .reecap-status-strip CSS hides the real strip until
-  // data-reecap-strip-active is set, leaving the skeleton in front of nothing.
   initStatusStrip(stripSlot);
 
   const grid = document.createElement('div');
@@ -5036,30 +5029,25 @@ function buildOverviewPage(container) {
   metricsSlot.className = 'overview-section-metrics';
   grid.appendChild(metricsSlot);
 
+  const mainSplit = document.createElement('div');
+  mainSplit.className = 'overview-main-split';
+  grid.appendChild(mainSplit);
+
   if (!chrome || !chrome.storage || !chrome.storage.local) return;
   try {
     chrome.storage.local.get(['reecapTimetable', 'reecapIdentity', 'reecapProfileData'], (data) => {
       if (chrome.runtime && chrome.runtime.lastError) return;
 
       renderDashboardCards(metricsSlot, data ? data.reecapProfileData : null);
-      renderScheduleCard(grid, data ? data.reecapTimetable : null);
-      // renderQuickLinksCard(grid);
-      // The categorized sidebar groups are the single source of truth for
-      // navigation. Rendering a second quick-links strip there created
-      // duplicate entries, so we no longer inject reecap-sidebar-quicklinks.
+      renderScheduleCard(mainSplit, data ? data.reecapTimetable : null);
+      renderCalendarOverviewCard(mainSplit);
 
-      // When the hidden cache warmer finishes, replace only the schedule card
-      // in place — no page refresh and no user navigation required.
       chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== 'local' || !changes.reecapTimetable || !grid.isConnected) return;
-        const existingSchedule = grid.querySelector('.overview-schedule-card');
-        renderScheduleCard(grid, changes.reecapTimetable.newValue, existingSchedule);
+        const existingSchedule = mainSplit.querySelector('.overview-schedule-card');
+        renderScheduleCard(mainSplit, changes.reecapTimetable.newValue, existingSchedule);
       });
 
-      // No schedule yet? Load the existing portal page silently in a one-shot
-      // helper iframe. Its all-frames content script runs observeTimetable(),
-      // writes the usual chrome.storage.local cache, then this helper removes
-      // itself. The user never has to open CHOOSE TIMETABLE manually.
       if (!data || !data.reecapTimetable) prefetchTimetableData();
     });
   } catch (e) {}
@@ -5073,19 +5061,11 @@ function prefetchTimetableData() {
     chrome.storage.local.get(['reecapTimetable'], (data) => {
       if (chrome.runtime && chrome.runtime.lastError) return;
       if (data && data.reecapTimetable) return;
-      // Intentionally NOT prefetching timetable data in the background.
-      // Concurrent requests crash the ASP.NET session state causing a 401 loop.
     });
-  } catch (e) {
-    // A reload can invalidate the extension context between overview render
-    // and storage lookup; the direct status-strip CTA remains available.
-  }
+  } catch (e) {}
 }
 
 function renderSidebarQuickLinks() {
-  // Deprecated (Phase 4, 2026-07-26). The categorized sidebar groups already
-  // cover Attendance, Timetable, Marks, Fee, Profile, and Backlogs, so
-  // rendering a second list doubled every entry. The footer slot is removed.
   if (document.querySelector('.reecap-sidebar-quicklinks')) {
     document.querySelectorAll('.reecap-sidebar-quicklinks').forEach((el) => el.remove());
   }
@@ -5100,7 +5080,7 @@ function updateOverviewCards(profileData) {
 function renderDashboardCards(slot, profileData) {
   if (!slot) return;
 
-  const ringRadius = 42;
+  const ringRadius = 24;
   const ringCircumference = 2 * Math.PI * ringRadius;
   let ringOffset = ringCircumference;
   let ringDisplay = "N/A";
@@ -5111,17 +5091,16 @@ function renderDashboardCards(slot, profileData) {
   let feeCurrentSem = "--";
   let feeCurrentSemLabel = "Current Semester";
   let feeCurrentSemStatus = "pending";
-  let feeCurrentSemPayable = null;
   let feeBalanceWords = "";
   let feeTotalDue = "--";
-  let syncedCaption = "Syncing from background Profile...";
+  let syncedCaption = "Syncing from Profile...";
 
   if (profileData) {
     held = profileData.held || 0;
     attended = profileData.attended || 0;
     if (held > 0) {
       const percent = profileData.percent !== undefined ? profileData.percent : (attended / held * 100);
-      ringDisplay = percent.toFixed(2) + "%";
+      ringDisplay = percent.toFixed(1) + "%";
       ringOffset = ringCircumference - (percent / 100) * ringCircumference;
       ringColor = percent >= 75 ? "var(--success)" : (percent >= 65 ? "var(--warning)" : "var(--error)");
     } else {
@@ -5132,7 +5111,6 @@ function renderDashboardCards(slot, profileData) {
     feeCurrentSem        = profileData.feeCurrentSem !== undefined && profileData.feeCurrentSem !== null ? `${profileData.feeCurrentSem}` : "--";
     feeCurrentSemLabel   = profileData.feeCurrentSemLabel || "Current Semester";
     feeCurrentSemStatus  = profileData.feeCurrentSemStatus || 'pending';
-    feeCurrentSemPayable = profileData.feeCurrentSemPayable !== undefined && profileData.feeCurrentSemPayable !== null ? `${profileData.feeCurrentSemPayable}` : null;
     feeBalanceWords      = profileData.feeBalanceWords || '';
     feeTotalDue          = profileData.feeTotalDue   !== undefined && profileData.feeTotalDue   !== null ? `${profileData.feeTotalDue}` : "--";
     if (profileData.lastUpdated) {
@@ -5143,82 +5121,72 @@ function renderDashboardCards(slot, profileData) {
     }
   }
 
-  // Color logic + caption text for the two fee values.
-  // - Current semester bill: amber if due, green if paid, mute + "Assessment
-  //   pending" caption if the portal hasn't yet posted the row.
-  // - Total outstanding: red if anything owed, green otherwise.
-  // - The optional balance-words caption (e.g. "Three Lakh Ninety Three …")
-  //   sits under the Total row so the user can spot-check the portal.
-  const haveSemNumber   = feeCurrentSem !== "--" && feeCurrentSem !== "0.00" && parseFloat(feeCurrentSem) > 0;
-  const haveTotalNumber = feeTotalDue   !== "--" && feeTotalDue   !== "0.00" && parseFloat(feeTotalDue)   > 0;
+  const haveTotalNumber = feeTotalDue !== "--" && feeTotalDue !== "0.00" && parseFloat(feeTotalDue) > 0;
+  const isBacklogsClear = backlogsText === '0' || backlogsText.toLowerCase().includes('no');
 
-  let semClass = 'is-muted';
-  let semDisplay = '<span class="fee-status-badge is-success">Cleared</span>';
-  let semCaption = 'Assessment pending';
-  if (feeCurrentSemStatus === 'due') {
-    semClass = 'is-warning';
-    semDisplay = '₹' + formatCurrencyAmount(feeCurrentSem);
-    semCaption = 'Amount outstanding this term';
-  } else if (feeCurrentSemStatus === 'paid') {
-    semClass = 'is-success';
-    semDisplay = '<span class="fee-status-badge is-success">Cleared</span>';
-    semCaption = 'Cleared in full' + (feeBalanceWords ? ' · ' + feeBalanceWords : '');
-  }
-  // Fall through: 'pending' → green "Cleared" badge + pending caption.
-
-  const totalDisplay  = (haveTotalNumber ? '₹' + formatCurrencyAmount(feeTotalDue) : '<span class="fee-status-badge is-success">Cleared</span>');
-  const totalCaption  = haveTotalNumber
-    ? 'Across all assessed terms'
-    : 'All accounts settled';
+  const totalDisplay = (haveTotalNumber ? '₹' + formatCurrencyAmount(feeTotalDue) : '<span class="status-pill-pass">Cleared</span>');
+  const totalCaption = haveTotalNumber ? 'Total outstanding' : 'All accounts settled';
 
   slot.innerHTML = `
-    <div class="ring-card">
-      <div class="ring-wrap">
-        <svg width="100" height="100">
-          <circle class="ring-bg" cx="50" cy="50" r="${ringRadius}"></circle>
-          <circle class="ring-fg" cx="50" cy="50" r="${ringRadius}"
+    <!-- 1. Attendance Card -->
+    <div class="overview-metric-card metric-card-attendance">
+      <div class="metric-ring-box">
+        <svg width="60" height="60" viewBox="0 0 60 60">
+          <circle class="ring-bg" cx="30" cy="30" r="${ringRadius}" stroke-width="5.5"></circle>
+          <circle class="ring-fg" cx="30" cy="30" r="${ringRadius}"
+                  stroke-width="5.5"
                   stroke="${ringColor}"
                   stroke-dasharray="${ringCircumference}"
                   stroke-dashoffset="${ringOffset}"></circle>
         </svg>
-        <div class="ring-center">
-          <div class="ring-value overview-ring-value" style="color: ${ringColor}">${ringDisplay}</div>
+        <div class="metric-ring-center">
+          <span class="metric-ring-text" style="color: ${ringColor}">${ringDisplay}</span>
         </div>
       </div>
-      <div class="ring-label">Attendance</div>
-      <div class="ring-caption">${profileData && held > 0 ? `${attended} / ${held} attended` : syncedCaption}</div>
+      <div class="metric-info-col">
+        <div class="metric-eyebrow">ATTENDANCE</div>
+        <div class="metric-main-val">${profileData && held > 0 ? `${attended} / ${held} Classes` : 'Live Records'}</div>
+        <div class="metric-sub-caption">${syncedCaption}</div>
+      </div>
     </div>
 
-    <div class="stat-card">
-      <div class="stat-top">
-        <div class="stat-label">Active Backlogs</div>
+    <!-- 2. Active Backlogs Card -->
+    <div class="overview-metric-card metric-card-backlogs">
+      <div class="metric-badge-box ${isBacklogsClear ? 'is-good' : 'is-warn'}">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          ${isBacklogsClear 
+            ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>'
+            : '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'}
+        </svg>
       </div>
-      <div class="ring-value" style="color: var(--text-primary); font-size: ${profileData ? '16px' : '14px'};">
-        ${backlogsText}
+      <div class="metric-info-col">
+        <div class="metric-eyebrow">ACTIVE BACKLOGS</div>
+        <div class="metric-main-val" style="color: ${isBacklogsClear ? 'var(--success)' : 'var(--warning)'};">
+          ${isBacklogsClear ? 'Zero Backlogs' : backlogsText}
+        </div>
+        <div class="metric-sub-caption">${isBacklogsClear ? 'Academic standing in good health' : syncedCaption}</div>
       </div>
-      <div class="ring-caption">${syncedCaption}</div>
     </div>
 
-    <div class="stat-card fee-balance-card">
-      <div class="stat-top">
-        <div class="stat-label">Fee Balance</div>
+    <!-- 3. Fee Balance Card -->
+    <div class="overview-metric-card metric-card-fees">
+      <div class="metric-badge-box is-accent">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+          <line x1="1" y1="10" x2="23" y2="10"></line>
+        </svg>
       </div>
-
-      <div class="fee-row">
-        <span class="fee-row-label">${feeCurrentSemLabel}</span>
-        <span class="fee-row-amount ${semClass}">${semDisplay}</span>
+      <div class="metric-info-col" style="flex: 1;">
+        <div class="metric-eyebrow-row">
+          <span class="metric-eyebrow">TERM FEES</span>
+          <span class="fee-status-chip ${haveTotalNumber ? 'is-warn' : 'is-good'}">${haveTotalNumber ? 'Due' : 'Cleared'}</span>
+        </div>
+        <div class="metric-main-val">${totalDisplay}</div>
+        <div class="metric-bottom-row">
+          <span class="metric-sub-caption">${totalCaption}</span>
+          <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="fee-pay-pill">Pay Online</a>
+        </div>
       </div>
-      <div class="fee-row-caption">${semCaption}</div>
-
-      <div class="fee-divider"></div>
-
-      <div class="fee-row">
-        <span class="fee-row-label">Total Outstanding</span>
-        <span class="fee-row-amount ${haveTotalNumber ? 'is-critical' : 'is-success'}">${totalDisplay}</span>
-      </div>
-      <div class="fee-row-caption">${totalCaption}</div>
-
-      <a href="Feepayments/studentfeereceipt.aspx?scrid=23" target="capIframe" class="fee-pay-pill">Pay Online</a>
     </div>
   `;
 
@@ -5234,8 +5202,6 @@ function renderScheduleCard(container, timetableData, previousCard = null) {
   const card = document.createElement('div');
   card.className = 'overview-card overview-schedule-card';
 
-  // Cache warmers update chrome.storage.local asynchronously. Replace the
-  // existing empty card in place rather than append a duplicate schedule.
   if (previousCard && previousCard.parentNode === container) {
     previousCard.replaceWith(card);
   } else {
@@ -5246,7 +5212,15 @@ function renderScheduleCard(container, timetableData, previousCard = null) {
   const jsDayToName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const todayName = jsDayToName[now.getDay()];
 
-  let html = `<div class="overview-card-header"><span class="overview-card-title">Today's Schedule</span><span class="overview-card-subtitle">${todayName}, ${now.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span></div>`;
+  let html = `
+    <div class="overview-card-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span class="overview-card-title">Today's Schedule</span>
+      </div>
+      <span class="overview-card-subtitle">${todayName}, ${now.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+    </div>
+  `;
 
   if (!timetableData || !timetableData.schedule) {
     html += `<div class="schedule-empty">Preparing your schedule in the background…</div>`;
@@ -5255,16 +5229,37 @@ function renderScheduleCard(container, timetableData, previousCard = null) {
   }
 
   const { schedule, legendMap } = timetableData;
-  const todaysClasses = schedule[todayName] || [];
+  const todaysClasses = schedule[todayName] || schedule[now.toLocaleDateString('en-US', { weekday: 'long' })] || [];
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
-  let hasClasses = false;
+  // Filter out empty dashes and non-classes
+  const validPeriods = todaysClasses.filter(period => {
+    const code = (period.subjectCode || '').trim();
+    return code && code !== '-' && code.toUpperCase() !== 'FREE';
+  });
+
+  if (validPeriods.length === 0) {
+    html += `<div class="schedule-empty">No classes scheduled for today. Enjoy!</div>`;
+    card.innerHTML = html;
+    return;
+  }
+
   let rowsHtml = `<div class="schedule-list">`;
 
-  todaysClasses.forEach(period => {
-    if (!period.subjectCode) return;
-    hasClasses = true;
+  // Check if first class is later in the day (e.g. afternoon start)
+  const firstPeriod = validPeriods[0];
+  const firstTimes = parseTimeRange(firstPeriod.timeRange);
+  if (firstTimes && firstTimes.start >= 720) { // starts at 12:00 PM or later
+    const startText = firstPeriod.timeRange.split(/[-to]/i)[0].trim();
+    rowsHtml += `
+      <div class="schedule-free-banner">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+        <span>Morning Free · First period starts at <strong>${startText}</strong></span>
+      </div>
+    `;
+  }
 
+  validPeriods.forEach(period => {
     const times = parseTimeRange(period.timeRange);
     let isActive = false;
     if (times && currentMins >= times.start && currentMins < times.end) {
@@ -5292,14 +5287,72 @@ function renderScheduleCard(container, timetableData, previousCard = null) {
   });
 
   rowsHtml += `</div>`;
+  html += rowsHtml;
+  card.innerHTML = html;
+}
 
-  if (!hasClasses) {
-    html += `<div class="schedule-empty">No classes scheduled for today. Enjoy!</div>`;
+function renderCalendarOverviewCard(container) {
+  if (container.querySelector('.overview-calendar-card')) return;
+
+  const card = document.createElement('div');
+  card.className = 'overview-card overview-calendar-card';
+
+  const calData = (window.__reecap_calendar && window.__reecap_calendar.semesters)
+    ? window.__reecap_calendar.semesters
+    : {};
+  const currentMilestones = calData['II'] || calData['I'] || [];
+
+  let html = `
+    <div class="overview-card-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <span class="overview-card-title">Semester II Calendar</span>
+      </div>
+      <a href="Academics/academiccalenderreport.aspx?scrid=6" target="capIframe" class="card-action-link" id="overview-view-calendar-link">
+        View All 8 Semesters
+      </a>
+    </div>
+    <div class="overview-calendar-list">
+  `;
+
+  if (currentMilestones.length === 0) {
+    html += `<div class="schedule-empty">Academic calendar synced with university schedule.</div>`;
   } else {
-    html += rowsHtml;
+    // Show top 4 relevant milestones
+    const preview = currentMilestones.slice(0, 4);
+    preview.forEach(m => {
+      const isRange = m.from !== m.to;
+      const dateStr = isRange ? `${m.from} — ${m.to}` : m.from;
+      let statusBadge = '<span class="status-pill-neutral">Scheduled</span>';
+      if (m.description.includes('Commencement') || m.description.includes('Registration')) {
+        statusBadge = '<span class="status-pill-pass">Completed</span>';
+      } else if (m.description.includes('Internal Examinations –I')) {
+        statusBadge = '<span class="status-pill-pass">Upcoming Next</span>';
+      }
+      html += `
+        <div class="calendar-milestone-row">
+          <div class="milestone-date-col">
+            <span class="milestone-date">${dateStr}</span>
+          </div>
+          <div class="milestone-info-col">
+            <span class="milestone-title">${m.description}</span>
+          </div>
+          <div class="milestone-badge-col">${statusBadge}</div>
+        </div>
+      `;
+    });
   }
 
+  html += `</div>`;
   card.innerHTML = html;
+  container.appendChild(card);
+
+  const calLink = card.querySelector('#overview-view-calendar-link');
+  if (calLink) {
+    calLink.addEventListener('click', () => {
+      showIframe();
+    });
+  }
 }
 
 function renderQuickLinksCard(container) {
