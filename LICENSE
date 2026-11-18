@@ -1,33 +1,43 @@
-ReEcap Student License (RSL v1.0)
-Non-Commercial Educational & Personal Use License with Institutional Disclaimer
+ReEcap Campus Community License (RCCL v1.0)
+Institutional Academic & Educational License (Faculty, Management & Students Only)
 
 Copyright (c) 2026 lupixele. All rights reserved.
 
 1. SCOPE AND NATURE OF SOFTWARE
-The Software is an independent, client-side visual stylesheet and cosmetic interface
-developed strictly for the author's personal educational convenience. The Software
-and its author are NOT affiliated, endorsed, authorized, or connected in any manner
-with Aditya University, E-CAP, or any related educational institutions or subsidiaries.
+The Software ("ReEcap") is an independent, client-side visual stylesheet, interface enhancement,
+and productivity extension developed strictly for personal and educational convenience.
+The Software and its author are NOT affiliated, endorsed, authorized, or officially connected
+with Aditya University, ECAP, or any related educational institutions or administrative subsidiaries.
 
-2. USE RESTRICTIONS
-Permission is granted to inspect and modify this source code for personal, non-commercial
-study and research only, subject to the following express conditions:
-  a. NO INSTITUTIONAL VIOLATIONS: The Software shall NOT be used, modified, deployed,
-     or distributed to bypass authentication, scrape unauthorized student/faculty data,
-     harvest credentials, conduct security scans or penetrations, or violate any
-     acceptable use policies or IT regulations of Aditya University or any institution.
-  b. STRICTLY LOCAL/CLIENT-SIDE: No user may repackage or distribute this Software with
-     embedded private datasets, institutional credentials, or backend automation scripts.
-  c. NO COMMERCIAL USE: The Software may not be sold, sublicensed, or integrated into
-     commercial products or services.
+2. AUTHORIZED PARTIES & PERMITTED USERS
+License to inspect, study, run, or locally modify this Software is EXCLUSIVELY and SOLELY granted to:
+  a. Currently enrolled Students of the college/university;
+  b. Active College Faculty and teaching staff;
+  c. Institutional Management and academic administration.
 
-3. INDEMNITY AND TERMINATION
-Any fork, distribution, or use of the Software in violation of institutional IT rules
-or applicable laws immediately revokes all rights granted under this license. The author
-disclaims all legal liability for unauthorized actions, credential misuse, policy
-infractions, or service disruptions caused by downstream users or third-party forks.
+Any use, execution, redistribution, cloning, packaging, or exploitation by outside commercial entities,
+data scrapers, commercial tutoring services, or unauthorized external third parties is EXPRESSLY PROHIBITED.
 
-4. NO WARRANTY
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
-IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, DISCIPLINARY ACTIONS,
-OR LIABILITIES ARISING FROM THE USE OR MISUSE OF THIS SOFTWARE.
+3. USE RESTRICTIONS & CONDITIONS
+Authorized users are granted permission to use and modify the Software for personal, educational,
+teaching, and administrative workflow convenience, subject to the following express conditions:
+  a. NO INSTITUTIONAL VIOLATIONS: The Software shall NOT be used, modified, deployed, or distributed
+     to bypass authentication mechanisms, scrape unauthorized student/faculty records, harvest credentials,
+     conduct penetration testing or vulnerability exploits, or violate any campus IT acceptable use policies.
+  b. STRICTLY LOCAL/CLIENT-SIDE: All portal interaction, DOM styling, and AI advisory assistance must execute
+     strictly locally within the user's browser. No party may repackage, distribute, or host this Software
+     with embedded private student/faculty datasets, harvested records, or backend data exfiltration hooks.
+  c. NON-COMMERCIAL: The Software and any derivative modifications may NOT be sold, sublicensed, monetized,
+     or bundled into commercial products or paid services under any circumstances.
+
+4. INDEMNITY AND TERMINATION
+Any use, fork, or distribution in violation of institutional policies, campus IT regulations,
+or applicable law immediately and automatically revokes all permissions granted under this license.
+The author disclaims all legal liability for unauthorized actions, credential misuse, policy infractions,
+or service disruptions caused by downstream users or third-party forks.
+
+5. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, DISCIPLINARY ACTIONS, OR LIABILITIES
+ARISING FROM THE USE OR MISUSE OF THIS SOFTWARE.
