@@ -1,24 +1,28 @@
 ## Current State
-NightTab theme system is live (45 presets, Dark/Light as token-derived filters, not invented variants; pushed as e834651 to origin/nighttab + main). Uncommitted in-tree: payment fixes (proxy native controls + iframe content-height resize, 30/30 checks) and Aria work (block-based markdown parser with 45 Node checks, stat cards removed, composer rework, 18/18 harness checks).
+- NightTab theme system is live (45 presets, 6 categories, token-derived filters; synced to GitHub on `nighttab` and `main` at `50f650d`).
+- Identity generalization and privacy scrubbing implemented: zero personal data hardcoded in `extension/decorators.js` or `extension/shared/aria.js`; client-side sanitizer scrubs roll numbers and university emails before transmitting queries to cloud edge LLM.
+- Sidebar collapse button bug resolved: eliminated duplicate simultaneous `icon-collapse` and `icon-expand` rendering caused by `display: block !important` override.
+- Sidebar subbadge chip removed from Academic Calendar menu link per design request.
+- Sidebar single-open accordion behavior active across student categories and employee submenus.
+- Desktop sidebar equipped with bounded height and independent vertical scrolling using nightTab styled scrollbars.
+- Interactive College Timetable ported from `Raw/Interactive College Timetable.zip` into the token-based component system with tactile subject cards, hover/focus details popovers, mobile day tabs, and Know Your Subjects color guide grid.
+- Comprehensive `Readme.md` documentation updated with full feature catalog and architectural specifications.
 
 ## Recent Decisions
-- Payment UI PROXIES native controls: the portal's onFeeCheckBoxClick/calculateAmounts traverse the original row positionally, so native checkboxes/amount inputs must never be relocated (caused alert(undefined) + frozen totals). Visible controls forward clicks and re-sync — tests/fee-services.html 30/30.
-- Payment page emits REECAP_RESIZE with getPaymentContentHeight() so the parent iframe shrinks to content; fixes the empty gap under the payment box (iframe sat at viewport height).
-- Aria markdown parser rewritten as a block parser (headings/nested+ordered+task lists/tables/fenced code/links/emphasis/blockquotes), sentinel-protected code spans and chips, streaming mode auto-closes partial tokens so output never flickers — tests/aria-markdown.test.js 45 checks.
-- Stat cards (CGPA/Attendance/Backlogs/Term Fees) removed entirely — markup, updateAriaStrip function/call, and all card CSS; dossier data still feeds welcome, suggestions, and AI context.
-- Composer: late `#aria-input` background/border override neutralized (the container owns the single visual box), send-button disabled states wired, markdown block CSS (pre/blockquote/task/table/link) added on theme tokens.
+- Generalize student display name dynamically from DOM portal greetings (Title Cased first name) with fallback to "Student", removing all hardcoded name overrides.
+- In `aria.js`, scrub roll numbers (`\b2[0-9][A-Za-z0-9]{8}\b`) and institutional emails before sending system/user messages to `https://aria.lupixele.online/api/chat`.
+- Removed `.reecap-sidebar-subbadge` from the Academic Calendar menu link to prevent text clipping in narrow navigation drawers.
+- Enforced single-open accordion behavior across sidebar groups by automatically collapsing other open categories when one is expanded.
+- Styled `ul.menu` with `max-height: calc(100vh - 40px)` and custom nightTab scrollbar rules for independent scrollability.
+- Maintained the DJB2 12-shade hashing and token-derived palette (`--palette-hue`, `--palette-color`, `--palette-soft`, `--palette-border`) for the timetable grid, avoiding any hardcoded colors from the source archive.
+
+## Verification
+- `node --check extension/decorators.js`: PASS
+- `node --check extension/shared/aria.js`: PASS
+- `node tests/aria-markdown.test.js`: PASS (45 checks)
+- `node tests/theme-architecture.test.js`: PASS
+- `git grep -i "RATAN"` / `git grep -i "25B11DS190"` / `git grep -i "lupel"` across `extension/` and `tests/`: 0 occurrences.
 
 ## Next Steps
-1. Sidebar accordion behavior (one open section at a time) + independent scroll with styled scrollbar.
-2. Port timetable design from Raw/Interactive College Timetable.zip into the token-based component system.
-3. Re-run all regression suites (theme, fee, iframe, bio-data, Aria markdown) after tasks 1-2.
-4. Commit + push payment/Aria work with the Claude co-author trailer when approved.
-5. Optional: `graphify label` to refresh 162 community names with the LLM.
-
-## Open Questions / Blockers
-- Browser-pane computed-style quirk (hidden pane freezes background transitions): themes verified via screenshots + resolved custom-property values instead of computed colors.
-- Aria shell live screenshot pending (shell only opens via toggle; render verified in harness only).
-- Item 3 of the user's fee issue list was blank/undefined — never specified.
-
-## Last Updated
-2026-11-18
+- Commit and push completed work to `nighttab` branch under Claude co-author trailer.
+- Fast-forward merge `main` and push to `origin/main`.

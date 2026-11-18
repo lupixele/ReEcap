@@ -1,93 +1,123 @@
 # ReEcap
 
-A modern UI reskin for the AEC student portal — cleaner interface, same functionality.
+A modern, high-performance UI reskin and academic workstation for the Aditya University / AEC student portal (`info.aec.edu.in`).
 
-ReEcap is a Chrome Extension that overlays a polished design system on top of the legacy ASP.NET student portal at `info.aec.edu.in`. It doesn't touch forms, postbacks, or server logic — it purely enhances the visual experience.
+ReEcap is a Manifest V3 Chrome extension that completely overhauls the legacy ASP.NET WebForms portal into a responsive, accessible workstation following the design tokens, elevation hierarchy, and color mathematics of [zombieFox/nightTab](https://github.com/zombieFox/nightTab). It operates strictly on the client-side, preserving native postbacks, form state, and authentication without modifying server workflows.
 
-## Installation 
+---
 
-You can install ReEcap directly into Google Chrome, Microsoft Edge, Brave, or any Chromium-based browser right from the latest GitHub Release!
+## Key Features
 
-1. Go to the [ReEcap Releases section](https://github.com/lupixele/ReEcap/releases/).
-2. Download the latest `.zip` file from the **Assets** section at the bottom of the release notes (e.g., `ReEcap-v1.3.3.zip`).
-3. Extract (unzip) the file into a folder on your computer. 
-4. Open Chrome and go to `chrome://extensions/` (or `edge://extensions/` if using Edge).
-5. Turn on **Developer mode** using the toggle switch in the top right corner.
-6. Click the **Load unpacked** button.
-7. Select the folder where you extracted the `.zip` file.
-8. That's it! Log into `info.aec.edu.in` and watch the redesign snap into place.
+### 1. Complete nightTab Design System Architecture
+- **45 Original Presets across 6 Curated Categories**: Core & Modern (`app`, `nord`, `obsidian`, `paper`, `gruvbox`, `dracula`, `solarized`, `tokyo`), Minimal & Nordic (`minimal-light`, `minimal-dark`, `snow`, `mist`, `slate`, `mono`, `ash`, `quartz`), Cyberpunk & Neon (`outrun`, `neon`, `cyber`, `matrix`, `synthwave`, `laser`, `vapor`), Space & Midnight (`midnight`, `deepspace`, `galaxy`, `eclipse`, `void`, `black`, `nebula`), Organic & Earth (`mint`, `forest`, `terra`, `sage`, `desert`, `autumn`, `clay`, `moss`), Vivid & Creative (`acrid`, `sol`, `koto`, `candy`, `sunset`, `ocean`, `white`).
+- **Mathematical 14-Shade HSL Color Engine**: Dynamic shade scaling calculated across baseline and contrast ranges.
+- **Perceived Contrast Calculations**: Text contrast thresholds dynamically derived via ITU-R BT.709 perceived luminance constants to guarantee readability across all palettes.
+- **Directional 4-Layer Elevation Physics**: Realistic soft drop shadows replacing legacy flat outlines.
+- **Floating GUI Theme Toolbar**: Bottom-right floating action button featuring instant live search, category pills, dark/light toggle, and direct preset switching across top shell and child iframes.
 
-> *Note: Since this is an unpacked developer extension, Chrome might occasionally ask if you want to disable developer mode extensions upon boot. Just click "Cancel" or the "X" if prompted.*
+### 2. Autonomous Aria AI Academic Co-Pilot
+- **Integrated Assistant Shell**: Accessible via masthead action pill or keyboard shortcut (`Ctrl + /`), with slide-out drawer interface and scrim backdrop.
+- **Live Academic Telemetry**: Directly aggregates student CGPA, SGPA, attendance percentage, active backlogs, fee dues, and today's schedule from portal records.
+- **Strategic Advisory**: Identifies courses with lower grades, calculates exact bunk allowances using the university 75% attendance rule, and projects target semester SGPA.
+- **Interactive Navigation Chips**: Action chips embedded in conversation allowing 1-click navigation to Attendance, Marks, Academic Calendar, Fees, or Timetable.
+- **Advanced Block Markdown Parser**: Fully rendered headings, ordered/nested lists, task checkboxes, GitHub-flavored pipe tables, fenced code blocks, and blockquotes with streaming support.
+- **Offline Intelligence Fallback**: Deterministic offline knowledge engine that provides advisory support even when offline.
+- **Privacy-First Design**: Dynamic student name extraction; all personal identifiers and roll numbers are scrubbed client-side before any query reaches cloud endpoints.
 
-## Features
+### 3. Interactive College Timetable
+- **Tactile Subject Cards**: Per-subject 12-shade token-derived palette with code badges, title clamp, and period timing.
+- **Hover & Focus Detail Popovers**: Instant flyout cards with faculty details, room numbers, and period information.
+- **Consecutive Class Merging**: Multi-period classes seamlessly merge into unified time blocks spanning continuous columns.
+- **Mobile Day Switcher**: Responsive mobile view with day selector tabs (`Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat`) and single-day focus cards.
+- **Know Your Subjects Color Guide**: Organized subject card grid showing code badges, full titles, and faculty details.
 
-- **Overview Page (Default Landing)** — Standalone modern landing page summarizing the student's day at a glance: Status Strip, Attendance Ring, Active Backlogs, Fee Balance, Today's Schedule timeline, and 1-click Quick Links.
-- **Unified Masthead** — Branded header with student avatar, name, and quick-action pills (Change Password, Logout).
-- **Redesigned Sidebar** — Standalone Overview link plus categorized navigation (Academics / Finance / Account) with SVG icons and collapsible groups.
-- **Clean Profile Separation** — Dashboard cards live exclusively on Overview, leaving the Profile page clean with only its categorized data tabs.
-- **Bio-Data Redesign** — Clean grid layout for personal, academic, and contact details.
-- **Timetable Grid** — CSS Grid timetable with hover tooltips showing subject, faculty, and room.
-- **Status Strip** — Live clock, student identity badge, and current/next class banner located at the top of the Overview page.
-- **Profile Tabs** — Modern pill-style tabs replacing the legacy jQuery UI accordion.
-- **Iframe Management** — Auto-resize, transparent backgrounds, title sync, and sidebar active-state tracking.
-- **Instant Toggle & Caching** — Enable/disable the reskin without reloading the page, with local caching for instant repeat display.
+### 4. 8-Semester Academic Calendar Hub
+- **Official Batch Schedules**: Comprehensive schedules covering Semesters I through VIII, including Summer terms.
+- **Interactive Features**: Instant keyword search, semester tab switcher, term dates, and live status chips (Completed, In Progress, Scheduled).
+- **Dual-Path Navigation**: Accessible directly from sidebar navigation or when navigating to the academic calendar report.
 
-## Themes
+### 5. Academic Overview Dashboard
+- **Status Strip**: Live monospace clock, current class countdown banner, and student identity badge.
+- **Metrics Grid**: Circular SVG attendance ring, verified backlogs card, and tuition fee balance card with direct payment action.
+- **Split Timeline**: Real-time today's schedule column paired with the active semester examination schedule.
 
-| Theme | Description |
-|---|---|
-| **Light** | Warm cream tones with a muted red accent |
-| **Dark** | Comfortable charcoal with restrained coral ambience for extended sessions |
-| **Cappuccino** | Coffee-toned warmth with a brown accent |
-| **AMOLED** | True-black OLED aesthetic with minimally lifted cards and dramatic coral glow |
-| **Evergreen** | Scholarly sage-and-forest palette with calm botanical character |
-| **Midnight** | Deep navy late-night study mode with a crisp sapphire accent |
-| **Rosewood** | Soft dusty rose and mauve palette with modern warm contrast |
+### 6. Refined Navigation & Workstation UI
+- **Accordion Sidebar**: Accessible semantic categories (`Academics`, `Finance`, `Account`, `Services`) with single-open accordion behavior.
+- **Independent Sidebar Scrolling**: Dedicated vertical scrolling container with nightTab styled scrollbars.
+- **Command Palette (`Ctrl + K`)**: Quick-jump search modal across all portal sections and tools.
+- **Clean Masthead**: Branded navigation with teacher top tabs, student greeting, Aria launcher, and native session controls.
+- **Exam Script PDF Generator**: Canvas stitching tool on revaluation viewer generating multi-page exam booklets.
 
-Switch themes instantly from the extension popup. Changes apply without a page reload.
+---
+
+## Architecture & Technical Design
+
+- **Non-Destructive DOM Decoration**: Client-side transformations preserve all ASP.NET hidden fields (`__VIEWSTATE`, `__EVENTVALIDATION`), form targets, and native postback routines.
+- **Cross-Frame Synchronization**: Seamless two-way postMessage and storage bridge synchronizing theme tokens, dimensions, and navigation state between top window and child iframes.
+- **Zero Telemetry & Private**: Runs entirely in the student's browser with no user tracking or external telemetry logging.
+- **Zero Unicode Emojis**: Strictly utilizes SVG iconography and semantic status chips throughout the entire design system.
+
+---
 
 ## Installation
 
-1. Clone or download this repository.
-2. Open `chrome://extensions` in Chrome.
-3. Enable **Developer mode** (toggle in the top-right corner).
-4. Click **Load unpacked** and select the `extension/` folder.
-5. Navigate to `info.aec.edu.in` — the reskin activates automatically.
+You can install ReEcap directly into Google Chrome, Microsoft Edge, Brave, or any Chromium-based browser:
+
+1. Clone or download this repository:
+   ```bash
+   git clone https://github.com/lupixele/ReEcap.git
+   ```
+2. Open Chrome and navigate to `chrome://extensions/`.
+3. Enable **Developer mode** using the toggle switch in the top-right corner.
+4. Click **Load unpacked**.
+5. Select the `extension/` directory inside the repository.
+6. Navigate to `https://info.aec.edu.in/aus/` — ReEcap activates automatically.
+
+---
 
 ## File Structure
 
 ```
-extension/
-├── manifest.json      # Chrome Extension config (Manifest V3)
-├── content.js         # Stylesheet injector, theme manager, iframe sync
-├── decorators.js      # DOM decorators — masthead, sidebar, dashboard, timetable, status strip
-├── style.css          # Complete design system (~1200 lines, 3 themes)
-├── popup.html         # Settings popup UI
-├── popup.js           # Popup toggle & theme logic
-└── icons/
-    ├── icon16.png
-    ├── icon48.png
-    └── icon128.png
+ReEcap/
+├── extension/
+│   ├── manifest.json          # Manifest V3 configuration, permissions, content scripts
+│   ├── content.js             # Theme initialization, storage listeners, cross-frame messaging
+│   ├── decorators.js          # Core DOM transformations: Masthead, Sidebar, Dashboard, Timetable, Aria
+│   ├── style.css              # Main design system styles and responsive layout overrides
+│   ├── popup.html             # Browser-action extension popup UI
+│   ├── popup.js               # Popup controller for presets, radius, and shadows
+│   ├── pdf_generator.js       # Revaluation answer script canvas stitcher & PDF downloader
+│   ├── shared/
+│   │   ├── aria.js            # Aria AI assistant, offline engine, and academic calendar database
+│   │   ├── theme.js           # nightTab color engine: 45 presets, 14-shade math, applyTheme
+│   │   └── tokens.css         # nightTab CSS design tokens, shadows, semantic bridge
+│   ├── lib/
+│   │   └── jspdf.umd.min.js   # Vendor library for client-side PDF generation
+│   └── icons/                 # Brand iconography (16, 32, 48, 64, 128px + SVG)
+├── tests/                     # Regression test harnesses (Node & browser)
+│   ├── aria-markdown.test.js  # Node test suite for Aria block markdown parser
+│   ├── theme-architecture.test.js # Theme preset and token calculation suite
+│   ├── fee-services.html      # Fee postback and payment proxy harness
+│   ├── aria-view.html         # Aria UI components and token harness
+│   └── biodata-overlap.html   # Profile biodata layout and wrapping harness
+├── handoff.md                 # Authoritative technical handoff document
+└── Readme.md                  # Public project documentation
 ```
 
-## Architecture
+---
 
-- **Non-destructive** — All changes are CSS overrides + injected DOM. Legacy elements are hidden, not removed. No ASP.NET postbacks or form data are touched.
-- **Inter-frame messaging** — The portal uses iframes. Data flows via `window.postMessage` (title, profile data, resize events) and `chrome.storage.local` (timetable cache, identity cache).
-- **Live updates** — The popup sends `REECAP_TOGGLE` and `REECAP_THEME` messages to content scripts for instant feedback.
-- **Runs at `document_start`** in `all_frames: true` to catch both the parent shell and child iframes.
+## Keyboard Shortcuts
 
-## Typography
-
-| Font | Usage |
+| Shortcut | Action |
 |---|---|
-| **Space Grotesk** | Headings, brand title, section titles |
-| **Inter** | Body text, data values, buttons |
-| **JetBrains Mono** | Labels, metadata, monospace elements |
+| `Ctrl + /` (or `Cmd + /`) | Open / Close Aria AI Co-Pilot |
+| `Ctrl + K` (or `Cmd + K`) | Open Quick Navigation Search Palette |
+| `Escape` | Close active modals, drawers, or Aria Co-Pilot |
+| `Enter` | Send message in Aria Composer |
+| `Shift + Enter` | Insert newline in Aria Composer |
 
-## Permissions
+---
 
-| Permission | Reason |
-|---|---|
-| `storage` | Persist toggle state, theme preference, sidebar collapse state, and cached timetable data |
-| `activeTab` | Send live toggle/theme messages to the active tab |
+## License
+
+MIT License. Designed for Aditya University students.

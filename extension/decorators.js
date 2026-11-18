@@ -166,27 +166,24 @@ function initDecorators() {
               .replace(/^(Hi|Welcome)[\.\s,:-]*/i, '')
               .trim();
 
-            const isLupelUser = (rawUserName && (
-              rawUserName.toUpperCase().includes('RATAN TEJA') ||
-              rawUserName.toUpperCase().includes('GURALA')
-            ));
-
-            const studentDisplayName = isLupelUser ? 'lupel' : (rawUserName ? rawUserName.split(' ')[0] : 'Student');
+            const parts = rawUserName ? rawUserName.split(/\s+/).filter(Boolean) : [];
+            const studentDisplayName = parts.length > 0
+              ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase()
+              : 'Student';
 
             if (rawUserName && isExtensionValid() && chrome?.storage?.local) {
               chrome.storage.local.get(['reecapIdentity'], (cur) => {
                 const prev = cur?.reecapIdentity || {};
-                const storedName = isLupelUser ? 'lupel' : rawUserName;
-                if (!prev.Name || prev.Name !== storedName) {
+                if (!prev.Name || prev.Name !== studentDisplayName) {
                   chrome.storage.local.set({
-                    reecapIdentity: { ...prev, Name: storedName, rawName: rawUserName }
+                    reecapIdentity: { ...prev, Name: studentDisplayName, rawName: rawUserName }
                   });
                 }
               });
             }
 
             lblUser.className = 'user-name';
-            lblUser.innerHTML = `<span class="greeting-prefix">Hi,</span> <span class="user-display-name">${studentDisplayName}</span>`;
+            lblUser.innerHTML = `<span class="greeting-prefix">Hi,</span> <span class="user-display-name">${escapeAttr(studentDisplayName)}</span>`;
             userCluster.appendChild(lblUser);
          }
 
@@ -2435,12 +2432,25 @@ function buildTimetableDashboard(tbl) {
   const jsDayToName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const todayName = jsDayToName[currentDayIndex];
 
-  // Build the marks/legend strip below the grid.
-  let html = `<div class="tt-grid" style="--cols: ${periodCount}" role="grid" aria-label="Weekly timetable">`;
+  let html = `
+    <div class="tt-header-bar">
+      <div class="tt-header-title">
+        <p class="eyebrow">Weekly Schedule</p>
+        <h2>Class Timetable</h2>
+      </div>
+      <div class="tt-header-hint">
+        <span class="hint-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg></span>
+        <span>Hover or focus a subject for details</span>
+      </div>
+    </div>
+  `;
 
-  html += `<div class="tt-cell tt-header" role="columnheader">Day</div>`;
-  headerLabels.forEach((label) => {
-    html += `<div class="tt-cell tt-header" role="columnheader">${escapeAttr(label)}</div>`;
+  // Desktop Matrix
+  html += `<div class="tt-grid-wrap"><div class="tt-grid" style="--cols: ${periodCount}" role="grid" aria-label="Weekly timetable">`;
+
+  html += `<div class="tt-cell tt-header tt-corner" role="columnheader">Day</div>`;
+  headerLabels.forEach((label, idx) => {
+    html += `<div class="tt-cell tt-header tt-period-head" role="columnheader"><span>${String(idx + 1).padStart(2, '0')}</span><time>${escapeAttr(label)}</time></div>`;
   });
 
   for (const day of sortedDays) {
@@ -2448,11 +2458,8 @@ function buildTimetableDashboard(tbl) {
     if (!slots) continue;
     const isToday = (day === todayName) ? 'is-today' : '';
 
-    html += `<div class="tt-cell tt-day ${isToday}">${escapeAttr(day)}</div>`;
+    html += `<div class="tt-cell tt-day ${isToday}" role="rowheader"><span>${escapeAttr(day.slice(0, 3))}</span><strong>${escapeAttr(day)}</strong></div>`;
 
-    // Tooltip placement follows the first/last actual class of the day—not
-    // period 1/last period—so leading or trailing empty cells cannot make an
-    // edge detail panel spill outside the no-scroll timetable.
     const classSlotIndexes = slots
       .map((slot, index) => slot.type === 'class' ? index : -1)
       .filter(index => index >= 0);
@@ -2462,7 +2469,7 @@ function buildTimetableDashboard(tbl) {
     for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
       const slot = slots[slotIndex];
       if (slot.type === 'empty') {
-        html += `<div class="tt-cell tt-empty ${isToday}"><span class="tt-period-label">P${slot.periodStart}</span></div>`;
+        html += `<div class="tt-cell tt-empty ${isToday}"><span class="free-label">Free</span></div>`;
         continue;
       }
       const spanStyle = slot.span > 1 ? `--span: ${slot.span};` : '';
@@ -2480,71 +2487,96 @@ function buildTimetableDashboard(tbl) {
 
       html += `
         <div class="tt-cell tt-class ${isToday}${slot.span > 1 ? ' tt-merged' : ''}${tooltipEdge}" style="${spanStyle} --palette: ${slot.palette};" tabindex="0" role="gridcell" aria-label="${escapeAttr(ttAriaLabel)}">
-          <div class="tt-period-label">${escapeAttr(periodLabel)}</div>
-          ${slot.timeRange ? `<div class="tt-time">${escapeAttr(slot.timeRange)}</div>` : ''}
-          <div class="tt-subject">${escapeAttr(slot.allCodes)}</div>
-          ${slot.details.name && slot.details.name !== slot.allCodes
-            ? `<div class="tt-subject-name">${escapeAttr(slot.details.name)}</div>`
-            : ''}
+          <div class="subject-card__top">
+            <span class="subject-card__code">${escapeAttr(slot.allCodes)}</span>
+            <span class="subject-card__dot"></span>
+          </div>
+          <h3 class="subject-card__title">${escapeAttr(slot.details.name || slot.allCodes)}</h3>
+          ${slot.timeRange ? `<time class="subject-card__time">${escapeAttr(slot.timeRange)}</time>` : ''}
 
-          <div class="tt-tooltip">
-            <div class="tt-tt-name">${escapeAttr(slot.details.name)}</div>
-            ${slot.faculty ? `<div class="tt-tt-meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>${escapeAttr(slot.faculty)}</div>` : ''}
-            ${slot.room ? `<div class="tt-tt-meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>${escapeAttr(slot.room)}</div>` : ''}
+          <div class="tt-tooltip subject-card__details">
+            <div class="detail-eyebrow">Class Details</div>
+            <strong class="detail-name">${escapeAttr(slot.details.name || slot.allCodes)}</strong>
+            ${slot.timeRange ? `<span class="detail-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span><small>Period</small>${escapeAttr(periodLabel)} (${escapeAttr(slot.timeRange)})</span></span>` : ''}
+            ${slot.faculty ? `<span class="detail-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span><small>Faculty</small>${escapeAttr(slot.faculty)}</span></span>` : ''}
+            ${slot.room ? `<span class="detail-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg><span><small>Location</small>${escapeAttr(slot.room)}</span></span>` : ''}
           </div>
         </div>
       `;
     }
   }
 
+  html += `</div></div>`;
+
+  // Responsive Mobile Schedule with interactive Day Tabs
+  const defaultSelectedDay = sortedDays.includes(todayName) ? todayName : (sortedDays[0] || 'Mon');
+  html += `<div class="tt-mobile-schedule" aria-label="Weekly timetable, day-by-day">`;
+  html += `<div class="day-tabs" role="tablist" aria-label="Select day">`;
+  sortedDays.forEach(day => {
+    if (!schedule[day]) return;
+    const isActive = day === defaultSelectedDay ? ' active' : '';
+    html += `<button type="button" role="tab" class="day-tab-btn${isActive}" data-tt-day="${escapeAttr(day)}" aria-selected="${day === defaultSelectedDay}">${escapeAttr(day.slice(0, 3))}</button>`;
+  });
   html += `</div>`;
 
-  // Phone layout trades the compressed matrix for complete, vertically flowing
-  // day sections. This keeps every source field visible without horizontal
-  // scrolling or tooltip-only information on touch devices.
-  html += `<div class="tt-mobile-schedule" aria-label="Weekly timetable, day-by-day">`;
-  for (const day of sortedDays) {
+  sortedDays.forEach(day => {
+    if (!schedule[day]) return;
+    const isDayActive = day === defaultSelectedDay ? ' active' : '';
     const slots = layoutByDay[day];
-    if (!slots) continue;
-    const isToday = day === todayName ? ' is-today' : '';
-    const classes = slots.filter(slot => slot.type === 'class');
-    html += `<section class="tt-mobile-day${isToday}"><h3>${escapeAttr(day)}</h3>`;
+    const classes = slots.filter(s => s.type === 'class');
+    html += `<div class="mobile-day-panel${isDayActive}" data-tt-panel="${escapeAttr(day)}" role="tabpanel">`;
+    html += `<div class="mobile-list__title"><strong>${escapeAttr(day)}</strong><span>${classes.length} class block${classes.length === 1 ? '' : 's'}</span></div>`;
     if (!classes.length) {
-      html += `<p class="tt-mobile-empty">No classes scheduled.</p>`;
+      html += `<p class="empty-day">No classes scheduled.</p>`;
     } else {
-      html += `<div class="tt-mobile-list">`;
+      html += `<div class="mobile-list">`;
       classes.forEach(slot => {
         const periodLabel = slot.span > 1
           ? `Period ${slot.periodStart}–${slot.periodStart + slot.span - 1}`
           : `Period ${slot.periodStart}`;
         html += `
-          <article class="tt-mobile-class" style="--palette: ${slot.palette};">
-            <div class="tt-mobile-period">${escapeAttr(periodLabel)}</div>
-            <div class="tt-mobile-main">
-              ${slot.timeRange ? `<div class="tt-mobile-time">${escapeAttr(slot.timeRange)}</div>` : ''}
-              <div class="tt-mobile-subject">${escapeAttr(slot.allCodes)}</div>
-              ${slot.details.name && slot.details.name !== slot.allCodes
-                ? `<div class="tt-mobile-name">${escapeAttr(slot.details.name)}</div>`
-                : ''}
-              ${slot.faculty ? `<div class="tt-mobile-meta">Faculty: ${escapeAttr(slot.faculty)}</div>` : ''}
-              ${slot.room ? `<div class="tt-mobile-meta">Room: ${escapeAttr(slot.room)}</div>` : ''}
+          <article class="subject-card subject-card--compact" style="--palette: ${slot.palette};">
+            <div class="subject-card__top">
+              <span class="subject-card__code">${escapeAttr(slot.allCodes)}</span>
+              <span class="subject-card__dot"></span>
             </div>
-          </article>`;
+            <h3 class="subject-card__title">${escapeAttr(slot.details.name || slot.allCodes)}</h3>
+            ${slot.timeRange ? `<time class="subject-card__time">${escapeAttr(slot.timeRange)}</time>` : ''}
+            <div class="subject-card__meta-row">
+              ${slot.faculty ? `<span><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>${escapeAttr(slot.faculty)}</span>` : ''}
+              ${slot.room ? `<span><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>${escapeAttr(slot.room)}</span>` : ''}
+            </div>
+          </article>
+        `;
       });
       html += `</div>`;
     }
-    html += `</section>`;
-  }
+    html += `</div>`;
+  });
   html += `</div>`;
+
   html += renderTimetableLegend(schedule, legendMap);
   dashboard.innerHTML = html;
+
+  // Bind interactive tab switches for mobile schedule
+  dashboard.querySelectorAll('.day-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetDay = btn.dataset.ttDay;
+      dashboard.querySelectorAll('.day-tab-btn').forEach(b => {
+        const isCurrent = b === btn;
+        b.classList.toggle('active', isCurrent);
+        b.setAttribute('aria-selected', String(isCurrent));
+      });
+      dashboard.querySelectorAll('.mobile-day-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.ttPanel === targetDay);
+      });
+    });
+  });
 
   tbl.parentElement.insertBefore(dashboard, tbl);
 }
 
 // Render a legend strip showing the legend key for every subject in the schedule.
-// Each chip uses the same palette colour as the timetable cells, so the
-// user can map a coloured block back to its name without reading the tooltip.
 function renderTimetableLegend(schedule, legendMap) {
   const seen = new Map();
   Object.values(schedule).forEach((daySlots) => {
@@ -2556,14 +2588,30 @@ function renderTimetableLegend(schedule, legendMap) {
   });
   if (seen.size === 0) return '';
   const PALETTE_SIZE = 12;
-  let legendHtml = '<div class="tt-legend">';
+  let legendHtml = `
+    <div class="tt-legend-section">
+      <div class="legend__intro">
+        <p class="eyebrow">Color Guide</p>
+        <h2>Know Your Subjects</h2>
+        <p>Each course has its own distinct color identity, so you can spot it anywhere across your week.</p>
+      </div>
+      <div class="legend__grid">
+  `;
   Array.from(seen.entries()).forEach(([code, details]) => {
     let hash = 5381;
     for (let i = 0; i < code.length; i++) hash = ((hash << 5) + hash + code.charCodeAt(i)) | 0;
     const palette = Math.abs(hash) % PALETTE_SIZE;
-    legendHtml += `<span class="tt-legend-chip" style="--palette: ${palette};" title="${escapeAttr(details.name)}"><span class="tt-legend-dot"></span><span class="tt-legend-code">${escapeAttr(code)}</span><span class="tt-legend-name">${escapeAttr(details.name || code)}</span></span>`;
+    legendHtml += `
+      <div class="legend-item" style="--palette: ${palette};" title="${escapeAttr(details.name || code)}">
+        <span class="legend-badge">${escapeAttr(code)}</span>
+        <div class="legend-meta">
+          <strong>${escapeAttr(details.name || code)}</strong>
+          ${details.faculty ? `<small>${escapeAttr(details.faculty)}</small>` : ''}
+        </div>
+      </div>
+    `;
   });
-  legendHtml += '</div>';
+  legendHtml += '</div></div>';
   return legendHtml;
 }
 
@@ -4495,12 +4543,21 @@ function buildSidebar() {
           const legacyArrow = a.querySelector('.arrow');
           if (legacyArrow) legacyArrow.remove();
 
-          // Toggle logic
+          // Toggle logic (Accordion: only one open submenu at a time)
           a.addEventListener('click', (e) => {
             e.preventDefault();
-            const isExpanded = a.getAttribute('aria-expanded') === 'true';
-            a.setAttribute('aria-expanded', !isExpanded);
-            li.classList.toggle('is-expanded');
+            const willExpand = a.getAttribute('aria-expanded') !== 'true';
+            if (willExpand) {
+              listItems.forEach(otherLi => {
+                if (otherLi !== li && otherLi.classList.contains('has-submenu')) {
+                  const otherA = otherLi.querySelector('.reecap-accordion-toggle');
+                  if (otherA) otherA.setAttribute('aria-expanded', 'false');
+                  otherLi.classList.remove('is-expanded');
+                }
+              });
+            }
+            a.setAttribute('aria-expanded', String(willExpand));
+            li.classList.toggle('is-expanded', willExpand);
           });
         }
       }
@@ -4777,8 +4834,7 @@ function buildSidebar() {
 
         a.title = item.text;
         const isCal = item.text.includes('CALENDAR') || item.text.includes('CALENDER');
-        const badgeHtml = isCal ? '<span class="reecap-sidebar-subbadge">Sem III</span>' : '';
-        a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>${badgeHtml}`;
+        a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>`;
         a.addEventListener('click', (e) => {
           if (isCal) {
             e.preventDefault();
@@ -4810,8 +4866,28 @@ function buildSidebar() {
       setGroupCollapsed(sidebarOpen[groupName] === false);
 
       groupHeader.addEventListener('click', () => {
-        const isCollapsed = !groupHeader.classList.contains('is-collapsed');
-        setGroupCollapsed(isCollapsed);
+        const willBeCollapsed = !groupHeader.classList.contains('is-collapsed');
+
+        if (!willBeCollapsed) {
+          // Accordion: collapse all other groups first so only one section is open at a time
+          const allHeaders = menu.querySelectorAll('.reecap-sidebar-group');
+          allHeaders.forEach(otherH => {
+            if (otherH !== groupHeader) {
+              const otherSectionId = otherH.getAttribute('aria-controls');
+              const otherSection = otherSectionId ? document.getElementById(otherSectionId) : null;
+              otherH.classList.add('is-collapsed');
+              otherH.setAttribute('aria-expanded', 'false');
+              if (otherSection) {
+                otherSection.classList.add('is-collapsed');
+                otherSection.setAttribute('aria-hidden', 'true');
+                const inner = otherSection.querySelector('.reecap-sidebar-section-inner');
+                if (inner) inner.inert = true;
+              }
+            }
+          });
+        }
+
+        setGroupCollapsed(willBeCollapsed);
 
         if (typeof chrome === 'undefined' || !chrome.runtime?.id || !chrome.storage?.sync) return;
 
@@ -4820,7 +4896,9 @@ function buildSidebar() {
             try {
               if (!chrome.runtime?.id || chrome.runtime.lastError) return;
               const currentSidebarOpen = data.sidebarOpen || {};
-              currentSidebarOpen[groupName] = !isCollapsed;
+              Object.keys(categorized).forEach(g => {
+                currentSidebarOpen[g] = (g === groupName) ? !willBeCollapsed : false;
+              });
               chrome.storage.sync.set({ sidebarOpen: currentSidebarOpen }, () => {
                 void chrome.runtime?.lastError;
               });
@@ -6505,13 +6583,14 @@ function updateAriaWelcome(dossier) {
   if (!welcomeCard) return;
 
   const rawName = dossier?.identity?.name || '';
-  const name = rawName.toUpperCase().includes('RATAN TEJA') ? 'Ratan Teja' : (rawName ? rawName.split(' ')[0] : 'there');
-  const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? dossier.academic.cgpa : '7.56';
+  const name = rawName ? rawName.split(' ')[0] : 'there';
+  const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? dossier.academic.cgpa : '--';
   let attPct = dossier?.attendance?.overallPercent;
   if ((!attPct || attPct === '--') && dossier?.attendance?.held > 0 && dossier?.attendance?.attended !== undefined && dossier.attendance.attended !== '--') {
     attPct = Number(((parseFloat(dossier.attendance.attended) / parseFloat(dossier.attendance.held)) * 100).toFixed(1));
   }
-  const attDisplay = (attPct && attPct !== '--') ? `${attPct}%` : '93.1%';
+  const attDisplay = (attPct && attPct !== '--') ? `${attPct}%` : '--%';
+  const backlogs = dossier?.backlogs !== undefined ? `${dossier.backlogs} Backlogs` : 'Zero Backlogs';
 
   welcomeCard.innerHTML = `
     <div class="aria-welcome-hero">
@@ -6520,7 +6599,7 @@ function updateAriaWelcome(dossier) {
         <strong style="font-size: 13.5px; color: var(--text-primary); letter-spacing: -0.01em;">Academic Co-Pilot Ready</strong>
       </div>
       <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
-        Hello <strong>${name}</strong>! Connected to live Aditya University records. Your standing shows <strong>${cgpa} CGPA</strong> (${attDisplay} Attendance • Zero Backlogs).
+        Hello <strong>${escapeAttr(name)}</strong>! Connected to live Aditya University records. Your standing shows <strong>${escapeAttr(cgpa)} CGPA</strong> (${escapeAttr(attDisplay)} Attendance • ${escapeAttr(backlogs)}).
       </p>
       <div style="display: flex; flex-wrap: wrap; gap: 6px;">
         <button type="button" class="aria-action-chip" data-action="weak_subjects"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg><span class="chip-label">Weak Subjects Audit</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -6773,13 +6852,14 @@ async function loadInitialWelcome() {
 
   const dossier = (window.__reecap_aria && isExtensionValid()) ? await window.__reecap_aria.getStudentDossier() : null;
   const rawName = dossier?.identity?.name || '';
-  const name = rawName.toUpperCase().includes('RATAN TEJA') ? 'Ratan Teja' : (rawName ? rawName.split(' ')[0] : 'there');
-  const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? dossier.academic.cgpa : '7.56';
+  const name = rawName ? rawName.split(' ')[0] : 'there';
+  const cgpa = dossier?.academic?.cgpa && dossier.academic.cgpa !== '--' ? dossier.academic.cgpa : '--';
   let attPct = dossier?.attendance?.overallPercent;
   if ((!attPct || attPct === '--') && dossier?.attendance?.held > 0 && dossier?.attendance?.attended !== undefined && dossier.attendance.attended !== '--') {
     attPct = Number(((parseFloat(dossier.attendance.attended) / parseFloat(dossier.attendance.held)) * 100).toFixed(1));
   }
-  const attDisplay = (attPct && attPct !== '--') ? `${attPct}%` : '93.1%';
+  const attDisplay = (attPct && attPct !== '--') ? `${attPct}%` : '--%';
+  const backlogs = dossier?.backlogs !== undefined ? `${dossier.backlogs} Backlogs` : 'Zero Backlogs';
 
   const welcomeHtml = `
     <div class="aria-msg msg-assistant">
@@ -6789,7 +6869,7 @@ async function loadInitialWelcome() {
           <strong style="font-size: 13.5px; color: var(--text-primary); letter-spacing: -0.01em;">Academic Co-Pilot Ready</strong>
         </div>
         <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
-          Hello <strong>${name}</strong>! Connected to live Aditya University records. Your standing shows <strong>${cgpa} CGPA</strong> (${attDisplay} Attendance • Zero Backlogs).
+          Hello <strong>${escapeAttr(name)}</strong>! Connected to live Aditya University records. Your standing shows <strong>${escapeAttr(cgpa)} CGPA</strong> (${escapeAttr(attDisplay)} Attendance • ${escapeAttr(backlogs)}).
         </p>
         <div style="display: flex; flex-wrap: wrap; gap: 6px;">
           <button type="button" class="aria-action-chip" data-action="weak_subjects"><svg class="chip-glyph" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg><span class="chip-label">Weak Subjects Audit</span><svg class="chip-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>

@@ -16,23 +16,23 @@
   <div id="divProfile_BioData">
     <table>
       <tr>
-        <td>RollNo</td><td>:</td><td>25B11DS190</td>
-        <td>Name</td><td>:</td><td>lupel</td>
+        <td>RollNo</td><td>:</td><td>23A91A0501</td>
+        <td>Name</td><td>:</td><td>Sample Student</td>
       </tr>
       <tr>
         <td>Phone.No</td><td>:</td><td></td>
-        <td>Email</td><td>:</td><td>25B11DS190@adityauniversity.in</td>
+        <td>Email</td><td>:</td><td>student@adityauniversity.in</td>
       </tr>
       <tr>
-        <td>Father Name</td><td>:</td><td>RAJENDRA KUMAR (9912331156) - teacher</td>
-        <td>Mother Name</td><td>:</td><td>RAJA KUMARI (9912162167) - HOUSE WIFE</td>
+        <td>Father Name</td><td>:</td><td>PARENT ONE (9876543210) - Engineer</td>
+        <td>Mother Name</td><td>:</td><td>PARENT TWO (9876543211) - Doctor</td>
       </tr>
       <tr>
         <td>Correspondence Address</td><td>:</td><td></td>
-        <td>Permanent Address</td><td>:</td><td>4-3-39/RKBOJJA VARI THOTAPITHAPURAMA_PithapuramA_KakinadaA_Andhra PradeshA_INDIA533450</td>
+        <td>Permanent Address</td><td>:</td><td>1-2-3 CAMPUS ROAD_Tech Valley_Kakinada_Andhra Pradesh_INDIA533001</td>
       </tr>
       <tr>
-        <td>Guardian Address</td><td>:</td><td>-Parent's Details4-3-39/RKBOJJA VARI THOTAPITHAPURAMA_PithapuramA_KakinadaA_Andhra PradeshA_INDIA533450</td>
+        <td>Guardian Address</td><td>:</td><td>-Parent's Details1-2-3 CAMPUS ROAD_Tech Valley_Kakinada_Andhra Pradesh_INDIA533001</td>
       </tr>
     </table>
   </div>
@@ -55,11 +55,11 @@
 
     check('Production renderer creates one redesigned biodata view', root && pane.querySelectorAll('.reecap-biodata').length === 1);
     check('Legacy table is hidden only after successful parsing', getComputedStyle(pane.querySelector('table')).display === 'none');
-    check('Roll number is preserved', valueFor('Roll No')?.textContent === '25B11DS190');
+    check('Roll number is preserved', valueFor('Roll No')?.textContent === '23A91A0501');
 
     const guardianText = valueFor('Guardian Details')?.textContent || '';
     check('Guardian section label is removed', !/Parent(?:'|’)?s\s+Details/i.test(guardianText));
-    check('Guardian address data is preserved', guardianText.startsWith('4-3-39/RKBOJJA VARI'));
+    check('Guardian address data is preserved', guardianText.startsWith('1-2-3 CAMPUS ROAD'));
 
     const responsive = [900, 320, 180].map(requestedWidth => {
       pane.style.width = `${requestedWidth}px`;

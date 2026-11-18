@@ -313,10 +313,7 @@ const ADITYA_ACADEMIC_CALENDAR = {
 
             const rollNo = id.RollNo || id.rollNo || '';
             const rawParsedName = id.Name || id.name || getActiveStudentNameFromDom() || '';
-            const isLupelUser = (rollNo && rollNo.toUpperCase() === '25B11DS190') ||
-                                rawParsedName.toUpperCase().includes('RATAN TEJA') ||
-                                rawParsedName.toUpperCase().includes('GURALA');
-            const name = isLupelUser ? 'lupel' : rawParsedName;
+            const name = rawParsedName || 'Student';
             const course = id.Course || '';
             const branch = id.Branch || '';
             const sem = id.Semester || '';
@@ -966,26 +963,15 @@ const ADITYA_ACADEMIC_CALENDAR = {
       }).join('\n\n');
     }
     if (!validCourses.length) {
-      gradesSummary = `Current CGPA is ${acad.cgpa || '7.56'} (${acad.credits || '41/41'} credits cleared, Zero Backlogs). Core completed courses include:
-- Digital Logic Design (Grade B, 6.0 pts)
-- Basic Electrical Engineering (Grade B, 6.0 pts)
-- Programming for Problem Solving Using C (Grade B+, 7.0 pts)
-- Data Structures (Grade B+, 7.0 pts)
-- Modern Physics (Grade B+, 7.0 pts)
-- Linear Algebra (Grade B+, 7.0 pts)
-- Python Programming (Grade A+, 9.0 pts)
-- Computer Organization & Architecture (Grade A, 8.0 pts)
-- Differential Equations & Vector Calculus (Grade A, 8.0 pts)`;
+      gradesSummary = acad.cgpa && acad.cgpa !== '--'
+        ? `Current CGPA is ${acad.cgpa} (${acad.credits || '--'} credits cleared, ${dossier.backlogs || 0} Backlogs).`
+        : 'No formal grades recorded yet.';
     }
 
     const rawName = id.name || getActiveStudentNameFromDom() || '';
-    const isLupelUser = (id.rollNo && id.rollNo.toUpperCase() === '25B11DS190') ||
-                        rawName.toUpperCase().includes('RATAN TEJA') ||
-                        rawName.toUpperCase().includes('GURALA');
-
-    const studentDisplayName = isLupelUser ? 'lupel' : (rawName ? rawName.split(' ')[0] : 'Student');
-    const studentFullName = isLupelUser ? 'lupel' : (rawName || 'Student');
-    const studentName = studentDisplayName;
+    const studentDisplayName = isCloud ? 'Student' : (rawName ? rawName.split(' ')[0] : 'Student');
+    const studentFullName = isCloud ? 'Student' : (rawName || 'Student');
+    const studentRollNo = isCloud ? '[REDACTED]' : (id.rollNo || 'Not specified');
 
     let curSemKey = 'III';
     if (id.semester) {
@@ -997,12 +983,12 @@ const ADITYA_ACADEMIC_CALENDAR = {
       .join('\n');
 
     return `You are Aria, an intelligent academic co-pilot and portal assistant embedded directly into ReEcap for Aditya University students.
-You were built by lupel (an Aditya University Data Science student) to guide students through their academics, analyze their performance, and help them navigate their student portal.
+You are built to guide students through their academics, analyze their performance, and help them navigate their student portal.
 
 [CURRENT STUDENT DOSSIER]:
 - Name: ${studentDisplayName} (Full Name: ${studentFullName})
 - Address the student directly as: "${studentDisplayName}" (always call them "${studentDisplayName}" when speaking to them)
-- Roll Number: ${id.rollNo || 'Not specified'}
+- Roll Number: ${studentRollNo}
 - Branch / Course: ${id.branch || id.course || 'Aditya University'}
 - Current Semester: ${id.semester || curSemKey}
 - Overall CGPA: ${acad.cgpa} (Credits: ${acad.credits}, Passed: ${acad.passed}, Failed: ${acad.failed})
@@ -1027,7 +1013,7 @@ ${calList || '- Semester End Theory Exams: 16.11.2026 to 28.11.2026\n- Results: 
 - 10-point scale: O(10), S/A+(9), A(8), B(7), C(6), P/D(5), F(0). NAAC A++ Autonomous Institution.
 
 [YOUR CORE ROLES]:
-1. ACADEMIC ADVISOR: Always refer to the student strictly as "${studentDisplayName}" (never use any other surname). Analyze grades, identify weak subjects (courses with Grade B or below: Digital Logic Design, Basic Electrical Engineering), evaluate internal test patterns, and suggest practical study strategies. Never dismiss the student or say you cannot identify weak subjects.
+1. ACADEMIC ADVISOR: Always refer to the student strictly as "${studentDisplayName}" (never use any other surname). Analyze grades, identify weak subjects (courses with Grade B or below), evaluate internal test patterns, and suggest practical study strategies. Never dismiss the student or say you cannot identify weak subjects.
 2. ATTENDANCE STRATEGIST: Calculate precise bunk allowances or mandatory attendance targets using the 75% formula.
 3. PORTAL NAVIGATOR: Guide the student to the exact sections of ReEcap.
 
@@ -1044,13 +1030,27 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
   }
 
   /**
+   * Scrubs personal identifying details (roll numbers, emails) from text prior to cloud transmission.
+   */
+  function scrubPersonalDetails(text) {
+    if (!text || typeof text !== 'string') return text;
+    return text
+      .replace(/\b2[0-9][A-Za-z0-9]{8}\b/gi, '[STUDENT_ROLL_NO]')
+      .replace(/[a-zA-Z0-9._%+-]+@(adityauniversity\.in|aec\.edu\.in)/gi, '[STUDENT_EMAIL]');
+  }
+
+  /**
    * Streams a query to Aria AI edge endpoint with automatic fallback.
    */
   async function streamAriaChat({ messages, dossier, onChunk, onDone, onError }) {
-    const systemPrompt = buildSystemPrompt(dossier);
+    const systemPrompt = buildSystemPrompt(dossier, true);
+    const scrubbedMessages = (messages || []).map(m => ({
+      role: m.role,
+      content: scrubPersonalDetails(m.content)
+    }));
     const payloadMessages = [
       { role: 'system', content: systemPrompt },
-      ...messages
+      ...scrubbedMessages
     ];
 
     try {
@@ -1349,10 +1349,7 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
     }
 
     const rawName = dossier.identity?.name || getActiveStudentNameFromDom() || '';
-    const isLupelUser = (dossier.identity?.rollNo && dossier.identity.rollNo.toUpperCase() === '25B11DS190') ||
-                        rawName.toUpperCase().includes('RATAN TEJA') ||
-                        rawName.toUpperCase().includes('GURALA');
-    const cleanName = isLupelUser ? 'lupel' : (rawName ? rawName.split(' ')[0] : 'Student');
+    const cleanName = rawName ? rawName.split(' ')[0] : 'Student';
 
     return `Hello ${cleanName}! I am **Aria**, your academic co-pilot in ReEcap.\n\n` +
       `Here is a quick snapshot of your records:\n` +
