@@ -5453,9 +5453,29 @@ function renderScheduleCard(container, timetableData, previousCard = null) {
       faculty = 'Scheduled Session';
     }
 
-    const timeParts = (period.timeRange || '').split(/[-–to]/i);
-    const timeStart = timeParts[0]?.trim() || `Period ${idx + 1}`;
-    const timeEnd = timeParts[1]?.trim() || '';
+    const STANDARD_TIMINGS = [
+      { start: "09:30 AM", end: "10:20 AM" },
+      { start: "10:20 AM", end: "11:10 AM" },
+      { start: "11:10 AM", end: "12:00 PM" },
+      { start: "01:00 PM", end: "01:50 PM" },
+      { start: "01:50 PM", end: "02:40 PM" },
+      { start: "02:50 PM", end: "03:40 PM" },
+      { start: "03:40 PM", end: "04:20 PM" }
+    ];
+
+    let timeStart = '';
+    let timeEnd = '';
+
+    if (period.timeRange && /\d{1,2}:\d{2}/.test(period.timeRange)) {
+      const timeParts = period.timeRange.split(/[-–to]/i);
+      timeStart = timeParts[0]?.trim() || '';
+      timeEnd = timeParts[1]?.trim() || '';
+    } else if (STANDARD_TIMINGS[idx]) {
+      timeStart = STANDARD_TIMINGS[idx].start;
+      timeEnd = STANDARD_TIMINGS[idx].end;
+    } else {
+      timeStart = `P${idx + 1}`;
+    }
 
     rowsHtml += `
       <div class="schedule-row ${isActive ? 'is-active' : ''}">
