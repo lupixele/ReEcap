@@ -311,6 +311,11 @@ function initDecorators() {
       handleBacklogsPortalPage();
     }
 
+    // 5c. Academic Calendar Report — academiccalenderreport.aspx
+    if (currentRoute.includes('academiccalenderreport') || currentRoute.includes('academiccalendar') || currentRoute.includes('academiccalender')) {
+      handleAcademicCalendarPage();
+    }
+
     // 5c. Universal Portal Error Interceptor
     observeAndRecoverServerError();
 
@@ -1507,41 +1512,222 @@ function handleOnlineTransactionsPage() {
 // Semester Academic Calendar Page (academiccalenderreport.aspx) Redesign
 // ────────────────────────────────────────────────────────────────
 
-function handleAcademicCalendarPage() {
-  if (document.getElementById('reecap-calendar-hub')) return;
-
-  // Hide legacy elements
-  Array.from(document.body.children).forEach(c => {
-    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
-      c.style.setProperty('display', 'none', 'important');
-    }
-  });
-
-  if (window.parent && window.parent.postMessage) {
-    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'SEMESTER CALENDAR' }, '*');
+const OFFICIAL_ADITYA_CALENDAR_FALLBACK = {
+  batch: 'B.Tech 2025-2029',
+  currentSemester: 'III',
+  semesters: {
+    'I': [
+      { description: "Student Induction Program", from: "04.08.2025", to: "23.08.2025" },
+      { description: "Registration to I Semester Courses", from: "11.08.2025", to: "16.08.2025" },
+      { description: "Commencement of Class Work", from: "25.08.2025", to: "25.08.2025" },
+      { description: "Last date to register or drop a Course", from: "01.09.2025", to: "01.09.2025" },
+      { description: "Internal Examinations –I", from: "22.10.2025", to: "24.10.2025" },
+      { description: "Finalization of Detentions based on attendance", from: "13.12.2025", to: "13.12.2025" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "15.12.2025", to: "17.12.2025" },
+      { description: "Internal Examinations –II", from: "22.12.2025", to: "24.12.2025" },
+      { description: "Makeup Internal Examinations", from: "26.12.2025", to: "27.12.2025" },
+      { description: "Semester End Examinations – Theory", from: "29.12.2025", to: "10.01.2026" },
+      { description: "Semester End Examinations – Lab", from: "19.01.2026", to: "24.01.2026" },
+      { description: "Declaration of Results", from: "07.02.2026", to: "07.02.2026" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "07.02.2026", to: "11.02.2026" },
+      { description: "Declaration of Revaluation results", from: "18.02.2026", to: "18.02.2026" },
+      { description: "Availability of Online Grade Sheet", from: "28.02.2026", to: "28.02.2026" },
+      { description: "Commencement of II Semester", from: "27.01.2026", to: "27.01.2026" }
+    ],
+    'II': [
+      { description: "Registration to II Semester Courses", from: "05.01.2026", to: "10.01.2026" },
+      { description: "Commencement of Class Work", from: "27.01.2026", to: "27.01.2026" },
+      { description: "Last date to register or drop a Course", from: "03.02.2026", to: "03.02.2026" },
+      { description: "Internal Examinations –I", from: "17.03.2026", to: "20.03.2026" },
+      { description: "Summer Vacation", from: "18.05.2026", to: "30.05.2026" },
+      { description: "Finalization of Detentions based on attendance", from: "23.05.2026", to: "23.05.2026" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "25.05.2026", to: "27.05.2026" },
+      { description: "Internal Examinations –II", from: "01.06.2026", to: "03.06.2026" },
+      { description: "Makeup Internal Examinations", from: "04.06.2026", to: "06.06.2026" },
+      { description: "Semester End Examinations – Lab", from: "08.06.2026", to: "13.06.2026" },
+      { description: "Semester End Examinations – Theory", from: "15.06.2026", to: "27.06.2026" },
+      { description: "Declaration of Results", from: "11.07.2026", to: "11.07.2026" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "11.07.2026", to: "15.07.2026" },
+      { description: "Declaration of Revaluation results", from: "22.07.2026", to: "22.07.2026" },
+      { description: "Availability of Online Grade Sheet", from: "01.08.2026", to: "01.08.2026" },
+      { description: "Commencement of III Semester", from: "29.06.2026", to: "29.06.2026" }
+    ],
+    'III': [
+      { description: "Registration to III Semester Courses", from: "08.06.2026", to: "13.06.2026" },
+      { description: "Commencement of Class Work", from: "29.06.2026", to: "29.06.2026" },
+      { description: "Last date to register or drop a Course", from: "06.07.2026", to: "06.07.2026" },
+      { description: "Internal Examinations –I", from: "19.08.2026", to: "21.08.2026" },
+      { description: "Finalization of Detentions based on attendance", from: "24.10.2026", to: "24.10.2026" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "26.10.2026", to: "28.10.2026" },
+      { description: "Internal Examinations –II", from: "02.11.2026", to: "04.11.2026" },
+      { description: "Makeup Internal Examinations", from: "05.11.2026", to: "07.11.2026" },
+      { description: "Semester End Examinations – Lab", from: "09.11.2026", to: "14.11.2026" },
+      { description: "Semester End Examinations – Theory", from: "16.11.2026", to: "28.11.2026" },
+      { description: "Declaration of Results", from: "12.12.2026", to: "12.12.2026" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "12.12.2026", to: "16.12.2026" },
+      { description: "Declaration of Revaluation results", from: "23.12.2026", to: "23.12.2026" },
+      { description: "Availability of Online Grade Sheet", from: "02.01.2027", to: "02.01.2027" },
+      { description: "Commencement of IV Semester", from: "30.11.2026", to: "30.11.2026" }
+    ],
+    'IV': [
+      { description: "Registration to IV Semester Courses", from: "09.11.2026", to: "14.11.2026" },
+      { description: "Commencement of Class Work", from: "30.11.2026", to: "30.11.2026" },
+      { description: "Last date to register or drop a Course", from: "07.12.2026", to: "07.12.2026" },
+      { description: "Internal Examinations –I", from: "27.01.2027", to: "29.01.2027" },
+      { description: "Finalization of Detentions based on attendance", from: "27.03.2027", to: "27.03.2027" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "29.03.2027", to: "31.03.2027" },
+      { description: "Internal Examinations –II", from: "05.04.2027", to: "07.04.2027" },
+      { description: "Makeup Internal Examinations", from: "09.04.2027", to: "10.04.2027" },
+      { description: "Semester End Examinations – Lab", from: "12.04.2027", to: "17.04.2027" },
+      { description: "Semester End Examinations – Theory", from: "19.04.2027", to: "01.05.2027" },
+      { description: "Declaration of Results", from: "15.05.2027", to: "15.05.2027" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "15.05.2027", to: "19.05.2027" },
+      { description: "Declaration of Revaluation results", from: "26.05.2027", to: "26.05.2027" },
+      { description: "Availability of Online Grade Sheet", from: "05.06.2027", to: "05.06.2027" },
+      { description: "Commencement of Summer Semester", from: "03.05.2027", to: "03.05.2027" },
+      { description: "Commencement of V Semester", from: "28.06.2027", to: "28.06.2027" }
+    ],
+    'Summer-2027': [
+      { description: "Registration to Courses with fee", from: "12.04.2027", to: "17.04.2027" },
+      { description: "Commencement of Class Work", from: "03.05.2027", to: "03.05.2027" },
+      { description: "Internal Examinations – I", from: "26.05.2027", to: "28.05.2027" },
+      { description: "Internal Examinations – II", from: "14.06.2027", to: "17.06.2027" },
+      { description: "Semester End Examinations – Lab", from: "18.06.2027", to: "19.06.2027" },
+      { description: "Semester End Examinations – Theory", from: "21.06.2027", to: "26.06.2027" },
+      { description: "Declaration of Results", from: "03.07.2027", to: "03.07.2027" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "03.07.2027", to: "07.07.2027" },
+      { description: "Declaration of Revaluation results", from: "14.07.2027", to: "14.07.2027" },
+      { description: "Availability of Online Grade Sheet", from: "24.07.2027", to: "24.07.2027" },
+      { description: "Commencement of V Semester Class Work", from: "28.06.2027", to: "28.06.2027" }
+    ],
+    'V': [
+      { description: "Registration to V Semester Courses", from: "07.06.2027", to: "12.06.2027" },
+      { description: "Commencement of Class Work", from: "28.06.2027", to: "28.06.2027" },
+      { description: "Last date to register or drop a Course", from: "05.07.2027", to: "05.07.2027" },
+      { description: "Internal Examinations –I", from: "18.08.2027", to: "20.08.2027" },
+      { description: "Finalization of Detentions based on attendance", from: "23.10.2027", to: "23.10.2027" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "25.10.2027", to: "27.10.2027" },
+      { description: "Internal Examinations –II", from: "01.11.2027", to: "03.11.2027" },
+      { description: "Makeup Internal Examinations", from: "04.11.2027", to: "06.11.2027" },
+      { description: "Semester End Examinations – Lab", from: "08.11.2027", to: "13.11.2027" },
+      { description: "Semester End Examinations – Theory", from: "15.11.2027", to: "27.11.2027" },
+      { description: "Declaration of Results", from: "11.12.2027", to: "11.12.2027" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "11.12.2027", to: "15.12.2027" },
+      { description: "Declaration of Revaluation results", from: "22.12.2027", to: "22.12.2027" },
+      { description: "Availability of Online Grade Sheet", from: "01.01.2028", to: "01.01.2028" },
+      { description: "Commencement of VI Semester", from: "29.11.2027", to: "29.11.2027" }
+    ],
+    'VI': [
+      { description: "Registration to VI Semester Courses", from: "08.11.2027", to: "13.11.2027" },
+      { description: "Commencement of Class Work", from: "29.11.2027", to: "29.11.2027" },
+      { description: "Last date to register or drop a Course", from: "06.12.2027", to: "06.12.2027" },
+      { description: "Internal Examinations –I", from: "25.01.2028", to: "28.01.2028" },
+      { description: "Finalization of Detentions based on attendance", from: "25.03.2028", to: "25.03.2028" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "27.03.2028", to: "29.03.2028" },
+      { description: "Internal Examinations –II", from: "03.04.2028", to: "06.04.2028" },
+      { description: "Makeup Internal Examinations", from: "07.04.2028", to: "08.04.2028" },
+      { description: "Semester End Examinations – Lab", from: "10.04.2028", to: "15.04.2028" },
+      { description: "Semester End Examinations – Theory", from: "17.04.2028", to: "29.04.2028" },
+      { description: "Declaration of Results", from: "13.05.2028", to: "13.05.2028" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "13.05.2028", to: "17.05.2028" },
+      { description: "Declaration of Revaluation results", from: "24.05.2028", to: "24.05.2028" },
+      { description: "Availability of Online Grade Sheet", from: "03.06.2028", to: "03.06.2028" },
+      { description: "Commencement of Summer Semester", from: "01.05.2028", to: "01.05.2028" },
+      { description: "Commencement of VII Semester", from: "26.06.2028", to: "26.06.2028" }
+    ],
+    'Summer-2028': [
+      { description: "Registration to Courses with fee", from: "10.04.2028", to: "15.04.2028" },
+      { description: "Commencement of Class Work", from: "01.05.2028", to: "01.05.2028" },
+      { description: "Internal Examinations – I", from: "24.05.2028", to: "26.05.2028" },
+      { description: "Internal Examinations – II", from: "12.06.2028", to: "14.06.2028" },
+      { description: "Semester End Examinations – Lab", from: "15.06.2028", to: "17.06.2028" },
+      { description: "Semester End Examinations – Theory", from: "19.06.2028", to: "24.06.2028" },
+      { description: "Declaration of Results", from: "01.07.2028", to: "01.07.2028" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "01.07.2028", to: "05.07.2028" },
+      { description: "Declaration of Revaluation results", from: "12.07.2028", to: "12.07.2028" },
+      { description: "Availability of Online Grade Sheet", from: "22.07.2028", to: "22.07.2028" },
+      { description: "Commencement of VII Semester Class Work", from: "26.06.2028", to: "26.06.2028" }
+    ],
+    'VII': [
+      { description: "Registration to VII Semester Courses", from: "05.06.2028", to: "10.06.2028" },
+      { description: "Commencement of Class Work", from: "26.06.2028", to: "26.06.2028" },
+      { description: "Last date to register or drop a Course", from: "03.07.2028", to: "03.07.2028" },
+      { description: "Internal Examinations –I", from: "16.08.2028", to: "18.08.2028" },
+      { description: "Finalization of Detentions based on attendance", from: "21.10.2028", to: "21.10.2028" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "23.10.2028", to: "25.10.2028" },
+      { description: "Internal Examinations –II", from: "30.10.2028", to: "01.11.2028" },
+      { description: "Makeup Internal Examinations", from: "02.10.2028", to: "04.11.2028" },
+      { description: "Semester End Examinations – Lab", from: "06.10.2028", to: "11.11.2028" },
+      { description: "Semester End Examinations – Theory", from: "13.11.2028", to: "25.11.2028" },
+      { description: "Declaration of Results", from: "09.12.2028", to: "09.12.2028" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "09.12.2028", to: "13.12.2028" },
+      { description: "Declaration of Revaluation results", from: "20.12.2028", to: "20.12.2028" },
+      { description: "Availability of Online Grade Sheet", from: "30.12.2028", to: "30.12.2028" },
+      { description: "Commencement of VIII Semester", from: "27.11.2028", to: "27.11.2028" }
+    ],
+    'VIII': [
+      { description: "Registration to VIII Semester Courses", from: "06.11.2028", to: "11.11.2028" },
+      { description: "Commencement of Project work / Full Semester Internship", from: "27.11.2028", to: "27.11.2028" },
+      { description: "Last date to register or drop a Course", from: "04.12.2028", to: "04.12.2028" },
+      { description: "Finalization of Detentions based on attendance", from: "17.03.2029", to: "17.03.2029" },
+      { description: "Payment of Semester End Examination (SEE) fee", from: "19.03.2029", to: "21.03.2029" },
+      { description: "Semester End Examinations", from: "02.04.2029", to: "13.04.2029" },
+      { description: "Declaration of Results", from: "28.04.2029", to: "28.04.2029" },
+      { description: "Availability of Online Grade Sheet", from: "19.05.2029", to: "19.05.2029" }
+    ]
   }
+};
 
-  const container = document.createElement('div');
-  container.id = 'reecap-calendar-hub';
-  container.className = 'calendar-redesign';
-  container.style.padding = '24px';
-  container.style.maxWidth = '1120px';
-  container.style.margin = '0 auto';
-  container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+function renderAcademicCalendarHub(container) {
+  if (!container) return;
 
   const calData = (window.__reecap_calendar && window.__reecap_calendar.semesters)
     ? window.__reecap_calendar.semesters
-    : {};
+    : (window.parent?.__reecap_calendar?.semesters || OFFICIAL_ADITYA_CALENDAR_FALLBACK.semesters);
 
   const semKeys = Object.keys(calData);
-  let activeSem = 'II';
+  let activeSem = 'III';
   if (!calData[activeSem] && semKeys.length > 0) activeSem = semKeys[0];
+  let searchQuery = '';
 
-  function renderCalendarView() {
-    const milestones = calData[activeSem] || [];
+  function parseCalDate(str) {
+    if (!str) return null;
+    const parts = str.trim().split('.');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+    }
+    return null;
+  }
 
-    let tabsHtml = semKeys.map(k => {
-      const isCur = (k === 'II');
+  function getStatus(m, sem) {
+    const now = new Date();
+    const fromDate = parseCalDate(m.from);
+    const toDate = parseCalDate(m.to) || fromDate;
+
+    if (sem === 'I' || sem === 'II') {
+      return { label: 'Completed', cls: 'status-pill-pass' };
+    }
+    if (toDate) {
+      const end = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59);
+      if (now > end) return { label: 'Completed', cls: 'status-pill-pass' };
+    }
+    if (fromDate && toDate) {
+      const start = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0);
+      const end = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59);
+      if (now >= start && now <= end) return { label: 'In Progress', cls: 'status-pill-active' };
+    }
+    return { label: 'Scheduled', cls: 'status-pill-neutral' };
+  }
+
+  function updateView() {
+    const allMilestones = calData[activeSem] || [];
+    const q = searchQuery.toLowerCase().trim();
+    const milestones = q
+      ? allMilestones.filter(m => m.description.toLowerCase().includes(q) || m.from.includes(q) || m.to.includes(q))
+      : allMilestones;
+
+    const tabsHtml = semKeys.map(k => {
+      const isCur = (k === 'III');
       const isSelected = (k === activeSem);
       return `
         <button type="button" class="calendar-sem-tab ${isSelected ? 'is-active' : ''}" data-sem="${k}">
@@ -1551,62 +1737,60 @@ function handleAcademicCalendarPage() {
       `;
     }).join('');
 
-    let milestonesRows = milestones.map((m, idx) => {
-      const isRange = m.from !== m.to;
-      const dateDisplay = isRange ? `${m.from} — ${m.to}` : m.from;
-
-      let badge = 'Scheduled';
-      let badgeClass = 'status-pill-neutral';
-
-      if (activeSem === 'I') {
-        badge = 'Completed';
-        badgeClass = 'status-pill-pass';
-      } else if (activeSem === 'II') {
-        if (m.description.includes('Commencement') || m.description.includes('Registration')) {
-          badge = 'Completed';
-          badgeClass = 'status-pill-pass';
-        } else if (m.description.includes('Internal Examinations –I')) {
-          badge = 'Upcoming Next';
-          badgeClass = 'status-pill-pass';
-        } else {
-          badge = 'Scheduled';
-          badgeClass = 'status-pill-neutral';
-        }
-      }
-
-      return `
+    let milestonesRows = '';
+    if (milestones.length === 0) {
+      milestonesRows = `
         <tr>
-          <td class="mono" style="padding: 12px 16px; color: var(--text-faint); width: 50px;">${idx + 1}</td>
-          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">${m.description}</td>
-          <td class="mono" style="padding: 12px 16px; color: var(--text-secondary); font-size: 13px;">${dateDisplay}</td>
-          <td style="padding: 12px 16px; text-align: center;">
-            <span class="status-pill ${badgeClass}" style="font-size: 11px; padding: 2px 8px; border-radius: 999px;">${badge}</span>
+          <td colspan="4" style="padding: 32px 16px; text-align: center; color: var(--text-secondary);">
+            No milestone events match "${searchQuery}".
           </td>
         </tr>
       `;
-    }).join('');
+    } else {
+      milestonesRows = milestones.map((m, idx) => {
+        const isRange = m.from !== m.to;
+        const dateDisplay = isRange ? `${m.from} — ${m.to}` : m.from;
+        const st = getStatus(m, activeSem);
+
+        return `
+          <tr class="calendar-milestone-tablerow">
+            <td class="mono" style="padding: 12px 16px; color: var(--text-faint); width: 44px; text-align: center;">${idx + 1}</td>
+            <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary); font-size: 13.5px;">${m.description}</td>
+            <td class="mono" style="padding: 12px 16px; color: var(--text-secondary); font-size: 12.5px; white-space: nowrap;">${dateDisplay}</td>
+            <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+              <span class="status-pill ${st.cls}" style="font-size: 11px; padding: 3px 10px; border-radius: 999px;">${st.label}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
 
     container.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; flex-wrap: wrap;">
+      <div class="calendar-hub-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 16px; flex-wrap: wrap;">
         <div>
-          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px;">Aditya University Academic Schedule</div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px;">Aditya University • Academic Schedule</div>
           <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em;">Semester Academic Calendar</h1>
-          <p style="margin: 6px 0 0; font-size: 13px; color: var(--text-secondary);">Official schedule for B.Tech (2025–2029 Batch) • Live Milestones & Examinations</p>
+          <p style="margin: 6px 0 0; font-size: 13px; color: var(--text-secondary);">Official schedule for B.Tech (2025–2029 Batch) • Live Milestones & Examination Windows</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="text" class="calendar-search-input" id="calendar-search-box" placeholder="Filter milestones..." value="${searchQuery.replace(/"/g, '&quot;')}" />
         </div>
       </div>
 
       <!-- Hero Milestone Notification Card -->
-      <div style="margin-bottom: 24px; padding: 18px 22px; border-radius: var(--radius-md, 10px); background: color-mix(in srgb, var(--accent) 8%, var(--surface-card)); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent); flex-shrink: 0;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      <div class="calendar-hero-card" style="margin-bottom: 20px; padding: 18px 22px; border-radius: var(--radius-md, 10px); background: color-mix(in srgb, var(--accent) 8%, var(--surface-card)); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 40px; height: 40px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 15%, transparent); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          </div>
           <div>
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent);">Current Active Milestone</div>
-            <div style="font-size: 15px; font-weight: 750; color: var(--text-primary); margin-top: 2px;">Semester II — Internal Examinations – I (Mid 1)</div>
-            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 2px;">Scheduled from <span class="mono" style="font-weight: 600; color: var(--text-primary);">17.03.2026</span> to <span class="mono" style="font-weight: 600; color: var(--text-primary);">20.03.2026</span> • Summer Vacation begins 18.05.2026</div>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent);">Current Active Milestone (Semester III)</div>
+            <div style="font-size: 15px; font-weight: 750; color: var(--text-primary); margin-top: 2px;">Semester End Examinations – Theory (SEE Theory)</div>
+            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 3px;">Scheduled from <span class="mono" style="font-weight: 600; color: var(--text-primary);">16.11.2026</span> to <span class="mono" style="font-weight: 600; color: var(--text-primary);">28.11.2026</span> • Results declaration on <span class="mono" style="font-weight: 600; color: var(--text-primary);">12.12.2026</span></div>
           </div>
         </div>
         <div>
-          <span class="status-pill status-pill-pass" style="font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px;">In Progress</span>
+          <span class="status-pill status-pill-active" style="font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 999px;">In Progress</span>
         </div>
       </div>
 
@@ -1616,16 +1800,16 @@ function handleAcademicCalendarPage() {
       </div>
 
       <!-- Schedule Table -->
-      <div style="background: var(--surface-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); overflow: hidden; margin-bottom: 24px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+      <div style="background: var(--surface-card); border-radius: var(--radius-md, 10px); border: 1px solid var(--border-subtle); overflow: hidden; margin-bottom: 24px;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--surface-sunken);">
           <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary);">Semester ${activeSem} Milestones Roadmap</h3>
-          <span style="font-size: 12px; color: var(--text-secondary);">${milestones.length} Official Milestones</span>
+          <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">${milestones.length} Official Events</span>
         </div>
         <div class="reecap-table-wrap" style="overflow-x: auto;">
           <table class="reecap-data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-              <tr style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle);">
-                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">#</th>
+              <tr style="background: var(--surface-canvas); border-bottom: 1px solid var(--border-subtle);">
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); width: 44px; text-align: center;">#</th>
                 <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Milestone Event / Activity</th>
                 <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Scheduled Window</th>
                 <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: center;">Status</th>
@@ -1639,18 +1823,60 @@ function handleAcademicCalendarPage() {
       </div>
     `;
 
-    // Tab click listeners
+    // Rebind tab listeners
     container.querySelectorAll('.calendar-sem-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         activeSem = btn.dataset.sem;
-        renderCalendarView();
+        updateView();
       });
     });
+
+    // Rebind search input listener
+    const searchBox = container.querySelector('#calendar-search-box');
+    if (searchBox) {
+      searchBox.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        const curCursor = e.target.selectionStart;
+        updateView();
+        const nextBox = container.querySelector('#calendar-search-box');
+        if (nextBox) {
+          nextBox.focus();
+          try { nextBox.setSelectionRange(curCursor, curCursor); } catch (err) {}
+        }
+      });
+    }
   }
 
-  renderCalendarView();
-  document.body.appendChild(container);
+  updateView();
 }
+
+function handleAcademicCalendarPage() {
+  if (document.getElementById('reecap-calendar-hub')) return;
+
+  // Hide legacy elements
+  Array.from(document.body.children).forEach(c => {
+    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+      c.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  if (window.parent && window.parent.postMessage) {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'ACADEMIC CALENDAR' }, '*');
+  }
+
+  const container = document.createElement('div');
+  container.id = 'reecap-calendar-hub';
+  container.className = 'calendar-redesign reecap-calendar-view';
+  container.style.display = 'block';
+  container.style.padding = '24px';
+  container.style.maxWidth = '1120px';
+  container.style.margin = '0 auto';
+  container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+
+  document.body.appendChild(container);
+  renderAcademicCalendarHub(container);
+}
+
 
 function handleFeePortalPage() {
   const lowerPath = window.location.pathname.toLowerCase();
@@ -4437,6 +4663,19 @@ function buildSidebar() {
     if (!matched) categorized['Account'].push({ text, link });
   });
 
+  // Ensure ACADEMIC CALENDAR is always present in Academics
+  const hasCal = categorized['Academics'].some(it =>
+    it.text.includes('CALENDAR') || it.text.includes('CALENDER')
+  );
+  if (!hasCal) {
+    const calLink = document.createElement('a');
+    calLink.className = 'menuLink';
+    calLink.href = 'Academics/academiccalenderreport.aspx?scrid=6';
+    calLink.setAttribute('href', 'Academics/academiccalenderreport.aspx?scrid=6');
+    calLink.textContent = 'ACADEMIC CALENDAR';
+    categorized['Academics'].unshift({ text: 'ACADEMIC CALENDAR', link: calLink });
+  }
+
   chrome.storage.sync.get({ sidebarOpen: { Academics: true, Finance: false, Account: false }, reecapHiddenNav: [] }, ({ sidebarOpen, reecapHiddenNav = [] }) => {
     menu.innerHTML = '';
 
@@ -4463,12 +4702,13 @@ function buildSidebar() {
 
     for (const [groupName, items] of Object.entries(categorized)) {
       items.forEach(it => {
+        const isCal = it.text.includes('CALENDAR') || it.text.includes('CALENDER');
         searchTargets.push({
           id: it.text.toLowerCase().replace(/\s+/g, '-'),
           title: it.text,
           group: groupName,
           icon: icons[it.text] || genericIcon,
-          action: () => it.link.click()
+          action: isCal ? () => showAcademicCalendar() : () => it.link.click()
         });
       });
     }
@@ -4591,9 +4831,16 @@ function buildSidebar() {
         }
 
         a.title = item.text;
-        a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>`;
-        a.addEventListener('click', () => {
-          if (typeof showIframe === 'function') showIframe();
+        const isCal = item.text.includes('CALENDAR') || item.text.includes('CALENDER');
+        const badgeHtml = isCal ? '<span class="reecap-sidebar-subbadge">Sem III</span>' : '';
+        a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>${badgeHtml}`;
+        a.addEventListener('click', (e) => {
+          if (isCal) {
+            e.preventDefault();
+            showAcademicCalendar();
+          } else {
+            if (typeof showIframe === 'function') showIframe();
+          }
           if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
         });
         const li = document.createElement('li');
@@ -4941,6 +5188,10 @@ function showOverview() {
   }
   
   if (overview) overview.style.setProperty('display', 'flex', 'important');
+  const calView = document.getElementById('reecap-calendar-view');
+  if (calView) calView.style.setProperty('display', 'none', 'important');
+  document.documentElement.setAttribute('data-calendar-active', 'false');
+
   // Attempt to aggressively hide nested legacy profile wrappers
   if (profileContainer) profileContainer.style.setProperty('display', 'none', 'important');
   const legacyProfileDiv = document.getElementById('divProfile');
@@ -4989,8 +5240,11 @@ function showIframe() {
     } catch (e) {}
   }
   if (overview) overview.style.setProperty('display', 'none', 'important');
+  const calView = document.getElementById('reecap-calendar-view');
+  if (calView) calView.style.setProperty('display', 'none', 'important');
 
   document.documentElement.setAttribute('data-overview-active', 'false');
+  document.documentElement.setAttribute('data-calendar-active', 'false');
 
   const overviewLink = document.querySelector('.reecap-sidebar-overview');
   if (overviewLink) overviewLink.classList.remove('active');
@@ -5000,6 +5254,60 @@ function showIframe() {
       const currentUrl = iframe.contentWindow.location.pathname.toLowerCase();
       if (currentUrl) syncSidebarActiveState(currentUrl);
     } catch (e) {}
+  }
+}
+
+function showAcademicCalendar() {
+  const container = document.getElementById('reecap-default-content');
+  if (container) container.style.display = 'block';
+  const iframe = document.getElementById('capIframeId');
+  const overview = document.getElementById('reecap-overview');
+  let calendarView = document.getElementById('reecap-calendar-view');
+  const pageTitle = document.getElementById('reecap-page-title');
+  const contentCol = document.getElementById('reecap-content-col');
+
+  if (iframe) {
+    iframe.style.setProperty('visibility', 'hidden', 'important');
+    iframe.style.setProperty('position', 'fixed', 'important');
+    iframe.style.setProperty('top', '-10000px', 'important');
+    iframe.style.setProperty('left', '-10000px', 'important');
+    iframe.style.setProperty('width', '1px', 'important');
+    iframe.style.setProperty('height', '1px', 'important');
+    iframe.style.setProperty('opacity', '0', 'important');
+    iframe.style.setProperty('pointer-events', 'none', 'important');
+    iframe.style.removeProperty('display');
+  }
+
+  if (overview) overview.style.setProperty('display', 'none', 'important');
+
+  if (!calendarView && contentCol) {
+    calendarView = document.createElement('div');
+    calendarView.id = 'reecap-calendar-view';
+    calendarView.className = 'reecap-calendar-view';
+    contentCol.appendChild(calendarView);
+  }
+
+  if (calendarView) {
+    calendarView.style.setProperty('display', 'block', 'important');
+    renderAcademicCalendarHub(calendarView);
+  }
+
+  if (pageTitle) pageTitle.textContent = 'ACADEMIC CALENDAR';
+
+  document.documentElement.setAttribute('data-overview-active', 'false');
+  document.documentElement.setAttribute('data-calendar-active', 'true');
+
+  document.querySelectorAll('a.reecap-sidebar-link').forEach(link => {
+    const text = (link.textContent || '').toUpperCase();
+    if (text.includes('CALENDAR') || text.includes('CALENDER')) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+
+  if (typeof closeResponsiveNavigation === 'function') {
+    closeResponsiveNavigation();
   }
 }
 
@@ -5120,6 +5428,13 @@ function rebuildMainLayout() {
   overviewDiv.className = 'reecap-overview';
   buildOverviewPage(overviewDiv);
   contentCol.appendChild(overviewDiv);
+
+  // Build and insert Academic Calendar View
+  const calendarDiv = document.createElement('div');
+  calendarDiv.id = 'reecap-calendar-view';
+  calendarDiv.className = 'reecap-calendar-view';
+  calendarDiv.style.display = 'none';
+  contentCol.appendChild(calendarDiv);
 
   contentCol.appendChild(iframe);
 
@@ -5627,8 +5942,9 @@ function renderCalendarOverviewCard(container, identity = null) {
 
   const calLink = card.querySelector('#overview-view-calendar-link');
   if (calLink) {
-    calLink.addEventListener('click', () => {
-      showIframe();
+    calLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAcademicCalendar();
     });
   }
 }

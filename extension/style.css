@@ -8179,3 +8179,60 @@ table[id*="grid"] tr:hover td {
   border-radius: calc(var(--theme-radius, 25) * 0.01em) !important;
   border: none !important;
 }
+
+
+/* ---- ReEcap Academic Calendar Hub (nightTab Architecture) ---- */
+.reecap-calendar-view {
+  display: none;
+  width: 100%;
+  padding: 24px;
+  max-width: 1140px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  animation: fadeIn 0.18s ease-in-out;
+}
+
+.reecap-sidebar-subbadge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.calendar-search-input {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  outline: none;
+  transition: all 0.15s ease;
+  width: 240px;
+}
+
+.calendar-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.calendar-milestone-tablerow {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.15s ease;
+}
+
+.calendar-milestone-tablerow:hover {
+  background-color: color-mix(in srgb, var(--accent) 5%, var(--surface-card));
+}
+
+.calendar-hero-card {
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.25);
+}

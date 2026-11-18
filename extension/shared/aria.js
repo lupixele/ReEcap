@@ -75,7 +75,7 @@
 // Official Aditya University Academic Calendar Schedule (B.Tech 2025-2029 Batch)
 const ADITYA_ACADEMIC_CALENDAR = {
   batch: 'B.Tech 2025-2029',
-  currentSemester: 'II',
+  currentSemester: 'III',
   semesters: {
     'I': [
       { description: "Student Induction Program", from: "04.08.2025", to: "23.08.2025" },
@@ -127,7 +127,7 @@ const ADITYA_ACADEMIC_CALENDAR = {
       { description: "Declaration of Results", from: "12.12.2026", to: "12.12.2026" },
       { description: "Payment for SEE script viewing & Revaluation", from: "12.12.2026", to: "16.12.2026" },
       { description: "Declaration of Revaluation results", from: "23.12.2026", to: "23.12.2026" },
-      { description: "Availability of Online Grade Sheet", from: "02.01.2026", to: "02.01.2026" },
+      { description: "Availability of Online Grade Sheet", from: "02.01.2027", to: "02.01.2027" },
       { description: "Commencement of IV Semester", from: "30.11.2026", to: "30.11.2026" },
     ],
     'IV': [
