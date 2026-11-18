@@ -1376,7 +1376,8 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         attendance: { url: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', title: 'ATTENDANCE' },
         marks: { url: 'Academics/StudentMarksReport.aspx?scrid=15', title: 'MARKS REPORT' },
         timetable: { url: 'Academics/studenttimetableoption.aspx', title: 'TIMETABLE' },
-        fees: { url: 'Feepayments/studentfeereceipt.aspx?scrid=23', title: 'FEE & RECEIPTS HUB' },
+        fees: { url: 'Academics/StudentProfile.aspx?scrid=17#fees', title: 'FEE DETAILS' },
+        feedetails: { url: 'Academics/StudentProfile.aspx?scrid=17#fees', title: 'FEE DETAILS' },
         receipts: { url: 'FeePayments/studentreceipts.aspx?scrid=28', title: 'RECEIPTS' },
         backlogs: { url: 'Academics/studentbacklogs.aspx?scrid=4', title: 'BACKLOGS REPORT' },
         examviewer: { url: 'Examinations/RevalutionScriptViewer.aspx', title: 'VIEW ANSWER SHEET' },
@@ -1387,6 +1388,13 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
       if (verb === 'overview') {
         if (typeof root.showOverview === 'function') root.showOverview();
         return;
+      }
+
+      if (verb === 'fees' || verb === 'feedetails') {
+        if (typeof root.navigateToFeeDetails === 'function') {
+          root.navigateToFeeDetails();
+          return;
+        }
       }
 
       const route = routeMap[verb];

@@ -1,28 +1,24 @@
 ## Current State
-- NightTab theme system is live (45 presets, 6 categories, token-derived filters; synced to GitHub on `nighttab` and `main` at `50f650d`).
-- Identity generalization and privacy scrubbing implemented: zero personal data hardcoded in `extension/decorators.js` or `extension/shared/aria.js`; client-side sanitizer scrubs roll numbers and university emails before transmitting queries to cloud edge LLM.
-- Sidebar collapse button bug resolved: eliminated duplicate simultaneous `icon-collapse` and `icon-expand` rendering caused by `display: block !important` override.
-- Sidebar subbadge chip removed from Academic Calendar menu link per design request.
-- Sidebar single-open accordion behavior active across student categories and employee submenus.
-- Desktop sidebar equipped with bounded height and independent vertical scrolling using nightTab styled scrollbars.
-- Interactive College Timetable ported from `Raw/Interactive College Timetable.zip` into the token-based component system with tactile subject cards, hover/focus details popovers, mobile day tabs, and Know Your Subjects color guide grid.
-- Comprehensive `Readme.md` documentation updated with full feature catalog and architectural specifications.
+- Active working branch switched to `main` with `nighttab` changes fully merged and pushed to `origin/main` at `239648a`.
+- Independent Dual-Pane Scrolling: Locked master viewport on desktop (`StudentMaster.aspx`) with pinned masthead, independent vertical scrolling for both the sidebar (`ul.menu`) and content pane (`.reecap-content-col`), matching nightTab custom scrollbars, and seamless wheel forwarding from child iframes.
+- Masthead Polish: Pinned top navigation, removed orange accent line (`.masthead::after`), formatted student full name properly, and removed the "Hi," prefix from greetings.
+- Keyboard Shortcuts Cleaned: Removed `Ctrl+K` and `Ctrl+,` shortcuts from both UI (`<kbd>` badges) and backend event listeners.
+- Receipts Theming Fixed: Complete nightTab token styling for AjaxControlToolkit TabContainer (`.ajax__tab_*`), panels, grids, and action buttons, eliminating all vanilla cyan/blue gradient leaks and borders.
+- Unified Fee Details Navigation: Replaced broken legacy sidebar Fee Details routing with direct integration into the student profile fee ledger (`#fees`), providing instant access to hero meter, semester cards, and ledger details.
+- Timetable Color Guide Removed: Eradicated the "Color Guide / Know Your Subjects" section from the interactive timetable per user preference.
+- Comprehensive `Readme.md` documentation updated with current architectural specifications.
 
 ## Recent Decisions
-- Generalize student display name dynamically from DOM portal greetings (Title Cased first name) with fallback to "Student", removing all hardcoded name overrides.
-- In `aria.js`, scrub roll numbers (`\b2[0-9][A-Za-z0-9]{8}\b`) and institutional emails before sending system/user messages to `https://aria.lupixele.online/api/chat`.
-- Removed `.reecap-sidebar-subbadge` from the Academic Calendar menu link to prevent text clipping in narrow navigation drawers.
-- Enforced single-open accordion behavior across sidebar groups by automatically collapsing other open categories when one is expanded.
-- Styled `ul.menu` with `max-height: calc(100vh - 40px)` and custom nightTab scrollbar rules for independent scrollability.
-- Maintained the DJB2 12-shade hashing and token-derived palette (`--palette-hue`, `--palette-color`, `--palette-soft`, `--palette-border`) for the timetable grid, avoiding any hardcoded colors from the source archive.
+- Master shell layout on `data-reecap-master="true"` locks `html` and `body` to `100vh` on desktop with `overflow: hidden`, giving `.reecap-sidebar-col` and `.reecap-content-col` independent scroll containers with `overscroll-behavior: contain`.
+- Child iframes relay mouse wheel delta to parent `.reecap-content-col` via `REECAP_CONTENT_WHEEL` for smooth, uninterrupted content scrolling.
+- Override AjaxControlToolkit classes (`.ajax__tab_xp`, `.ajax__tab_header`, `.ajax__tab_tab`, `.ajax__tab_body`, etc.) with `--surface-card`, `--card-border`, `--surface-sunken`, and `--accent` to neutralize legacy theme leakage on `studentreceipts.aspx`.
+- Route sidebar "FEE DETAILS" and overview quicklinks to `StudentProfile.aspx?scrid=17#fees`, switching directly to `divProfile_Fees` via postMessage if already loaded.
+- Removed `renderTimetableLegend` output from the interactive timetable dashboard.
 
 ## Verification
 - `node --check extension/decorators.js`: PASS
 - `node --check extension/shared/aria.js`: PASS
 - `node tests/aria-markdown.test.js`: PASS (45 checks)
 - `node tests/theme-architecture.test.js`: PASS
+- `tests/iframe-navigation.html`: PASS (100% checks)
 - `git grep -i "RATAN"` / `git grep -i "25B11DS190"` / `git grep -i "lupel"` across `extension/` and `tests/`: 0 occurrences.
-
-## Next Steps
-- Commit and push completed work to `nighttab` branch under Claude co-author trailer.
-- Fast-forward merge `main` and push to `origin/main`.

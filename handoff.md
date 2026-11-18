@@ -1,9 +1,9 @@
 # ReEcap — Developer Handoff
 
 > **Last updated:** 2026-11-18
-> **Active branch:** `nighttab`
+> **Active branch:** `main`
 > **Remote:** `https://github.com/lupixele/ReEcap.git`
-> **Last pushed commit:** `50f650d` (`origin/nighttab` and `origin/main`)
+> **Last pushed commit:** `239648a` (`origin/main` and `origin/nighttab`)
 
 ## Project and Invariants
 
@@ -11,27 +11,37 @@ ReEcap is a Manifest V3 Chrome extension that modernizes the Aditya University A
 
 ## Completed Work & Current State
 
-### 1. Identity Generalization & Privacy Scrubbing
-- Scrubbed all hardcoded personal student names and roll numbers from `extension/decorators.js`, `extension/shared/aria.js`, and `tests/biodata-overlap.html`.
-- Student name display now dynamically parses from the logged-in portal greeting in Title Case, falling back gracefully to "Student".
-- Client-side data scrubber `scrubPersonalDetails()` in `shared/aria.js` intercepts all system and user prompt payloads before dispatching to the cloud edge LLM endpoint (`https://aria.lupixele.online/api/chat`), removing student roll numbers and university email addresses.
+### 1. Independent Dual-Pane Scrolling Architecture
+- Locked desktop master viewport (`StudentMaster.aspx`) with `data-reecap-master="true"`: pinned masthead, `overflow: hidden` on root window.
+- Both sidebar (`ul.menu`) and content column (`.reecap-content-col`) feature dedicated vertical scroll containers with custom nightTab styled scrollbars.
+- Scrolling reacts strictly to where the cursor is hovered without moving the entire window or top bar.
+- Child iframes relay wheel events to the parent `.reecap-content-col` via `REECAP_CONTENT_WHEEL` for smooth content scrolling when hovering over iframe content.
+- Graceful fallback on mobile (`<= 900px`) preserving native touch scrolling.
 
-### 2. Sidebar Navigation & Layout Fixes
-- **Collapse Button Bug Fix**: Resolved the issue where both `.icon-collapse` and `.icon-expand` rendered simultaneously inside `#reecap-sidebar-toggle-btn` due to an overriding `display: block !important` on `.sidebar-collapse-btn svg`. Explicit rules now isolate visibility cleanly between expanded and collapsed states.
-- **Academic Calendar Subbadge Removal**: Removed `.reecap-sidebar-subbadge` from the Academic Calendar menu link to eliminate text clipping.
-- **Single-Open Accordion**: Clicking any sidebar section header now collapses all other open groups, guaranteeing only one category remains expanded at a time.
-- **Independent Vertical Scrolling**: Added `max-height: calc(100vh - 40px)`, `overflow-y: auto`, and custom nightTab scrollbar rules to `ul.menu`.
+### 2. Top Bar & Masthead Polish
+- Masthead is permanently locked at the top of the workstation shell (`flex-shrink: 0`).
+- Removed the orange accent underline (`.masthead::after`) below the ReEcap brand name.
+- Dynamically extracts and formats the student's full name in proper Title Case without hardcoded personal information.
+- Removed the "Hi," prefix from the masthead greeting.
 
-### 3. Interactive College Timetable Port
-- Ported the design from `Raw/Interactive College Timetable.zip` into ReEcap's token-based component system without hardcoding archive colors.
-- Tactile subject cards featuring subject codes, status dots, two-line title clamps, and period timings.
-- Hover and focus popovers displaying full course title, period breakdown, faculty name, and room/location with SVG iconography.
-- Responsive mobile schedule with interactive day selector tabs (`Mon` through `Sat`) and single-day card panels.
-- "Know Your Subjects" color guide grid documenting course codes, full names, and faculty.
+### 3. Keyboard Shortcuts Cleanup
+- Completely removed `Ctrl+K` and `Ctrl+,` shortcuts from both the UI (`<kbd>` badges in search item and bottom nav) and backend (`keydown` event listeners).
+- Search modal remains readily accessible via direct click.
 
-### 4. Documentation & Verification
-- Comprehensive `Readme.md` rewritten covering nightTab design system architecture, Aria AI capabilities, Academic Calendar hub, timetable grid, and security/privacy guarantees.
-- Zero Unicode emojis maintained across all source code, CSS, commit messages, and documentation.
+### 4. Receipts Theming & Theme Leak Elimination
+- Overrode AjaxControlToolkit TabContainer classes (`.ajax__tab_container`, `.ajax__tab_xp`, `.ajax__tab_header`, `.ajax__tab_tab`, `.ajax__tab_active`, `.ajax__tab_body`, `.ajax__tab_panel`) using nightTab design tokens.
+- Fully eliminated vanilla cyan/blue gradient leaks and unstyled borders on `studentreceipts.aspx`.
+- Styled receipt data tables and print action buttons with tactile nightTab surfaces and hover states.
+- Bound child resize events on tab clicks to keep the iframe smoothly fitted.
+
+### 5. Unified Fee Details Navigation
+- Replaced broken legacy sidebar routing (`FeePayments/studentpayments.aspx?scrid=11`) with direct integration into the student profile fee ledger (`Academics/StudentProfile.aspx?scrid=17#fees`).
+- Directly activates the redesigned Fee Details tab with active semester hero meter, due/payable progress, semester cards, and row-level ledger.
+- Supports instant tab switching via `REECAP_SWITCH_TAB` postMessage when the profile iframe is already active.
+- Synchronized overview quicklinks and Aria action intents to the unified fee destination.
+
+### 6. Interactive Timetable Polish
+- Removed the "Color Guide / Know Your Subjects" legend section per user preference, leaving a clean timetable grid and mobile day switcher.
 
 ## Verification Commands & Status
 
@@ -44,14 +54,14 @@ node tests/theme-architecture.test.js
 
 - Parser regression suite: 45/45 Node checks passing.
 - Theme architecture: 45 presets, 35 dark and 10 light token-derived filters passing.
+- Iframe navigation: 100% checks passing.
 - Privacy check: 0 personal records in `extension/` and `tests/`.
 
 ## Files Changed
 
-- `extension/decorators.js` — Generalization of user name, sidebar accordion logic, timetable component port, subbadge removal.
-- `extension/shared/aria.js` — Student name generalization, cloud privacy scrubber, generalized prompt roles.
-- `extension/style.css` — Sidebar collapse icon fix, independent sidebar scroll, timetable tactile cards, popovers, mobile day tabs, and legend grid.
-- `tests/biodata-overlap.html` — Synthetic test data replacing real student details.
-- `Readme.md` — Updated project documentation with full feature suite.
-- `PROGRESS.md` — Checkpoint and status notes.
+- `extension/decorators.js` — Full name greeting without "Hi,", removal of `Ctrl+K` listener and `Ctrl+,` badge, fee details tab routing, receipts page decoration, child wheel forwarding, and removal of timetable color guide.
+- `extension/shared/aria.js` — Navigation action map update for fee details (`#fees`).
+- `extension/style.css` — Pinned masthead shell, dual independent pane scrollbars, removal of `.masthead::after` accent bar, and complete AjaxControlToolkit tab/receipts theme styling.
+- `Readme.md` — Updated feature descriptions, navigation architecture, and shortcuts table.
+- `PROGRESS.md` — Current milestone and decision tracking.
 - `handoff.md` — Authoritative developer handoff.

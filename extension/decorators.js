@@ -76,6 +76,9 @@ function initDecorators() {
     
     // 0. Iframe Resize Listener
     if (window.location.pathname.toLowerCase().includes('studentmaster.aspx') || window.location.pathname.toLowerCase().includes('main.aspx')) {
+      document.documentElement.setAttribute('data-reecap-master', 'true');
+      if (document.body) document.body.setAttribute('data-reecap-master', 'true');
+
       window.addEventListener('message', (e) => {
         if (e.data && e.data.type === 'REECAP_RESIZE') {
           const iframe = document.getElementById('capIframeId');
@@ -87,6 +90,13 @@ function initDecorators() {
               const targetHeight = Math.max(250, Math.ceil(e.data.height));
               iframe.style.setProperty('height', targetHeight + 'px', 'important');
             }
+          }
+        }
+        if (e.data && e.data.type === 'REECAP_CONTENT_WHEEL') {
+          const contentCol = document.getElementById('reecap-content-col');
+          if (contentCol) {
+            const mult = e.data.deltaMode === 1 ? 24 : (e.data.deltaMode === 2 ? contentCol.clientHeight : 1);
+            contentCol.scrollTop += e.data.deltaY * mult;
           }
         }
       });
@@ -168,7 +178,7 @@ function initDecorators() {
 
             const parts = rawUserName ? rawUserName.split(/\s+/).filter(Boolean) : [];
             const studentDisplayName = parts.length > 0
-              ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase()
+              ? parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ')
               : 'Student';
 
             if (rawUserName && isExtensionValid() && chrome?.storage?.local) {
@@ -183,7 +193,7 @@ function initDecorators() {
             }
 
             lblUser.className = 'user-name';
-            lblUser.innerHTML = `<span class="greeting-prefix">Hi,</span> <span class="user-display-name">${escapeAttr(studentDisplayName)}</span>`;
+            lblUser.innerHTML = `<span class="user-display-name">${escapeAttr(studentDisplayName)}</span>`;
             userCluster.appendChild(lblUser);
          }
 
@@ -271,6 +281,17 @@ function initDecorators() {
         // Also retry after a short delay in case the title is rendered async
         setTimeout(sendTitle, 300);
       }
+
+      // Forward mouse wheel events to parent content container for seamless independent scrolling
+      window.addEventListener('wheel', (e) => {
+        try {
+          window.parent.postMessage({
+            type: 'REECAP_CONTENT_WHEEL',
+            deltaY: e.deltaY,
+            deltaMode: e.deltaMode
+          }, '*');
+        } catch (err) {}
+      }, { passive: true });
     }
     
     // 1. Login Page (Default.aspx)
@@ -1966,6 +1987,67 @@ function handleAcademicCalendarPage() {
 }
 
 
+function decorateReceiptsPage() {
+  try {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'RECEIPTS' }, '*');
+  } catch (e) {}
+
+  const sendReceiptsResize = () => {
+    try {
+      const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 400);
+      window.parent.postMessage({ type: 'REECAP_RESIZE', height: h + 40 }, '*');
+    } catch (e) {}
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sendReceiptsResize);
+  } else {
+    sendReceiptsResize();
+  }
+  setTimeout(sendReceiptsResize, 300);
+  setTimeout(sendReceiptsResize, 1000);
+
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.closest('[class*="ajax__tab"]')) {
+      setTimeout(sendReceiptsResize, 100);
+      setTimeout(sendReceiptsResize, 400);
+    }
+  });
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'REECAP_REQUEST_RESIZE') {
+      sendReceiptsResize();
+    }
+  });
+}
+
+function decorateStudentPaymentsPage() {
+  try {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'FEE DETAILS' }, '*');
+  } catch (e) {}
+
+  const sendPaymentsResize = () => {
+    try {
+      const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 400);
+      window.parent.postMessage({ type: 'REECAP_RESIZE', height: h + 40 }, '*');
+    } catch (e) {}
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sendPaymentsResize);
+  } else {
+    sendPaymentsResize();
+  }
+  setTimeout(sendPaymentsResize, 300);
+  setTimeout(sendPaymentsResize, 1000);
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'REECAP_REQUEST_RESIZE') {
+      sendPaymentsResize();
+    }
+  });
+}
+
 function handleFeePortalPage() {
   const lowerPath = window.location.pathname.toLowerCase();
 
@@ -1973,6 +2055,11 @@ function handleFeePortalPage() {
   // postback controls. Never replace them with the payment fallback ledger.
   if (!lowerPath.includes('studentfeereceipt.aspx')) {
     document.documentElement.setAttribute('data-fee-native-page', 'true');
+    if (lowerPath.includes('studentreceipts.aspx')) {
+      decorateReceiptsPage();
+    } else if (lowerPath.includes('studentpayments.aspx')) {
+      decorateStudentPaymentsPage();
+    }
     return;
   }
 
@@ -2555,7 +2642,6 @@ function buildTimetableDashboard(tbl) {
   });
   html += `</div>`;
 
-  html += renderTimetableLegend(schedule, legendMap);
   dashboard.innerHTML = html;
 
   // Bind interactive tab switches for mobile schedule
@@ -2576,43 +2662,9 @@ function buildTimetableDashboard(tbl) {
   tbl.parentElement.insertBefore(dashboard, tbl);
 }
 
-// Render a legend strip showing the legend key for every subject in the schedule.
+// Color guide section removed per user preference.
 function renderTimetableLegend(schedule, legendMap) {
-  const seen = new Map();
-  Object.values(schedule).forEach((daySlots) => {
-    daySlots.forEach((p) => {
-      if (!p.subjectCode) return;
-      const code = p.subjectCode.split(',')[0].trim();
-      if (code && !seen.has(code)) seen.set(code, legendMap[code] || { name: code });
-    });
-  });
-  if (seen.size === 0) return '';
-  const PALETTE_SIZE = 12;
-  let legendHtml = `
-    <div class="tt-legend-section">
-      <div class="legend__intro">
-        <p class="eyebrow">Color Guide</p>
-        <h2>Know Your Subjects</h2>
-        <p>Each course has its own distinct color identity, so you can spot it anywhere across your week.</p>
-      </div>
-      <div class="legend__grid">
-  `;
-  Array.from(seen.entries()).forEach(([code, details]) => {
-    let hash = 5381;
-    for (let i = 0; i < code.length; i++) hash = ((hash << 5) + hash + code.charCodeAt(i)) | 0;
-    const palette = Math.abs(hash) % PALETTE_SIZE;
-    legendHtml += `
-      <div class="legend-item" style="--palette: ${palette};" title="${escapeAttr(details.name || code)}">
-        <span class="legend-badge">${escapeAttr(code)}</span>
-        <div class="legend-meta">
-          <strong>${escapeAttr(details.name || code)}</strong>
-          ${details.faculty ? `<small>${escapeAttr(details.faculty)}</small>` : ''}
-        </div>
-      </div>
-    `;
-  });
-  legendHtml += '</div></div>';
-  return legendHtml;
+  return '';
 }
 
 function observeProfileDashboard() {
@@ -3016,12 +3068,24 @@ function buildProfileTabs(accordion) {
   tabContainer.id = 'reecap-profile-dashboard';
   tabContainer.className = 'reecap-tabs';
 
+  const activeHash = (window.location.hash || '').toLowerCase();
+  let defaultActiveIndex = 0;
+  if (activeHash.includes('fee')) {
+    const feeIndex = availableTabs.findIndex(t => t.id === 'divProfile_Fees');
+    if (feeIndex >= 0) defaultActiveIndex = feeIndex;
+  } else if (activeHash.includes('backlog')) {
+    const bIndex = availableTabs.findIndex(t => t.id === 'divProfile_Backlogs');
+    if (bIndex >= 0) defaultActiveIndex = bIndex;
+  }
+
+  const tabButtons = [];
   availableTabs.forEach((tab, index) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'reecap-tab-btn';
-    if (index === 0) btn.classList.add('active');
+    if (index === defaultActiveIndex) btn.classList.add('active');
     btn.innerHTML = `${tab.icon}<span>${tab.label}</span>`;
+    tabButtons.push(btn);
 
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -3039,6 +3103,15 @@ function buildProfileTabs(accordion) {
       tab.pane.classList.add('reecap-pane-active');
       tab.pane.style.setProperty('display', 'block', 'important');
 
+      // Update parent title if specific tab
+      if (tab.id === 'divProfile_Fees') {
+        try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'FEE DETAILS' }, '*'); } catch (err) {}
+      } else if (tab.id === 'divProfile_Backlogs') {
+        try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'BACKLOGS' }, '*'); } catch (err) {}
+      } else {
+        try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'STUDENT PROFILE' }, '*'); } catch (err) {}
+      }
+
       sendProfileResize();
       setTimeout(sendProfileResize, 150);
     });
@@ -3046,14 +3119,31 @@ function buildProfileTabs(accordion) {
     tabContainer.appendChild(btn);
   });
 
-  // Ensure first pane is active and displayed
+  // Ensure active pane is displayed
   allPanes.forEach((p, index) => {
-    if (index === 0) {
+    if (index === defaultActiveIndex) {
       p.classList.add('reecap-pane-active');
       p.style.setProperty('display', 'block', 'important');
     } else {
       p.classList.remove('reecap-pane-active');
       p.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  if (defaultActiveIndex > 0) {
+    const activeTab = availableTabs[defaultActiveIndex];
+    if (activeTab && activeTab.id === 'divProfile_Fees') {
+      try { window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'FEE DETAILS' }, '*'); } catch (err) {}
+    }
+  }
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'REECAP_SWITCH_TAB') {
+      const targetId = e.data.tabId;
+      const targetIndex = availableTabs.findIndex(t => t.id === targetId);
+      if (targetIndex >= 0 && tabButtons[targetIndex]) {
+        tabButtons[targetIndex].click();
+      }
     }
   });
 
@@ -4705,12 +4795,13 @@ function buildSidebar() {
     for (const [groupName, items] of Object.entries(categorized)) {
       items.forEach(it => {
         const isCal = it.text.includes('CALENDAR') || it.text.includes('CALENDER');
+        const isFeeDetails = it.text.trim().toUpperCase() === 'FEE DETAILS';
         searchTargets.push({
           id: it.text.toLowerCase().replace(/\s+/g, '-'),
           title: it.text,
           group: groupName,
           icon: icons[it.text] || genericIcon,
-          action: isCal ? () => showAcademicCalendar() : () => it.link.click()
+          action: isCal ? () => showAcademicCalendar() : (isFeeDetails ? () => navigateToFeeDetails() : () => it.link.click())
         });
       });
     }
@@ -4723,23 +4814,12 @@ function buildSidebar() {
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <span>Search</span>
       </div>
-      <kbd class="search-shortcut">Ctrl+K</kbd>
     `;
 
     searchItem.addEventListener('click', () => {
       openSearchCommandModal(searchTargets);
     });
     menu.appendChild(searchItem);
-
-    if (!window.__reecap_search_listener_bound) {
-      window.__reecap_search_listener_bound = true;
-      document.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-          e.preventDefault();
-          openSearchCommandModal(searchTargets);
-        }
-      });
-    }
 
     // Add OVERVIEW item at top (Only for Students)
     if (isStudentRole()) {
@@ -4834,11 +4914,15 @@ function buildSidebar() {
 
         a.title = item.text;
         const isCal = item.text.includes('CALENDAR') || item.text.includes('CALENDER');
+        const isFeeDetails = item.text.trim().toUpperCase() === 'FEE DETAILS';
         a.innerHTML = `<span class="reecap-sidebar-icon">${icons[item.text] || genericIcon}</span><span class="reecap-sidebar-text">${item.text}</span>`;
         a.addEventListener('click', (e) => {
           if (isCal) {
             e.preventDefault();
             showAcademicCalendar();
+          } else if (isFeeDetails) {
+            e.preventDefault();
+            navigateToFeeDetails();
           } else {
             if (typeof showIframe === 'function') showIframe();
           }
@@ -4922,7 +5006,6 @@ function buildSidebar() {
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           <span class="reecap-sidebar-text">Customize Menu</span>
         </div>
-        <kbd class="kbd-shortcut">Ctrl+,</kbd>
       </div>
     `;
 
@@ -4936,6 +5019,32 @@ function buildSidebar() {
     menu.appendChild(bottomNav);
     
   });
+}
+
+function navigateToFeeDetails() {
+  if (typeof showIframe === 'function') showIframe();
+  const iframe = document.getElementById('capIframeId');
+  if (!iframe) return;
+
+  const pageTitle = document.getElementById('reecap-page-title');
+  if (pageTitle) pageTitle.textContent = 'FEE DETAILS';
+
+  document.querySelectorAll('.reecap-sidebar-link').forEach(link => {
+    if (link.textContent.trim().toUpperCase() === 'FEE DETAILS') {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+
+  const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
+  if (curSrc.includes('studentprofile.aspx')) {
+    try {
+      iframe.contentWindow?.postMessage({ type: 'REECAP_SWITCH_TAB', tabId: 'divProfile_Fees' }, '*');
+    } catch (e) {}
+  } else {
+    iframe.src = 'Academics/StudentProfile.aspx?scrid=17#fees';
+  }
 }
 
 function openSearchCommandModal(searchTargets) {
@@ -5985,7 +6094,7 @@ function renderQuickLinksCard(container) {
     { label: 'Attendance', href: 'Academics/StudentAttendance.aspx?scrid=3&showtype=SA', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7l-2-2"></path><path d="M12 15l2-2"></path><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>' },
     { label: 'Timetable', href: 'Academics/studenttimetableoption.aspx', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' },
     { label: 'Marks', href: 'Academics/StudentMarksReport.aspx?scrid=15', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' },
-    { label: 'Fee Details', href: 'FeePayments/studentpayments.aspx?scrid=11', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' },
+    { label: 'Fee Details', href: 'Academics/StudentProfile.aspx?scrid=17#fees', action: 'feeDetails', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' },
     { label: 'Profile', href: 'Academics/StudentProfile.aspx?scrid=17', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' }
   ];
 
@@ -5993,7 +6102,7 @@ function renderQuickLinksCard(container) {
 
   links.forEach(item => {
     html += `
-      <a href="${item.href}" target="capIframe" class="quicklink-item">
+      <a href="${item.href}" target="capIframe" class="quicklink-item" ${item.action ? `data-action="${item.action}"` : ''}>
         <div class="quicklink-icon">${item.icon}</div>
         <div class="quicklink-label">${item.label}</div>
       </a>
@@ -6004,8 +6113,13 @@ function renderQuickLinksCard(container) {
   card.innerHTML = html;
 
   card.querySelectorAll('.quicklink-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      showIframe();
+    btn.addEventListener('click', (e) => {
+      if (btn.dataset.action === 'feeDetails') {
+        e.preventDefault();
+        navigateToFeeDetails();
+      } else {
+        showIframe();
+      }
     });
   });
 

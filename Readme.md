@@ -29,7 +29,6 @@ ReEcap is a Manifest V3 Chrome extension that completely overhauls the legacy AS
 - **Hover & Focus Detail Popovers**: Instant flyout cards with faculty details, room numbers, and period information.
 - **Consecutive Class Merging**: Multi-period classes seamlessly merge into unified time blocks spanning continuous columns.
 - **Mobile Day Switcher**: Responsive mobile view with day selector tabs (`Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat`) and single-day focus cards.
-- **Know Your Subjects Color Guide**: Organized subject card grid showing code badges, full titles, and faculty details.
 
 ### 4. 8-Semester Academic Calendar Hub
 - **Official Batch Schedules**: Comprehensive schedules covering Semesters I through VIII, including Summer terms.
@@ -43,9 +42,9 @@ ReEcap is a Manifest V3 Chrome extension that completely overhauls the legacy AS
 
 ### 6. Refined Navigation & Workstation UI
 - **Accordion Sidebar**: Accessible semantic categories (`Academics`, `Finance`, `Account`, `Services`) with single-open accordion behavior.
-- **Independent Sidebar Scrolling**: Dedicated vertical scrolling container with nightTab styled scrollbars.
-- **Command Palette (`Ctrl + K`)**: Quick-jump search modal across all portal sections and tools.
-- **Clean Masthead**: Branded navigation with teacher top tabs, student greeting, Aria launcher, and native session controls.
+- **Independent Dual-Pane Scrolling**: Dedicated vertical scrolling containers for both sidebar and content panes with nightTab styled scrollbars that respond independently to cursor hover while pinning the top masthead.
+- **Quick Navigation Search Palette**: Fast search modal across all portal sections and tools accessible directly from the sidebar.
+- **Clean Masthead**: Pinned top navigation with teacher top tabs, student full name, Aria launcher, and native session controls without distracting accent lines.
 - **Exam Script PDF Generator**: Canvas stitching tool on revaluation viewer generating multi-page exam booklets.
 
 ---
@@ -111,7 +110,6 @@ ReEcap/
 | Shortcut | Action |
 |---|---|
 | `Ctrl + /` (or `Cmd + /`) | Open / Close Aria AI Co-Pilot |
-| `Ctrl + K` (or `Cmd + K`) | Open Quick Navigation Search Palette |
 | `Escape` | Close active modals, drawers, or Aria Co-Pilot |
 | `Enter` | Send message in Aria Composer |
 | `Shift + Enter` | Insert newline in Aria Composer |
