@@ -505,26 +505,34 @@ body[data-reecap-master="true"] .reecap-content-col::-webkit-scrollbar-thumb:hov
   }
 }
 
-body.bodyStyle > form > center > div {
-  max-width: 1536px !important;
-  width: 96% !important;
-  padding: 0 24px 24px 24px !important;
-  margin: 0 auto;
+body.bodyStyle > form > center > div,
+body > form > center > div {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-/* Zero the form and center wrapper inside the iframe so there is no gap under the parent title */
-body.bodyStyle > form {
+/* Zero the form and center wrapper inside the iframe and master so there is no gap under the parent title */
+body.bodyStyle > form,
+body > form {
   margin: 0 !important;
   padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
-body.bodyStyle > form > center {
+body.bodyStyle > form > center,
+body > form > center {
   display: block !important;
   margin: 0 !important;
   padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  text-align: left !important;
 }
 
 body.bodyStyle > form > center > div > table {
@@ -959,17 +967,22 @@ body.bodyStyle > form > center > br {
 .reecap-layout-columns {
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
-  gap: 28px;
-  align-items: start;
+  gap: 0 !important;
+  align-items: stretch;
   width: 100%;
   position: relative;
 }
 
 .reecap-sidebar-col {
-  position: sticky;
-  top: 20px;
+  position: relative;
+  top: 0;
+  left: 0;
+  margin: 0 !important;
+  padding: 0 !important;
   flex-shrink: 0;
-  min-width: 0;
+  width: 248px !important;
+  min-width: 248px !important;
+  max-width: 248px !important;
   z-index: var(--z-navigation);
 }
 

@@ -310,6 +310,31 @@ function initDecorators() {
       document.documentElement.setAttribute('data-reecap-master', 'true');
       if (document.body) document.body.setAttribute('data-reecap-master', 'true');
 
+      // Clear native ASP.NET centering and margins to dock sidebar flush against the wall
+      function enforceFlushWallDock() {
+        const centerEl = document.querySelector('body > form > center');
+        if (centerEl) {
+          centerEl.style.setProperty('width', '100%', 'important');
+          centerEl.style.setProperty('max-width', '100%', 'important');
+          centerEl.style.setProperty('margin', '0', 'important');
+          centerEl.style.setProperty('padding', '0', 'important');
+          centerEl.style.setProperty('text-align', 'left', 'important');
+          centerEl.style.setProperty('display', 'block', 'important');
+        }
+        const topDiv = centerEl ? centerEl.querySelector(':scope > div') : null;
+        if (topDiv) {
+          topDiv.style.setProperty('width', '100%', 'important');
+          topDiv.style.setProperty('max-width', '100%', 'important');
+          topDiv.style.setProperty('margin', '0', 'important');
+          topDiv.style.setProperty('padding', '0', 'important');
+          topDiv.removeAttribute('align');
+        }
+      }
+      enforceFlushWallDock();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', enforceFlushWallDock);
+      }
+
       window.addEventListener('message', (e) => {
         if (e.data && e.data.type === 'REECAP_RESIZE') {
           const iframe = document.getElementById('capIframeId');

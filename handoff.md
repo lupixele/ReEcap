@@ -29,9 +29,10 @@
 
 ### Flush Sidebar Wall & Top-Bar Docking Architecture
 - **Zero-Margin Shell Container**:
-  - `body[data-reecap-master="true"] > form > center > div` expanded from max 1536px box with 24px padding to full-bleed `width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important;`.
+  - `body[data-reecap-master="true"] > form > center > div` and `body.bodyStyle > form > center > div` expanded from max 1536px box with 24px padding and `margin: 0 auto` to full-bleed `width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important;`.
+  - Added `enforceFlushWallDock()` in [extension/decorators.js](file:///p:/Magnanimity/Projects/ReEcap/extension/decorators.js) to programmatically clear ASP.NET server-rendered `align="center"` attributes on `<center>` and `<div>` and enforce `text-align: left; margin: 0; padding: 0`.
 - **Flush Top Bar Masthead**:
-  - `.masthead` sits directly at the top with `margin: 0 !important; border-radius: 0 !important; border-bottom: 1px solid var(--border-light) !important; padding: 8px 24px !important;`.
+  - `.masthead` sits directly at the top with `margin: 0 !important; border-radius: 0 !important; border-bottom: 1px solid var(--border-light) !important; padding: 8px 16px !important;`.
   - Zero vertical gap exists between the bottom of the masthead and the top of the sidebar and content columns.
 - **Wall-Docked Sidebar Column (`.reecap-sidebar-col`)**:
   - Docks flush to the left wall (`left: 0 !important; margin: 0 !important; padding: 0 !important; border-radius: 0 !important;`).
