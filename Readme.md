@@ -12,24 +12,24 @@
 
 ---
 
-## Showcase: Before & After Transformation
+## Showcase
 
-### 1. Student Portal Overview (Legacy vs. Modern Redesign)
-Direct visual comparison of the student workstation: transforming outdated, table-heavy 2000s WebForms with 97px margins into a sleek, full-bleed nightTab dashboard featuring a live SVG attendance dial, 0-backlog verification, transparent fee ledger, and real-time class countdowns.
+### 1. Student Overview Dashboard
+Clean summary of your academic standing: real-time attendance meter, verified 0-backlog status, outstanding fee balance, and today's continuous class schedule with countdowns.
 
-![Student Dashboard Transformation (Legacy vs Redesign)](docs/comparison_overview.png)
-
----
-
-### 2. Login & Authentication Flow (Legacy vs. Modern Redesign)
-Replacing the legacy ASP.NET login form with a centered glassmorphism card featuring 1-click role selection (`Student`, `Parent`, `Employee`), dark/light theme fidelity, and native Cloudflare Turnstile verification.
-
-![Login Page Transformation (Legacy vs Redesign)](docs/comparison_login.png)
+![Student Overview Dashboard](docs/figure4_overview.jpg)
 
 ---
 
-### 3. Academic Calendar & 8-Semester Roadmap
-Full batch schedule for Semesters I through VIII with instant search, countdowns, and real-time milestone status chips (`Completed`, `In Progress`, `Scheduled`).
+### 2. Redesigned Login Page
+Modern glassmorphism login card with one-click role selection, native Cloudflare Turnstile verification, and direct links.
+
+![Redesigned Login Page](docs/figure3_login.png)
+
+---
+
+### 3. Academic Calendar & Milestone Roadmap
+Full batch schedule for Semesters I through VIII with instant search, countdowns, and real-time status chips (`Completed`, `In Progress`, `Scheduled`).
 
 ![Academic Calendar](docs/figure5_themed_calendar.jpg)
 
