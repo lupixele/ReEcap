@@ -354,9 +354,26 @@ function injectThemeToolbar() {
   toolbar.className = 'reecap-theme-toolbar';
   
   const iconPalette = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.02 0 1.93-.72 2.15-1.72.07-.32-.01-.65-.24-.89l-2.02-2.02c-.22-.22-.31-.55-.24-.87.16-.76.84-1.31 1.63-1.31h1.36c3.55 0 6.4-2.85 6.4-6.4 0-4.08-4.07-7.79-9.04-7.79z"/></svg>`;
-  const iconLight = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
-  const iconDark = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-  const iconMoonPhase = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 1 0 11 4v16z"/></svg>`;
+  const iconLight = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+  const iconDark = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+
+  const presets = (window.__reecap_theme && window.__reecap_theme.PRESETS)
+    ? window.__reecap_theme.PRESETS
+    : {};
+
+  let buttonsHtml = '';
+  for (const [id, p] of Object.entries(presets)) {
+    const rgb = p.accent?.rgb || { r: 0, g: 80, b: 255 };
+    const borderStyle = (id === 'black') ? 'border: 1px solid #444;' : (id === 'white' ? 'border: 1px solid #ccc;' : '');
+    const cat = p.category || 'core';
+    buttonsHtml += `
+      <button type="button" class="toolbar-theme-btn" data-preset="${id}" data-category="${cat}" title="${p.name}">
+        <span class="theme-swatch" style="background: rgb(${rgb.r}, ${rgb.g}, ${rgb.b}); ${borderStyle}"></span>
+        <span class="theme-name">${p.name}</span>
+        <span class="toolbar-theme-cat">${cat}</span>
+      </button>
+    `;
+  }
 
   toolbar.innerHTML = `
     <button class="reecap-toolbar-trigger" aria-label="Theme Settings">
@@ -365,43 +382,29 @@ function injectThemeToolbar() {
     <div class="reecap-toolbar-menu">
        <!-- Mode Toggles -->
        <div class="toolbar-mode-toggles">
-         <button class="toolbar-mode-btn" data-mode="light" title="Light Style">${iconLight}</button>
-         <button class="toolbar-mode-btn" data-mode="dark" title="Dark Style">${iconDark}</button>
+         <button type="button" class="toolbar-mode-btn" data-mode="light" title="Light Style">${iconLight} <span>Light</span></button>
+         <button type="button" class="toolbar-mode-btn" data-mode="dark" title="Dark Style">${iconDark} <span>Dark</span></button>
+       </div>
+
+       <!-- Search Box -->
+       <div class="toolbar-search-wrap">
+         <input type="text" class="toolbar-theme-search" id="toolbar-theme-search" placeholder="Search 45 nightTab themes..." />
+       </div>
+
+       <!-- Category Filter Pills -->
+       <div class="toolbar-category-shelf">
+         <button type="button" class="toolbar-cat-pill is-active" data-cat="all">All (45)</button>
+         <button type="button" class="toolbar-cat-pill" data-cat="core">Core</button>
+         <button type="button" class="toolbar-cat-pill" data-cat="minimal">Minimal</button>
+         <button type="button" class="toolbar-cat-pill" data-cat="cyber">Cyber</button>
+         <button type="button" class="toolbar-cat-pill" data-cat="space">Space</button>
+         <button type="button" class="toolbar-cat-pill" data-cat="earth">Earth</button>
+         <button type="button" class="toolbar-cat-pill" data-cat="vivid">Vivid</button>
        </div>
        
-       <!-- nightTab Theme Presets -->
+       <!-- nightTab Theme Presets (all 45) -->
        <div class="toolbar-family-list">
-         <button class="toolbar-theme-btn" data-preset="app">
-            <span class="theme-swatch" style="background:#0050ff;"></span> nightTab App
-         </button>
-         <button class="toolbar-theme-btn" data-preset="nord">
-            <span class="theme-swatch" style="background:#5e81ac;"></span> Nord
-         </button>
-         <button class="toolbar-theme-btn" data-preset="obsidian">
-            <span class="theme-swatch" style="background:#00ffff;"></span> Obsidian
-         </button>
-         <button class="toolbar-theme-btn" data-preset="outrun">
-            <span class="theme-swatch" style="background:#ff00bb;"></span> Outrun
-         </button>
-         <button class="toolbar-theme-btn" data-preset="neon">
-            <span class="theme-swatch" style="background:#39ff14;"></span> Neon
-         </button>
-         <button class="toolbar-theme-btn" data-preset="midnight">
-            <span class="theme-swatch" style="background:#0011ff;"></span> Midnight
-         </button>
-         <button class="toolbar-theme-btn" data-preset="mint">
-            <span class="theme-swatch" style="background:#5effe2;"></span> Mint
-         </button>
-         <button class="toolbar-theme-btn" data-preset="sol">
-            <span class="theme-swatch" style="background:#ffb900;"></span> Sol
-         </button>
-         <div class="toolbar-divider"></div>
-         <button class="toolbar-theme-btn" data-preset="black">
-            <span class="theme-swatch" style="background:#000; border: 1px solid #333;"></span> Black AMOLED
-         </button>
-         <button class="toolbar-theme-btn" data-preset="white">
-            <span class="theme-swatch" style="background:#fff; border: 1px solid #ccc;"></span> White Daylight
-         </button>
+         ${buttonsHtml}
        </div>
     </div>
   `;
@@ -418,10 +421,10 @@ function injectThemeToolbar() {
          const style = data.nightTabStyle || data.themeMode || 'dark';
          
          wrapper.querySelectorAll('.toolbar-mode-btn').forEach(b => {
-           if (b.dataset.mode === style) b.classList.add('active');
+           b.classList.toggle('active', b.dataset.mode === style);
          });
          wrapper.querySelectorAll('.toolbar-theme-btn').forEach(b => {
-           if (b.dataset.preset === preset) b.classList.add('active');
+           b.classList.toggle('active', b.dataset.preset === preset);
          });
        });
     }
@@ -429,18 +432,59 @@ function injectThemeToolbar() {
      // Silently handle context invalidated
   }
 
-  // Wiring Clicks to Background script message bus (avoids duplicating logic)
-  const menuBtn = wrapper.querySelector('.reecap-toolbar-trigger');
-  
   // Toggle Open/Close
+  const menuBtn = wrapper.querySelector('.reecap-toolbar-trigger');
   menuBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    wrapper.classList.toggle('is-open');
+    const isOpen = wrapper.classList.toggle('is-open');
+    if (isOpen) {
+      const activeBtn = wrapper.querySelector('.toolbar-theme-btn.active');
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+      const searchBox = wrapper.querySelector('#toolbar-theme-search');
+      if (searchBox) searchBox.focus();
+    }
   });
   
   document.addEventListener('click', (e) => {
-    if(!wrapper.contains(e.target)) wrapper.classList.remove('is-open');
+    if (!wrapper.contains(e.target)) wrapper.classList.remove('is-open');
   });
+
+  // Filter logic (search + categories)
+  let activeCat = 'all';
+  let searchQuery = '';
+
+  function filterThemeList() {
+    const q = searchQuery.toLowerCase().trim();
+    wrapper.querySelectorAll('.toolbar-theme-btn').forEach(btn => {
+      const presetId = (btn.dataset.preset || '').toLowerCase();
+      const name = (btn.querySelector('.theme-name')?.textContent || '').toLowerCase();
+      const cat = (btn.dataset.category || '').toLowerCase();
+
+      const matchesCat = (activeCat === 'all' || cat === activeCat);
+      const matchesSearch = (!q || name.includes(q) || presetId.includes(q) || cat.includes(q));
+
+      btn.style.display = (matchesCat && matchesSearch) ? 'flex' : 'none';
+    });
+  }
+
+  wrapper.querySelectorAll('.toolbar-cat-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      wrapper.querySelectorAll('.toolbar-cat-pill').forEach(p => p.classList.remove('is-active'));
+      pill.classList.add('is-active');
+      activeCat = pill.dataset.cat || 'all';
+      filterThemeList();
+    });
+  });
+
+  const searchInput = wrapper.querySelector('#toolbar-theme-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      filterThemeList();
+    });
+  }
 
   // Handle Mode setting (light/dark)
   wrapper.querySelectorAll('.toolbar-mode-btn').forEach(btn => {
@@ -481,6 +525,7 @@ function injectThemeToolbar() {
     });
   });
 }
+
 
 function redesignLoginPage() {
   const form = document.getElementById('form1');
