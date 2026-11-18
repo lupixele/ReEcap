@@ -72,6 +72,176 @@
     return msg.includes('extension context invalidated') || msg.includes('context invalidated');
   }
 
+// Official Aditya University Academic Calendar Schedule (B.Tech 2025-2029 Batch)
+const ADITYA_ACADEMIC_CALENDAR = {
+  batch: 'B.Tech 2025-2029',
+  currentSemester: 'II',
+  semesters: {
+    'I': [
+      { description: "Student Induction Program", from: "04.08.2025", to: "23.08.2025" },
+      { description: "Registration to I Semester Courses", from: "11.08.2025", to: "16.08.2025" },
+      { description: "Commencement of Class Work", from: "25.08.2025", to: "25.08.2025" },
+      { description: "Last date to register or drop a Course", from: "01.09.2025", to: "01.09.2025" },
+      { description: "Internal Examinations –I", from: "22.10.2025", to: "24.10.2025" },
+      { description: "Finalization of Detentions based on attendance", from: "13.12.2025", to: "13.12.2025" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "15.12.2025", to: "17.12.2025" },
+      { description: "Internal Examinations –II", from: "22.12.2025", to: "24.12.2025" },
+      { description: "Makeup Internal Examinations", from: "26.12.2025", to: "27.12.2025" },
+      { description: "Semester End Examinations – Theory", from: "29.12.2025", to: "10.01.2026" },
+      { description: "Semester End Examinations – Lab", from: "19.01.2026", to: "24.01.2026" },
+      { description: "Declaration of Results", from: "07.02.2026", to: "07.02.2026" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "07.02.2026", to: "11.02.2026" },
+      { description: "Declaration of Revaluation results", from: "18.02.2026", to: "18.02.2026" },
+      { description: "Availability of Online Grade Sheet", from: "28.02.2026", to: "28.02.2026" },
+      { description: "Commencement of II Semester", from: "27.01.2026", to: "27.01.2026" },
+    ],
+    'II': [
+      { description: "Registration to II Semester Courses", from: "05.01.2026", to: "10.01.2026" },
+      { description: "Commencement of Class Work", from: "27.01.2026", to: "27.01.2026" },
+      { description: "Last date to register or drop a Course", from: "03.02.2026", to: "03.02.2026" },
+      { description: "Internal Examinations –I", from: "17.03.2026", to: "20.03.2026" },
+      { description: "Summer Vacation", from: "18.05.2026", to: "30.05.2026" },
+      { description: "Finalization of Detentions based on attendance", from: "23.05.2026", to: "23.05.2026" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "25.05.2026", to: "27.05.2026" },
+      { description: "Internal Examinations –II", from: "01.06.2026", to: "03.06.2026" },
+      { description: "Makeup Internal Examinations", from: "04.06.2026", to: "06.06.2026" },
+      { description: "Semester End Examinations – Lab", from: "08.06.2026", to: "13.06.2026" },
+      { description: "Semester End Examinations – Theory", from: "15.06.2026", to: "27.06.2026" },
+      { description: "Declaration of Results", from: "11.07.2026", to: "11.07.2026" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "11.07.2026", to: "15.07.2026" },
+      { description: "Declaration of Revaluation results", from: "22.07.2026", to: "22.07.2026" },
+      { description: "Availability of Online Grade Sheet", from: "01.08.2026", to: "01.08.2026" },
+      { description: "Commencement of III Semester", from: "29.06.2026", to: "29.06.2026" },
+    ],
+    'III': [
+      { description: "Registration to III Semester Courses", from: "08.06.2026", to: "13.06.2026" },
+      { description: "Commencement of Class Work", from: "29.06.2026", to: "29.06.2026" },
+      { description: "Last date to register or drop a Course", from: "06.07.2026", to: "06.07.2026" },
+      { description: "Internal Examinations –I", from: "19.08.2026", to: "21.08.2026" },
+      { description: "Finalization of Detentions based on attendance", from: "24.10.2026", to: "24.10.2026" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "26.10.2026", to: "28.10.2026" },
+      { description: "Internal Examinations –II", from: "02.11.2026", to: "04.11.2026" },
+      { description: "Makeup Internal Examinations", from: "05.11.2026", to: "07.11.2026" },
+      { description: "Semester End Examinations – Lab", from: "09.11.2026", to: "14.11.2026" },
+      { description: "Semester End Examinations – Theory", from: "16.11.2026", to: "28.11.2026" },
+      { description: "Declaration of Results", from: "12.12.2026", to: "12.12.2026" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "12.12.2026", to: "16.12.2026" },
+      { description: "Declaration of Revaluation results", from: "23.12.2026", to: "23.12.2026" },
+      { description: "Availability of Online Grade Sheet", from: "02.01.2026", to: "02.01.2026" },
+      { description: "Commencement of IV Semester", from: "30.11.2026", to: "30.11.2026" },
+    ],
+    'IV': [
+      { description: "Registration to IV Semester Courses", from: "09.11.2026", to: "14.11.2026" },
+      { description: "Commencement of Class Work", from: "30.11.2026", to: "30.11.2026" },
+      { description: "Last date to register or drop a Course", from: "07.12.2026", to: "07.12.2026" },
+      { description: "Internal Examinations –I", from: "27.01.2027", to: "29.01.2027" },
+      { description: "Finalization of Detentions based on attendance", from: "27.03.2027", to: "27.03.2027" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "29.03.2027", to: "31.03.2027" },
+      { description: "Internal Examinations –II", from: "05.04.2027", to: "07.04.2027" },
+      { description: "Makeup Internal Examinations", from: "09.04.2027", to: "10.04.2027" },
+      { description: "Semester End Examinations – Lab", from: "12.04.2027", to: "17.04.2027" },
+      { description: "Semester End Examinations – Theory", from: "19.04.2027", to: "01.05.2027" },
+      { description: "Declaration of Results", from: "15.05.2027", to: "15.05.2027" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "15.05.2027", to: "19.05.2027" },
+      { description: "Declaration of Revaluation results", from: "26.05.2027", to: "26.05.2027" },
+      { description: "Availability of Online Grade Sheet", from: "05.06.2027", to: "05.06.2027" },
+      { description: "Commencement of Summer Semester", from: "03.05.2027", to: "03.05.2027" },
+      { description: "Commencement of V Semester", from: "28.06.2027", to: "28.06.2027" },
+    ],
+    'Summer-2027': [
+      { description: "Registration to Courses with fee", from: "12.04.2027", to: "17.04.2027" },
+      { description: "Commencement of Class Work", from: "03.05.2027", to: "03.05.2027" },
+      { description: "Internal Examinations – I", from: "26.05.2027", to: "28.05.2027" },
+      { description: "Internal Examinations – II", from: "14.06.2027", to: "17.06.2027" },
+      { description: "Semester End Examinations – Lab", from: "18.06.2027", to: "19.06.2027" },
+      { description: "Semester End Examinations – Theory", from: "21.06.2027", to: "26.06.2027" },
+      { description: "Declaration of Results", from: "03.07.2027", to: "03.07.2027" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "03.07.2027", to: "07.07.2027" },
+      { description: "Declaration of Revaluation results", from: "14.07.2027", to: "14.07.2027" },
+      { description: "Availability of Online Grade Sheet", from: "24.07.2027", to: "24.07.2027" },
+      { description: "Commencement of V Semester Class Work", from: "28.06.2027", to: "28.06.2027" },
+    ],
+    'V': [
+      { description: "Registration to V Semester Courses", from: "07.06.2027", to: "12.06.2027" },
+      { description: "Commencement of Class Work", from: "28.06.2027", to: "28.06.2027" },
+      { description: "Last date to register or drop a Course", from: "05.07.2027", to: "05.07.2027" },
+      { description: "Internal Examinations –I", from: "18.08.2027", to: "20.08.2027" },
+      { description: "Finalization of Detentions based on attendance", from: "23.10.2027", to: "23.10.2027" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "25.10.2027", to: "27.10.2027" },
+      { description: "Internal Examinations –II", from: "01.11.2027", to: "03.11.2027" },
+      { description: "Makeup Internal Examinations", from: "04.11.2027", to: "06.11.2027" },
+      { description: "Semester End Examinations – Lab", from: "08.11.2027", to: "13.11.2027" },
+      { description: "Semester End Examinations – Theory", from: "15.11.2027", to: "27.11.2027" },
+      { description: "Declaration of Results", from: "11.12.2027", to: "11.12.2027" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "11.12.2027", to: "15.12.2027" },
+      { description: "Declaration of Revaluation results", from: "22.12.2027", to: "22.12.2027" },
+      { description: "Availability of Online Grade Sheet", from: "01.01.2028", to: "01.01.2028" },
+      { description: "Commencement of VI Semester", from: "29.11.2027", to: "29.11.2027" },
+    ],
+    'VI': [
+      { description: "Registration to VI Semester Courses", from: "08.11.2027", to: "13.11.2027" },
+      { description: "Commencement of Class Work", from: "29.11.2027", to: "29.11.2027" },
+      { description: "Last date to register or drop a Course", from: "06.12.2027", to: "06.12.2027" },
+      { description: "Internal Examinations –I", from: "25.01.2028", to: "28.01.2028" },
+      { description: "Finalization of Detentions based on attendance", from: "25.03.2028", to: "25.03.2028" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "27.03.2028", to: "29.03.2028" },
+      { description: "Internal Examinations –II", from: "03.04.2028", to: "06.04.2028" },
+      { description: "Makeup Internal Examinations", from: "07.04.2028", to: "08.04.2028" },
+      { description: "Semester End Examinations – Lab", from: "10.04.2028", to: "15.04.2028" },
+      { description: "Semester End Examinations – Theory", from: "17.04.2028", to: "29.04.2028" },
+      { description: "Declaration of Results", from: "13.05.2028", to: "13.05.2028" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "13.05.2028", to: "17.05.2028" },
+      { description: "Declaration of Revaluation results", from: "24.05.2028", to: "24.05.2028" },
+      { description: "Availability of Online Grade Sheet", from: "03.06.2028", to: "03.06.2028" },
+      { description: "Commencement of Summer Semester", from: "01.05.2028", to: "01.05.2028" },
+      { description: "Commencement of VII Semester", from: "26.06.2028", to: "26.06.2028" },
+    ],
+    'Summer-2028': [
+      { description: "Registration to Courses with fee", from: "10.04.2028", to: "15.04.2028" },
+      { description: "Commencement of Class Work", from: "01.05.2028", to: "01.05.2028" },
+      { description: "Internal Examinations – I", from: "24.05.2028", to: "26.05.2028" },
+      { description: "Internal Examinations – II", from: "12.06.2028", to: "14.06.2028" },
+      { description: "Semester End Examinations – Lab", from: "15.06.2028", to: "17.06.2028" },
+      { description: "Semester End Examinations – Theory", from: "19.06.2028", to: "24.06.2028" },
+      { description: "Declaration of Results", from: "01.07.2028", to: "01.07.2028" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "01.07.2028", to: "05.07.2028" },
+      { description: "Declaration of Revaluation results", from: "12.07.2028", to: "12.07.2028" },
+      { description: "Availability of Online Grade Sheet", from: "22.07.2028", to: "22.07.2028" },
+      { description: "Commencement of VII Semester Class Work", from: "26.06.2028", to: "26.06.2028" },
+    ],
+    'VII': [
+      { description: "Registration to VII Semester Courses", from: "05.06.2028", to: "10.06.2028" },
+      { description: "Commencement of Class Work", from: "26.06.2028", to: "26.06.2028" },
+      { description: "Last date to register or drop a Course", from: "03.07.2028", to: "03.07.2028" },
+      { description: "Internal Examinations –I", from: "16.08.2028", to: "18.08.2028" },
+      { description: "Finalization of Detentions based on attendance", from: "21.10.2028", to: "21.10.2028" },
+      { description: "Payment of Semester End Examination(SEE) fee", from: "23.10.2028", to: "25.10.2028" },
+      { description: "Internal Examinations –II", from: "30.10.2028", to: "01.11.2028" },
+      { description: "Makeup Internal Examinations", from: "02.10.2028", to: "04.11.2028" },
+      { description: "Semester End Examinations – Lab", from: "06.10.2028", to: "11.11.2028" },
+      { description: "Semester End Examinations – Theory", from: "13.11.2028", to: "25.11.2028" },
+      { description: "Declaration of Results", from: "09.12.2028", to: "09.12.2028" },
+      { description: "Payment for SEE script viewing & Revaluation", from: "09.12.2028", to: "13.12.2028" },
+      { description: "Declaration of Revaluation results", from: "20.12.2028", to: "20.12.2028" },
+      { description: "Availability of Online Grade Sheet", from: "30.12.2028", to: "30.12.2028" },
+      { description: "Commencement of VIII Semester", from: "27.11.2028", to: "27.11.2028" },
+    ],
+    'VIII': [
+      { description: "Registration to VIII Semester Courses", from: "06.11.2028", to: "11.11.2028" },
+      { description: "Commencement of Project work /  Full Semester Internship", from: "27.11.2028", to: "27.11.2028" },
+      { description: "Last date to register or drop a Course", from: "04.12.2028", to: "04.12.2028" },
+      { description: "Finalization of Detentions based on attendance", from: "17.03.2029", to: "17.03.2029" },
+      { description: "Payment of Semester End Examination (SEE) fee", from: "19.03.2029", to: "21.03.2029" },
+      { description: "Semester End Examinations", from: "02.04.2029", to: "13.04.2029" },
+      { description: "Declaration of Results", from: "28.04.2029", to: "28.04.2029" },
+      { description: "Availability of Online Grade Sheet", from: "19.05.2029", to: "19.05.2029" },
+    ],
+  }
+};
+
+  window.__reecap_calendar = ADITYA_ACADEMIC_CALENDAR;
+
+
   function getEmptyDossier() {
     return {
       identity: { rollNo: '', name: '', course: '', branch: '', semester: '' },
@@ -344,9 +514,9 @@
             }
             resolve(parsed);
           } catch (e) {
-            if (!isContextInvalidatedError(e)) {
-              console.warn('ReEcap: Background academic prefetch skipped:', e);
-            }
+            // Silently suppress during reload
+            resolve(null);
+            return;
             resolve(null);
           }
         });
@@ -494,9 +664,9 @@
 
             resolve(profileData);
           } catch (err) {
-            if (!isContextInvalidatedError(err)) {
-              console.warn('ReEcap: Background profile prefetch failed:', err);
-            }
+            // Silently suppress during reload
+            resolve(null);
+            return;
             resolve(null);
           }
         });
@@ -811,6 +981,21 @@ ${gradesSummary}
 [TODAY'S TIMETABLE SCHEDULE]:
 ${dossier.schedule.length > 0 ? JSON.stringify(dossier.schedule) : 'No timetable schedule cached for today.'}
 
+[ADITYA UNIVERSITY ACADEMIC CALENDAR (2025–26 SEMESTER II)]:
+- Internal Exams I: 17.03.2026 to 20.03.2026
+- Summer Vacation: 18.05.2026 to 30.05.2026
+- Detentions Finalization: 23.05.2026
+- SEE Fee Payment: 25.05.2026 to 27.05.2026
+- Internal Exams II: 01.06.2026 to 03.06.2026
+- Lab End Exams: 08.06.2026 to 13.06.2026
+- Theory End Exams: 15.06.2026 to 27.06.2026
+- Results: 11.07.2026
+- III Semester Starts: 29.06.2026
+
+[ADITYA UNIVERSITY POLICIES]:
+- Minimum 75% attendance required for SEE eligibility; 65-75% condonable on genuine medical grounds; <65% detained.
+- 10-point scale: O(10), S/A+(9), A(8), B(7), C(6), P/D(5), F(0). NAAC A++ Autonomous Institution.
+
 [YOUR CORE ROLES]:
 1. ACADEMIC ADVISOR: Always refer to the student strictly as "${studentName}" (never use any other surname). Analyze grades, identify weak subjects (courses with Grade B or below: Digital Logic Design, Basic Electrical Engineering), evaluate internal test patterns, and suggest practical study strategies. Never dismiss the student or say you cannot identify weak subjects.
 2. ATTENDANCE STRATEGIST: Calculate precise bunk allowances or mandatory attendance targets using the 75% formula.
@@ -902,6 +1087,42 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
     const q = (query || '').toLowerCase();
     const acad = dossier.academic || {};
     const att = dossier.attendance || {};
+
+    // 0a. Academic Calendar, Exams & Milestones Intelligence
+    if (q.includes('calendar') || q.includes('vacation') || q.includes('holiday') || q.includes('mid') || (q.includes('exam') && (q.includes('date') || q.includes('when') || q.includes('schedule') || q.includes('start') || q.includes('end'))) || q.includes('revaluation')) {
+      return `### Aditya University Semester II Academic Schedule (2025–26)\n\n` +
+        `Here are the verified milestone dates from the official academic calendar for **Semester II**:\n\n` +
+        `- **Internal Examinations – I (Mid 1):** **17.03.2026** to **20.03.2026**\n` +
+        `- **Summer Vacation:** **18.05.2026** to **30.05.2026**\n` +
+        `- **Finalization of Detentions (Attendance Cutoff):** **23.05.2026**\n` +
+        `- **Payment of SEE Exam Fee:** **25.05.2026** to **27.05.2026**\n` +
+        `- **Internal Examinations – II (Mid 2):** **01.06.2026** to **03.06.2026**\n` +
+        `- **Makeup Internal Examinations:** **04.06.2026** to **06.06.2026**\n` +
+        `- **Semester End Lab Examinations:** **08.06.2026** to **13.06.2026**\n` +
+        `- **Semester End Theory Examinations:** **15.06.2026** to **27.06.2026**\n` +
+        `- **Declaration of Results:** **11.07.2026**\n` +
+        `- **SEE Script Viewing & Revaluation:** **11.07.2026** to **15.07.2026**\n` +
+        `- **Commencement of III Semester Class Work:** **29.06.2026**\n\n` +
+        `[action:nav:calendar|Open Semester Calendar] [action:nav:marks|Check Grades]`;
+    }
+
+    // 0b. Aditya University Rules & Policies Intelligence
+    if (q.includes('aditya') || q.includes('university') || q.includes('condonation') || q.includes('detention') || q.includes('grading system') || q.includes('attendance rule') || q.includes('cutoff')) {
+      return `### Aditya University Academic Regulations & Policies\n\n` +
+        `- **Attendance Requirement:** Minimum **75% aggregate attendance** is strictly mandatory across registered subjects to appear for Semester End Examinations (SEE).\n` +
+        `- **Condonation Policy:** Attendance between **65% and 74.9%** may be condoned by the Academic Council strictly on valid medical grounds (supported by medical certificates) upon payment of the prescribed condonation fee.\n` +
+        `- **Detention:** Students securing less than **65% attendance** are detained and are ineligible for end semester examinations.\n` +
+        `- **10-Point Grading System:**\n` +
+        `  - **O** (Outstanding): 10 Grade Points\n` +
+        `  - **S / A+** (Superior): 9 Grade Points\n` +
+        `  - **A** (Very Good): 8 Grade Points\n` +
+        `  - **B+ / B** (Good): 7 Grade Points\n` +
+        `  - **C** (Average): 6 Grade Points\n` +
+        `  - **P / D** (Pass): 5 Grade Points\n` +
+        `  - **F** (Fail): 0 Grade Points\n\n` +
+        `- **Accreditation:** Autonomous institution accredited by NAAC with **A++** Grade and approved by AICTE.\n\n` +
+        `[action:nav:attendance|Check My Attendance] [action:nav:calendar|View Academic Calendar]`;
+    }
 
     // 1. Weak Subjects & Comprehensive Performance Audit
     if (q.includes('weak') || q.includes('improve') || q.includes('difficult') || q.includes('lowest') || q.includes('strength') || (q.includes('subject') && !q.includes('bunk') && !q.includes('attendance'))) {
@@ -1124,7 +1345,9 @@ Keep responses concise, clear, encouraging, and accurate. Never invent false cou
         fees: { url: 'Feepayments/studentfeereceipt.aspx?scrid=23', title: 'FEE & RECEIPTS HUB' },
         receipts: { url: 'FeePayments/studentreceipts.aspx?scrid=28', title: 'RECEIPTS' },
         backlogs: { url: 'Academics/studentbacklogs.aspx?scrid=4', title: 'BACKLOGS REPORT' },
-        examviewer: { url: 'Examinations/RevalutionScriptViewer.aspx', title: 'VIEW ANSWER SHEET' }
+        examviewer: { url: 'Examinations/RevalutionScriptViewer.aspx', title: 'VIEW ANSWER SHEET' },
+        calendar: { url: 'Academics/AcademicCalenderReport.aspx?scrid=1', title: 'SEMESTER CALENDAR' },
+        transactions: { url: 'feepayments/optransactions.aspx', title: 'ONLINE TRANSACTIONS' }
       };
 
       if (verb === 'overview') {

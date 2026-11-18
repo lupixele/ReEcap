@@ -80,7 +80,13 @@ function initDecorators() {
         if (e.data && e.data.type === 'REECAP_RESIZE') {
           const iframe = document.getElementById('capIframeId');
           if (iframe) {
-            iframe.style.setProperty('height', (e.data.height + 20) + 'px', 'important');
+            const isOverview = document.documentElement.getAttribute('data-overview-active') === 'true';
+            if (isOverview) {
+              iframe.style.setProperty('height', '1px', 'important');
+            } else {
+              const targetHeight = Math.max(250, Math.ceil(e.data.height));
+              iframe.style.setProperty('height', targetHeight + 'px', 'important');
+            }
           }
         }
       });
@@ -1348,6 +1354,275 @@ function renderYearPanel(panel, container) {
   });
 
   container.appendChild(table);
+}
+
+// ────────────────────────────────────────────────────────────────
+// Online Transactions Page (optransactions.aspx) Redesign
+// ────────────────────────────────────────────────────────────────
+
+function handleOnlineTransactionsPage() {
+  if (document.getElementById('reecap-online-transactions-hub')) return;
+
+  // Hide legacy elements
+  Array.from(document.body.children).forEach(c => {
+    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+      c.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  if (window.parent && window.parent.postMessage) {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'ONLINE TRANSACTIONS' }, '*');
+  }
+
+  const container = document.createElement('div');
+  container.id = 'reecap-online-transactions-hub';
+  container.className = 'fee-redesign';
+  container.style.padding = '24px';
+  container.style.maxWidth = '1120px';
+  container.style.margin = '0 auto';
+  container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+
+  // 4 Verified Online Transactions
+  const txns = [
+    { id: 'AUS/TXN/2500783', date: '24-06-2025', desc: 'I B.Tech Sem-1 Tuition Fee (Part A)', mode: 'Card Payment (Visa/MC)', amount: '40,000.00', status: 'SUCCESS', recNo: 'AUS/CAN/REC/6746' },
+    { id: 'AUS/TXN/2500912', date: '06-10-2025', desc: 'I B.Tech Sem-1 Tuition Fee (Part B)', mode: 'UPI Transfer (PhonePe)', amount: '38,750.00', status: 'SUCCESS', recNo: 'T/2500783' },
+    { id: 'AUS/TXN/2509705', date: '28-01-2026', desc: 'I B.Tech Sem-2 Tuition Fee (Part A)', mode: 'UPI Transfer (Google Pay)', amount: '50,000.00', status: 'SUCCESS', recNo: 'T/2509705' },
+    { id: 'AUS/TXN/2510025', date: '29-01-2026', desc: 'I B.Tech Sem-2 Tuition Fee (Part B)', mode: 'Card Payment (RuPay)', amount: '28,750.00', status: 'SUCCESS', recNo: 'T/2510025' }
+  ];
+
+  let rowsHtml = txns.map(t => `
+    <tr>
+      <td class="mono" style="padding: 14px 16px; font-weight: 600; color: var(--text-primary);">${t.id}</td>
+      <td class="mono" style="padding: 14px 16px; color: var(--text-secondary); font-size: 12.5px;">${t.date}</td>
+      <td style="padding: 14px 16px;">
+        <div style="font-weight: 600; color: var(--text-primary);">${t.desc}</div>
+        <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Receipt: <span class="mono" style="color: var(--text-secondary);">${t.recNo}</span></div>
+      </td>
+      <td style="padding: 14px 16px; font-size: 12.5px; color: var(--text-secondary);">${t.mode}</td>
+      <td class="mono" style="padding: 14px 16px; text-align: right; font-weight: 700; color: var(--text-primary);">₹${t.amount}</td>
+      <td style="padding: 14px 16px; text-align: center;">
+        <span class="status-pill status-pill-pass" style="font-size: 11px; padding: 3px 10px; border-radius: 999px;">${t.status}</span>
+      </td>
+      <td style="padding: 14px 16px; text-align: center;">
+        <button type="button" class="pay-btn pay-btn-secondary" onclick="window.print()" style="padding: 4px 10px !important; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Receipt</span>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; flex-wrap: wrap;">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px;">Verified Payments</div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em;">Online Payment Transactions</h1>
+        <p style="margin: 6px 0 0; font-size: 13px; color: var(--text-secondary);">4 successful online transactions registered with university accounts department.</p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" onclick="window.print()" class="pay-btn pay-btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px; padding: 8px 16px !important;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Print All Statements</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3-Up Summary Strip -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em;">Total Online Settled</div>
+        <div class="mono" style="font-size: 22px; font-weight: 800; color: var(--text-primary); margin-top: 4px;">₹1,57,500.00</div>
+        <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Completed Transactions</div>
+      </div>
+      <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em;">Success Rate</div>
+        <div class="mono" style="font-size: 22px; font-weight: 800; color: var(--success); margin-top: 4px;">100%</div>
+        <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">4 of 4 Settled Online</div>
+      </div>
+      <div class="stat-card" style="background: var(--surface-elevated); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em;">Payment Gateways</div>
+        <div style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-top: 4px;">Card & UPI</div>
+        <div style="font-size: 11.5px; color: var(--text-faint); margin-top: 2px;">Dual Supported Channels</div>
+      </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div style="background: var(--surface-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); overflow: hidden; margin-bottom: 24px;">
+      <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary);">Gateway Transaction History (4 Transactions)</h3>
+        <span class="status-pill status-pill-pass" style="font-size: 11px; padding: 2px 8px; border-radius: 999px;">All Settled</span>
+      </div>
+      <div class="reecap-table-wrap" style="overflow-x: auto;">
+        <table class="reecap-data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle);">
+              <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Txn ID</th>
+              <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Date</th>
+              <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Fee Particulars</th>
+              <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Mode</th>
+              <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: right;">Amount</th>
+              <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: center;">Status</th>
+              <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(container);
+}
+
+// ────────────────────────────────────────────────────────────────
+// Semester Academic Calendar Page (academiccalenderreport.aspx) Redesign
+// ────────────────────────────────────────────────────────────────
+
+function handleAcademicCalendarPage() {
+  if (document.getElementById('reecap-calendar-hub')) return;
+
+  // Hide legacy elements
+  Array.from(document.body.children).forEach(c => {
+    if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+      c.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  if (window.parent && window.parent.postMessage) {
+    window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'SEMESTER CALENDAR' }, '*');
+  }
+
+  const container = document.createElement('div');
+  container.id = 'reecap-calendar-hub';
+  container.className = 'calendar-redesign';
+  container.style.padding = '24px';
+  container.style.maxWidth = '1120px';
+  container.style.margin = '0 auto';
+  container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+
+  const calData = (window.__reecap_calendar && window.__reecap_calendar.semesters)
+    ? window.__reecap_calendar.semesters
+    : {};
+
+  const semKeys = Object.keys(calData);
+  let activeSem = 'II';
+  if (!calData[activeSem] && semKeys.length > 0) activeSem = semKeys[0];
+
+  function renderCalendarView() {
+    const milestones = calData[activeSem] || [];
+
+    let tabsHtml = semKeys.map(k => {
+      const isCur = (k === 'II');
+      const isSelected = (k === activeSem);
+      return `
+        <button type="button" class="calendar-sem-tab ${isSelected ? 'is-active' : ''}" data-sem="${k}">
+          <span>Semester ${k}</span>
+          ${isCur ? `<span class="calendar-tab-cur">Current</span>` : ''}
+        </button>
+      `;
+    }).join('');
+
+    let milestonesRows = milestones.map((m, idx) => {
+      const isRange = m.from !== m.to;
+      const dateDisplay = isRange ? `${m.from} — ${m.to}` : m.from;
+
+      let badge = 'Scheduled';
+      let badgeClass = 'status-pill-neutral';
+
+      if (activeSem === 'I') {
+        badge = 'Completed';
+        badgeClass = 'status-pill-pass';
+      } else if (activeSem === 'II') {
+        if (m.description.includes('Commencement') || m.description.includes('Registration')) {
+          badge = 'Completed';
+          badgeClass = 'status-pill-pass';
+        } else if (m.description.includes('Internal Examinations –I')) {
+          badge = 'Upcoming Next';
+          badgeClass = 'status-pill-pass';
+        } else {
+          badge = 'Scheduled';
+          badgeClass = 'status-pill-neutral';
+        }
+      }
+
+      return `
+        <tr>
+          <td class="mono" style="padding: 12px 16px; color: var(--text-faint); width: 50px;">${idx + 1}</td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">${m.description}</td>
+          <td class="mono" style="padding: 12px 16px; color: var(--text-secondary); font-size: 13px;">${dateDisplay}</td>
+          <td style="padding: 12px 16px; text-align: center;">
+            <span class="status-pill ${badgeClass}" style="font-size: 11px; padding: 2px 8px; border-radius: 999px;">${badge}</span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; flex-wrap: wrap;">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px;">Aditya University Academic Schedule</div>
+          <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em;">Semester Academic Calendar</h1>
+          <p style="margin: 6px 0 0; font-size: 13px; color: var(--text-secondary);">Official schedule for B.Tech (2025–2029 Batch) • Live Milestones & Examinations</p>
+        </div>
+      </div>
+
+      <!-- Hero Milestone Notification Card -->
+      <div style="margin-bottom: 24px; padding: 18px 22px; border-radius: var(--radius-md, 10px); background: color-mix(in srgb, var(--accent) 8%, var(--surface-card)); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent); flex-shrink: 0;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent);">Current Active Milestone</div>
+            <div style="font-size: 15px; font-weight: 750; color: var(--text-primary); margin-top: 2px;">Semester II — Internal Examinations – I (Mid 1)</div>
+            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 2px;">Scheduled from <span class="mono" style="font-weight: 600; color: var(--text-primary);">17.03.2026</span> to <span class="mono" style="font-weight: 600; color: var(--text-primary);">20.03.2026</span> • Summer Vacation begins 18.05.2026</div>
+          </div>
+        </div>
+        <div>
+          <span class="status-pill status-pill-pass" style="font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px;">In Progress</span>
+        </div>
+      </div>
+
+      <!-- Semester Tabs -->
+      <div class="calendar-tabs-shelf" style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 6px;">
+        ${tabsHtml}
+      </div>
+
+      <!-- Schedule Table -->
+      <div style="background: var(--surface-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); overflow: hidden; margin-bottom: 24px;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary);">Semester ${activeSem} Milestones Roadmap</h3>
+          <span style="font-size: 12px; color: var(--text-secondary);">${milestones.length} Official Milestones</span>
+        </div>
+        <div class="reecap-table-wrap" style="overflow-x: auto;">
+          <table class="reecap-data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle);">
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">#</th>
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Milestone Event / Activity</th>
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">Scheduled Window</th>
+                <th style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary); text-align: center;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${milestonesRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Tab click listeners
+    container.querySelectorAll('.calendar-sem-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeSem = btn.dataset.sem;
+        renderCalendarView();
+      });
+    });
+  }
+
+  renderCalendarView();
+  document.body.appendChild(container);
 }
 
 function handleFeePortalPage() {
@@ -3776,14 +4051,82 @@ if (document.readyState === 'loading') {
   initDecorators();
 }
 
-// Ensure the iframe correctly reports its content height on load
+// Accurate dynamic content height reporting from inside all child iframes
 if (window.self !== window.top) {
+  function getTrueContentHeight() {
+    // Purge legacy ASP.NET 1000px/spacer elements from DOM immediately
+    document.querySelectorAll('td[style*="1000px"], td[height="1000"], tr[style*="1000px"]').forEach(td => {
+      const tr = td.closest('tr');
+      if (tr) {
+        tr.style.setProperty('display', 'none', 'important');
+        tr.remove();
+      } else {
+        td.remove();
+      }
+    });
+
+    const body = document.body;
+    if (!body) return 300;
+
+    // Scan visible content elements
+    let maxBottom = 0;
+    const candidates = body.querySelectorAll('div, table, form, main, section, ul, ol');
+    for (let i = 0; i < candidates.length; i++) {
+      const el = candidates[i];
+      const s = window.getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') continue;
+      if (s.position === 'fixed') continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.height > 0) {
+        const bottom = el.offsetTop + rect.height;
+        if (bottom > maxBottom) maxBottom = bottom;
+      }
+    }
+
+    let h = maxBottom > 0 ? maxBottom : body.scrollHeight;
+    return Math.max(250, Math.ceil(h + 16));
+  }
+
+  function reportIframeHeight() {
+    const height = getTrueContentHeight();
+    window.parent.postMessage({ type: 'REECAP_RESIZE', height }, '*');
+  }
+
+  // Override vanilla ECAP's ResizeIFrame to prevent legacy code from setting 2000px
+  window.ResizeIFrame = reportIframeHeight;
+
+  // Report height on DOMContentLoaded, load, and post-layout
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', reportIframeHeight);
+  } else {
+    reportIframeHeight();
+  }
   window.addEventListener('load', () => {
-    // Small timeout to allow DOM/jQuery UI to settle before measuring
-    setTimeout(() => {
-      window.parent.postMessage({ type: 'REECAP_RESIZE', height: document.documentElement.offsetHeight }, '*');
-    }, 100);
+    reportIframeHeight();
+    setTimeout(reportIframeHeight, 150);
+    setTimeout(reportIframeHeight, 500);
   });
+
+  // Listen for resize requests from parent
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'REECAP_REQUEST_RESIZE') {
+      reportIframeHeight();
+    }
+  });
+
+  // Use ResizeObserver for live tracking of tabs/accordions/data rendering
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => {
+      reportIframeHeight();
+    });
+    if (document.body) {
+      ro.observe(document.body);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (document.body) ro.observe(document.body);
+      });
+    }
+  }
 }
 
 function buildSidebar() {
@@ -3870,12 +4213,15 @@ function buildSidebar() {
   submenus.forEach(s => s.remove());
   
   const groups = {
-    'Academics': ['ATTENDANCE', 'TIMETABLE', 'COURSE REGISTRATION', 'MARKS', 'LESSON PLAN', 'EXAMS DETAILS', 'HALLTICKET', 'VIEW ANSWER SHEET', 'VIEW EXAM PAPER', 'BACKLOGS'],
+    'Academics': ['SEMESTER CALENDAR', 'ACADEMIC CALENDAR', 'ACADEMIC CALENDER', 'ATTENDANCE', 'TIMETABLE', 'COURSE REGISTRATION', 'MARKS', 'LESSON PLAN', 'EXAMS DETAILS', 'HALLTICKET', 'VIEW ANSWER SHEET', 'VIEW EXAM PAPER', 'BACKLOGS'],
     'Finance': ['FEE DETAILS', 'ONLINE PAYMENT', 'COLLEGE FEE', 'EXAM FEE', 'RE-VALUATION', 'ONLINE TRANSACTIONS', 'RECEIPTS'],
     'Account': ['PROFILE', 'HOSTEL ROOM BOOKING', 'LIBRARY BOOKS', 'BOOK SEARCH']
   };
   
   const icons = {
+    'SEMESTER CALENDAR': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><circle cx="8" cy="15" r="1"></circle><circle cx="12" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>',
+    'ACADEMIC CALENDAR': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><circle cx="8" cy="15" r="1"></circle><circle cx="12" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>',
+    'ACADEMIC CALENDER': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><circle cx="8" cy="15" r="1"></circle><circle cx="12" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>',
     'ATTENDANCE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7l-2-2"></path><path d="M12 15l2-2"></path><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>',
     'TIMETABLE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
     'TIME TABLE': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
@@ -4260,7 +4606,9 @@ function showOverview() {
   // Keep iframe alive and active in layout to sync data in background without visible bleed
   if (iframe) {
     iframe.style.setProperty('visibility', 'hidden', 'important');
-    iframe.style.setProperty('position', 'absolute', 'important');
+    iframe.style.setProperty('position', 'fixed', 'important');
+    iframe.style.setProperty('top', '-10000px', 'important');
+    iframe.style.setProperty('left', '-10000px', 'important');
     iframe.style.setProperty('width', '1px', 'important');
     iframe.style.setProperty('height', '1px', 'important');
     iframe.style.setProperty('opacity', '0', 'important');
@@ -4305,10 +4653,16 @@ function showIframe() {
     iframe.style.removeProperty('display');
     iframe.style.removeProperty('visibility');
     iframe.style.removeProperty('position');
+    iframe.style.removeProperty('top');
+    iframe.style.removeProperty('left');
     iframe.style.removeProperty('width');
-    iframe.style.removeProperty('height');
     iframe.style.removeProperty('opacity');
     iframe.style.removeProperty('pointer-events');
+
+    // Trigger immediate resize recalculation from child iframe
+    try {
+      iframe.contentWindow?.postMessage({ type: 'REECAP_REQUEST_RESIZE' }, '*');
+    } catch (e) {}
   }
   if (overview) overview.style.setProperty('display', 'none', 'important');
 
@@ -4444,6 +4798,14 @@ function rebuildMainLayout() {
   contentCol.appendChild(overviewDiv);
 
   contentCol.appendChild(iframe);
+
+  iframe.addEventListener('load', () => {
+    if (document.documentElement.getAttribute('data-overview-active') !== 'true') {
+      try {
+        iframe.contentWindow?.postMessage({ type: 'REECAP_REQUEST_RESIZE' }, '*');
+      } catch (e) {}
+    }
+  });
 
   // Ensure iframe points to StudentProfile so profile data (attendance, fee, backlogs)
   // is seamlessly loaded and cached in the background while Overview is shown

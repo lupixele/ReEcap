@@ -7,9 +7,11 @@ Review/
 Raw/
 Review/
 extension/shared/students.*
-dist/*/shared/students.*
+dist/
+scratch/*/shared/students.*
 *.xlsx
 *.xls
 .freebuff/
 dist/
+scratch/
 .git.backup/

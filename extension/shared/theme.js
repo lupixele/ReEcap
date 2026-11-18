@@ -94,6 +94,7 @@
 
   const ROUTE_TAILS = {
     // ─ Academics ─
+    'academic-calendar.aspx':['/academics/academiccalenderreport.aspx', '/academiccalenderreport', '/academiccalendar'],
     'attendance.aspx':       ['/academics/studentattendance.aspx', '/academics/studentattendancereport.aspx', '/attendance'],
     'timetable.aspx':        ['/academics/timetablereport.aspx', '/timetablereport'],
     'choose-timetable.aspx': ['/academics/studenttimetableoption.aspx', '/studenttimetableoption'],

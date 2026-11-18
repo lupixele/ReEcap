@@ -656,16 +656,36 @@ body.bodyStyle > form > center > br {
   margin: 0 !important;
   padding: 0 !important;
   vertical-align: top;
+  min-height: 0 !important;
 }
 
-/* Hide legacy spacers inside the iframe so they don't bloat the height calculation */
+/* While Overview is active, guarantee the iframe is completely out of the scroll tree */
+html[data-overview-active="true"] #capIframeId {
+  position: fixed !important;
+  top: -10000px !important;
+  left: -10000px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Eradicate legacy ASP.NET 1000px spacer rows and empty spacers */
 td[style*="1000px"], 
 td[height="1000"],
+tr[style*="1000px"],
+tr:has(td[style*="1000px"]),
+tr:has(td[height="1000"]),
 #divProfile br,
 body.bodyStyle > form > center > div > br,
 body.bodyStyle br {
   height: 0 !important;
+  max-height: 0 !important;
   display: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
 }
 
 #reecap-profile-dashboard {
@@ -1826,8 +1846,16 @@ body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--acc
    ========================================================================== */
 
 /* Fix the 1000px dead space bug caused by legacy spacer row */
-td[style*="1000px"] {
+td[style*="1000px"],
+td[height="1000"],
+tr[style*="1000px"],
+tr:has(td[style*="1000px"]),
+tr:has(td[height="1000"]) {
   display: none !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 /* Modern Tabbed Interface to replace jQuery UI Accordion */
@@ -3735,6 +3763,89 @@ table.popupTable th a:hover {
   border-color: var(--accent);
   color: var(--accent-dark);
 }
+
+/* ---- 2-Option Payment Mode Pills (Card & UPI Only) -------------------- */
+.pay-2options-container {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pay-method-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-secondary);
+}
+.pay-method-pill:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-card));
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.pay-method-pill.is-selected {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-card));
+  border-color: var(--accent);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.pay-method-pill svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.pay-method-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.pay-method-sub {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ---- Semester Calendar UI --------------------------------------------- */
+.calendar-sem-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-secondary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.calendar-sem-tab:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-sunken));
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.calendar-sem-tab.is-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.calendar-tab-cur {
+  font-size: 9.5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.calendar-sem-tab:not(.is-active) .calendar-tab-cur {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 
 /* ---- Year cards --------------------------------------------------------- */
 .pay-years {
