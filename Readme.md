@@ -4,7 +4,7 @@
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-blue.svg)](https://developer.chrome.com/docs/extensions)
 [![Browser Support](https://img.shields.io/badge/Browsers-Chrome%20%7C%20Edge%20%7C%20Brave-orange.svg)]()
-[![License: RCCL v1.0](https://img.shields.io/badge/License-ReEcap%20Campus%20Community%20License%20v1.0-blue.svg)](LICENSE)
+[![License: RIL v1.0](https://img.shields.io/badge/License-ReEcap%20Institutional%20License%20v1.0-blue.svg)](LICENSE)
 
 **ReEcap** is a lightweight browser extension that replaces the outdated Aditya University ECAP portal with a fast, modern workstation. Everything runs 100% locally in your browser—your login, attendance records, exam results, and fee payments still go through the official university portal without any middleman or external servers.
 
@@ -110,4 +110,4 @@ Works on any Chromium browser (**Google Chrome**, **Microsoft Edge**, **Brave**,
 
 ## License
 
-Released under the **ReEcap Campus Community License (RCCL v1.0)** — exclusively permitted to college faculty, management, and students for personal, non-commercial educational and administrative convenience. See [LICENSE](LICENSE) for terms and institutional disclaimers.
+Released under the **ReEcap Institutional License (RIL v1.0)** — exclusively permitted to college faculty, management, and students for personal, non-commercial educational and administrative convenience. See [LICENSE](LICENSE) for terms and institutional disclaimers.
