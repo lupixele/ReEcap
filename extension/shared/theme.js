@@ -2171,26 +2171,73 @@
 
   // ─── Navigation Route Matching ───────────────────────────────────────────
 
-  const PATH_MATCH_TABLE = {
-    'student-profile': ['studentprofile.aspx', 'studentprofile'],
-    'attendance':      ['studentattendance.aspx', 'attendance', 'attendancedetails'],
-    'class-schedule':  ['studenttimetable.aspx', 'timetable', 'schedule'],
-    'internal-marks':  ['studentmarks.aspx', 'studentinternalmarks', 'internalmarks'],
-    'semester-results':['studentresults.aspx', 'studentsemesterresults', 'results'],
-    'fee-details':     ['studentfeedetails.aspx', 'fee', 'studentfees'],
-    'hall-ticket':     ['studenthallticket.aspx', 'hallticket', 'downloadhallticket'],
-    'exam-viewer':     ['examresults.aspx', 'examviewer', 'examreport']
+  const ROUTE_TAILS = {
+    // ─ Academics ─
+    'academic-calendar.aspx':['/academics/academiccalenderreport.aspx', '/academiccalenderreport', '/academiccalendar'],
+    'attendance.aspx':       ['/academics/studentattendance.aspx', '/academics/studentattendancereport.aspx', '/attendance'],
+    'timetable.aspx':        ['/academics/timetablereport.aspx', '/timetablereport', '/academics/studenttimetableoption.aspx', '/studenttimetableoption'],
+    'choose-timetable.aspx': ['/academics/studenttimetableoption.aspx', '/studenttimetableoption'],
+    'course-registration.aspx':['/academics/studentcourseregistration.aspx', '/studentcourseregistration', '/courseregistration'],
+    'marks.aspx':            ['/academics/studentmarksreport.aspx', '/studentmarksreport', '/marks'],
+    'lesson-plan.aspx':      ['/academics/lpreport.aspx', '/lpreport', '/lessonplan'],
+    'exams-details.aspx':    ['/examinations/studentexamtimetable.aspx', '/studentexamtimetable', '/examsdetails'],
+    'hallticket.aspx':       ['/examinations/studenthallticket.aspx', '/studenthallticket', '/hallticket'],
+    'view-answer-sheet.aspx':['/examinations/revalutionscriptviewer.aspx', '/revalutionscriptviewer', '/viewanswersheet'],
+    'backlogs.aspx':         ['/academics/studentbacklogs.aspx', '/studentbacklogs', '/backlogs'],
+    // ─ Finance ─
+    'fee-details.aspx':      ['/feepayments/studentpayments.aspx', '/studentpayments'],
+    'online-payment.aspx':   ['/feepayments/studentfeereceipt.aspx', '/studentfeereceipt'],
+    'college-fee.aspx':      ['/feepayments/studentfeereceipt.aspx', '/feepayments/collegefee.aspx', '/collegefee', '/studentfeereceipt'],
+    'exam-fee.aspx':         ['/studentexamfeeonline.aspx', '/studentexamfeeonline', '/examfee'],
+    're-valuation.aspx':     ['/examinations/revaluationregistrationstudent.aspx', '/revaluationregistrationstudent', '/revaluation'],
+    'online-transactions.aspx':['/feepayments/optransactions.aspx', '/optransactions', '/onlinetransactions'],
+    'receipts.aspx':         ['/feepayments/studentreceipts.aspx', '/studentreceipts', '/receipts'],
+    // ─ Account ─
+    'profile.aspx':          ['/academics/studentprofile.aspx', '/studentprofile', '/profile'],
+    'hostel-room-booking.aspx':['/hostel/hosteladmission.aspx', '/hostel/hostelbooking.aspx', '/hosteladmission', '/hostelbooking'],
+    'library-books.aspx':    ['/library/studentsbooks.aspx', '/studentsbooks', '/librarybooks'],
+    'book-search.aspx':      ['/library/booksearch1.aspx', '/booksearch1', '/booksearch']
   };
+
+  const PATH_MATCH_TABLE = ROUTE_TAILS;
+
+  function _basename(pathLower) {
+    const i = pathLower.lastIndexOf('/');
+    return i >= 0 ? pathLower.slice(i + 1) : pathLower;
+  }
 
   function matchActivePage(iframePath) {
     if (!iframePath) return null;
     const lower = iframePath.toLowerCase();
-    for (const [key, paths] of Object.entries(PATH_MATCH_TABLE)) {
-      if (paths.some(p => lower.includes(p))) {
-        return key;
+    const base = _basename(lower);
+    let bestKey = null;
+    let bestLen = -1;
+
+    for (const [key, tails] of Object.entries(ROUTE_TAILS)) {
+      for (const tail of tails) {
+        const t = tail.toLowerCase();
+        const isLongTail = t.length >= 14;
+        const candidateEndsWith = isLongTail && lower.endsWith(t);
+        const candidateBasenameContains = !isLongTail && base.includes(t.replace(/^\//, ''));
+        if (candidateEndsWith || candidateBasenameContains) {
+          if (t.length > bestLen) {
+            bestKey = key;
+            bestLen = t.length;
+          }
+        }
       }
     }
-    return null;
+    return bestKey;
+  }
+
+  function routeKeyForHref(href) {
+    try {
+      if (typeof href !== 'string' || !href) return null;
+      const path = new URL(href, 'http://placeholder/').pathname;
+      return matchActivePage(path);
+    } catch (e) {
+      return null;
+    }
   }
 
   // ─── Public API Exposure ─────────────────────────────────────────────────
@@ -2205,7 +2252,9 @@
     rgbToHsl,
     calculateShades,
     PATH_MATCH_TABLE,
-    matchActivePage
+    ROUTE_TAILS,
+    matchActivePage,
+    routeKeyForHref
   };
 
   global.__reecap_theme = themeAPI;

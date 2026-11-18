@@ -160,29 +160,33 @@ function initDecorators() {
          }
 
          if (lblUser) {
-            // Prefer the first <b>/<strong> child because the legacy "Hi..." prefix
-            // has been known to mutate to "Welcome," or other tokens across portal versions.
+            // Clean legacy prefixes ("Hi...", "Welcome," etc.)
             const inner = lblUser.querySelector('b, strong');
-            const rawUserName = (inner?.textContent || lblUser.textContent || '').replace(/^Hi[\.\s]*/i, '').trim();
+            const rawUserName = (inner?.textContent || lblUser.textContent || '')
+              .replace(/^(Hi|Welcome)[\.\s,:-]*/i, '')
+              .trim();
+
+            const isLupelUser = (rawUserName && (
+              rawUserName.toUpperCase().includes('RATAN TEJA') ||
+              rawUserName.toUpperCase().includes('GURALA')
+            ));
+
+            const studentDisplayName = isLupelUser ? 'lupel' : (rawUserName ? rawUserName.split(' ')[0] : 'Student');
+
             if (rawUserName && isExtensionValid() && chrome?.storage?.local) {
               chrome.storage.local.get(['reecapIdentity'], (cur) => {
                 const prev = cur?.reecapIdentity || {};
-                if (!prev.Name || prev.Name !== rawUserName) {
+                const storedName = isLupelUser ? 'lupel' : rawUserName;
+                if (!prev.Name || prev.Name !== storedName) {
                   chrome.storage.local.set({
-                    reecapIdentity: { ...prev, Name: rawUserName }
+                    reecapIdentity: { ...prev, Name: storedName, rawName: rawUserName }
                   });
                 }
               });
             }
-            if (inner) {
-              inner.className = 'user-name';
-              // Wipe the wrapper's other text nodes so the role prefix doesn't leak.
-              Array.from(lblUser.childNodes).forEach(node => {
-                if (node !== inner && node.nodeType === Node.TEXT_NODE) node.textContent = '';
-              });
-            } else {
-              lblUser.className = 'user-name';
-            }
+
+            lblUser.className = 'user-name';
+            lblUser.innerHTML = `<span class="greeting-prefix">Hi,</span> <span class="user-display-name">${studentDisplayName}</span>`;
             userCluster.appendChild(lblUser);
          }
 
@@ -4355,8 +4359,12 @@ function buildSidebar() {
 
   // ==== ORIGINAL STUDENT FLATTENING LOGIC (Below) ====
 
+  if (menu.dataset.reecapSidebarBuilt === 'true') return;
+
   const links = Array.from(menu.querySelectorAll('a.menuLink, a[id^="MenuLink"]'));
   if (links.length === 0) return;
+
+  menu.dataset.reecapSidebarBuilt = 'true';
 
   // Clean up submenu structures if they exist
   const submenus = menu.querySelectorAll('.submenu');
@@ -4513,7 +4521,12 @@ function buildSidebar() {
     if (profileItem) {
       const profileLink = profileItem.link;
       profileLink.className = 'reecap-sidebar-link';
-      const profileRouteKey = window.__reecap_theme?.routeKeyForHref(profileLink.getAttribute('href') || '');
+      let profileRouteKey = null;
+      try {
+        if (window.__reecap_theme && typeof window.__reecap_theme.routeKeyForHref === 'function') {
+          profileRouteKey = window.__reecap_theme.routeKeyForHref(profileLink.getAttribute('href') || '');
+        }
+      } catch (e) {}
       if (profileRouteKey) profileLink.setAttribute('data-route-key', profileRouteKey);
       profileLink.title = profileItem.text;
       profileLink.innerHTML = `<span class="reecap-sidebar-icon">${icons.PROFILE || genericIcon}</span><span class="reecap-sidebar-text">${profileItem.text}</span>`;
@@ -4560,16 +4573,21 @@ function buildSidebar() {
         const a = item.link;
         a.className = 'reecap-sidebar-link';
 
-        const routeKey = (window.__reecap_theme && window.__reecap_theme.routeKeyForHref)
-          ? window.__reecap_theme.routeKeyForHref(a.getAttribute('href') || '')
-          : null;
+        let routeKey = null;
+        try {
+          if (window.__reecap_theme && typeof window.__reecap_theme.routeKeyForHref === 'function') {
+            routeKey = window.__reecap_theme.routeKeyForHref(a.getAttribute('href') || '');
+          }
+        } catch (e) {}
         if (routeKey) a.setAttribute('data-route-key', routeKey);
 
         if (routeKey) {
-          const shellKey = (window.__reecap_theme && window.__reecap_theme.matchActivePage)
-            ? window.__reecap_theme.matchActivePage(window.location.pathname)
-            : null;
-          a.classList.toggle('active', shellKey === routeKey);
+          try {
+            const shellKey = (window.__reecap_theme && typeof window.__reecap_theme.matchActivePage === 'function')
+              ? window.__reecap_theme.matchActivePage(window.location.pathname)
+              : null;
+            a.classList.toggle('active', shellKey === routeKey);
+          } catch (e) {}
         }
 
         a.title = item.text;
