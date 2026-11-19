@@ -17,3 +17,7 @@ scratch/
 .git.backup/
 
 *.zip
+
+# Local demo environment
+demo/
+node_modules/

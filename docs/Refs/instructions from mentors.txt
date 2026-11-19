@@ -1,0 +1,33 @@
+*CodeForge BuildX 2026 – Project Documentation Guidelines*
+
+Dear Students,
+
+All mini-project documentation must follow a *uniform professional format*.
+
+📄 *Formatting Requirements:*
+- *Paper:* A4, Portrait
+- *Font:* Times New Roman
+- *Body Text:* 12 pt
+- *Main Headings:* 16 pt, Bold
+- *Subheadings:* 14 pt, Bold
+- *Line Spacing:* 1.5
+- *Text Alignment:* Justified
+- *Margins:* 1 inch on all sides
+- *Paragraph Spacing:* 6 pt after each paragraph
+- *Page Numbers:* Mandatory (bottom center/right)
+- *Text Color:* Black
+- *Background:* Plain White
+- *Length:* 10–15 pages (including cover page)
+
+📌 *Additional Guidelines:*
+1. Follow the *six mandatory documentation sections* already shared in the BuildX guidelines.
+2. Use consistent heading numbering (e.g., 1, 1.1, 1.2).
+3. *Images/Figures:* Captions must be numbered and placed *below the image* (e.g., Figure 1: Login Page).
+4. *Tables:* Captions must be numbered and placed *above the table* (e.g., Table 1: Technology Stack).
+5. Include clear, properly cropped screenshots without stretching or distortion.
+6. Avoid excessive blank spaces, unnecessary decorations, repeated content, or copying entire source code files.
+7. Use clear English with proper spelling and grammar.
+
+📌 *Submission:* Submit the documentation as a *PDF* and bring a *printed hard copy* for mentor review.
+
+⚠️ *Documentation that does not follow these guidelines must be corrected before final approval.*
