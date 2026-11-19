@@ -2520,11 +2520,11 @@ body.reecap-login-page .links a:hover { background: color-mix(in srgb, var(--acc
     text-align: left !important;
   }
   body.reecap-login-page .radio-group {
-    grid-template-columns: 1fr !important;
-    border-radius: var(--radius-sm) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    border-radius: 999px !important;
   }
   body.reecap-login-page .custom-radio {
-    border-radius: 7px !important;
+    border-radius: 999px !important;
   }
   body.reecap-login-page .reecap-login-footer {
     padding: 8px 14px 20px !important;
