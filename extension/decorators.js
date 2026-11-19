@@ -810,7 +810,7 @@ function initDecorators() {
 
     // 2. Profile Dashboard (Pass 1)
     const route = (window.location.pathname + window.location.search).toLowerCase();
-    if (route.includes('studentattendance.aspx')) {
+    if (route.includes('studentattendance') || route.includes('attendancereport') || route.includes('attendanceregister')) {
       redesignAttendancePage();
     }
     if (window.location.pathname.toLowerCase().includes('studentprofile.aspx')) {
@@ -1031,19 +1031,22 @@ function injectThemeToolbar() {
       card.setAttribute('tabindex', '0');
       card.dataset.preset = id;
       card.dataset.appearance = appearance;
+      card.style.setProperty('--swatch-bg', swatch.background);
+      card.style.setProperty('--swatch-fg', swatch.foreground);
+      card.style.setProperty('--swatch-accent', swatch.accent);
       const dispFont = preset.font?.display?.name || '';
       const uiFont = preset.font?.ui?.name || '';
       const fontLabel = dispFont === uiFont ? dispFont : `${dispFont} / ${uiFont}`;
 
       card.title = `${preset.name} (${appearance})\nDisplay: ${dispFont}\nUI: ${uiFont}`;
       card.innerHTML = `
-        <div class="preset-swatch" style="--swatch-bg: ${swatch.background}; --swatch-fg: ${swatch.foreground}; font-family: '${dispFont}', '${uiFont}', sans-serif;">
+        <div class="preset-swatch" style="font-family: '${dispFont}', '${uiFont}', sans-serif;">
           <span>Aa</span>
-          <span class="preset-accent-dot" style="--swatch-accent: ${swatch.accent};"></span>
+          <span class="preset-accent-dot"></span>
         </div>
         <div class="preset-name">${preset.name}</div>
         <div class="preset-font-name" title="Display: ${dispFont} • UI: ${uiFont}">${fontLabel}</div>
-        <div class="preset-style-badge">${appearance}</div>
+        <div class="preset-style-badge">${appearance === 'light' ? 'Light' : 'Dark'}</div>
       `;
 
       function selectPreset() {
@@ -2958,6 +2961,20 @@ function renderStandaloneBacklogsPage() {
   container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
   document.body.appendChild(container);
 
+  const sendBacklogResize = () => {
+    try {
+      const hub = document.getElementById('reecap-standalone-backlogs-hub');
+      const h = Math.max(
+        540,
+        hub ? (hub.offsetHeight || hub.scrollHeight || 0) + 48 : 0,
+        document.body ? document.body.scrollHeight : 0
+      );
+      if (window.parent && window.parent.postMessage) {
+        window.parent.postMessage({ type: 'REECAP_RESIZE', height: h }, '*');
+      }
+    } catch (e) {}
+  };
+
   const renderBacklogData = (res) => {
     const acad = res?.reecapAcademicData || {};
     const prof = res?.reecapProfileData || {};
@@ -2995,7 +3012,17 @@ function renderStandaloneBacklogsPage() {
         </div>
       </div>
     `;
+
+    sendBacklogResize();
+    setTimeout(sendBacklogResize, 80);
+    setTimeout(sendBacklogResize, 350);
   };
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'REECAP_REQUEST_RESIZE') {
+      sendBacklogResize();
+    }
+  });
 
   if (!isExtensionValid() || !chrome.storage || !chrome.storage.local) {
     renderBacklogData(null);
@@ -5438,6 +5465,12 @@ if (window.self !== window.top) {
 
     let maxBottom = 0;
     const selectors = [
+      '#reecap-standalone-backlogs-hub',
+      '.reecap-error-recovery-container',
+      '#reecap-fee-services-hub',
+      '#reecap-calendar-hub',
+      '.reecap-standalone-page',
+      '[id*="reecap-"]',
       '.reecap-biodata',
       '#reecap-timetable',
       '.reecap-payment-page',
@@ -5463,8 +5496,8 @@ if (window.self !== window.top) {
     });
 
     if (maxBottom <= 50) {
-      const root = document.forms[0] || body;
-      Array.from(root.children).forEach(child => {
+      Array.from(body.children).forEach(child => {
+        if (child.tagName === 'SCRIPT' || child.tagName === 'STYLE' || child.tagName === 'LINK') return;
         if (child.offsetParent === null && child.style.display === 'none') return;
         const rect = child.getBoundingClientRect();
         if (rect.height > 0) {
@@ -7049,13 +7082,13 @@ function renderDashboardCards(slot, profileData, isDemo) {
   if (!slot) return;
 
   const demoActive = isDemo !== undefined ? Boolean(isDemo) : Boolean(window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
-  if (demoActive && (!profileData || !profileData.held || profileData.held === 0)) {
+  if (demoActive) {
     if (window.__reecap_demo_mode && window.__reecap_demo_mode.getDemoAttendance) {
       profileData = window.__reecap_demo_mode.getDemoAttendance();
     }
   }
 
-  const ringRadius = 24;
+  const ringRadius = 21;
   const ringCircumference = 2 * Math.PI * ringRadius;
   let ringOffset = ringCircumference;
   let ringDisplay = "N/A";
@@ -7101,17 +7134,17 @@ function renderDashboardCards(slot, profileData, isDemo) {
   const haveTotalNumber = feeTotalDue !== "--" && feeTotalDue !== "0.00" && parseFloat(feeTotalDue) > 0;
   const isBacklogsClear = backlogsText === '0' || backlogsText.toLowerCase().includes('no');
 
-  const totalDisplay = (haveTotalNumber ? '₹' + formatCurrencyAmount(feeTotalDue) : '<span class="status-pill-pass">Cleared</span>');
+  const totalDisplay = (haveTotalNumber ? '₹' + formatCurrencyAmount(feeTotalDue) : '₹0.00');
   const totalCaption = haveTotalNumber ? 'Total outstanding' : 'All accounts settled';
 
   slot.innerHTML = `
     <!-- 1. Attendance Card -->
     <div class="overview-metric-card metric-card-attendance">
       <div class="metric-ring-box">
-        <svg width="56" height="56" viewBox="0 0 60 60">
-          <circle class="ring-bg" cx="30" cy="30" r="${ringRadius}" stroke-width="5.5"></circle>
-          <circle class="ring-fg" cx="30" cy="30" r="${ringRadius}"
-                  stroke-width="5.5"
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle class="ring-bg" cx="26" cy="26" r="${ringRadius}" stroke-width="5"></circle>
+          <circle class="ring-fg" cx="26" cy="26" r="${ringRadius}"
+                  stroke-width="5"
                   stroke="${ringColor}"
                   stroke-dasharray="${ringCircumference}"
                   stroke-dashoffset="${ringOffset}"></circle>
@@ -7672,7 +7705,7 @@ function redesignAttendancePage() {
   function renderView(profileData, isDemo) {
     window.__reecap_render_attendance = renderView;
     const demoActive = isDemo !== undefined ? Boolean(isDemo) : Boolean(window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
-    if (demoActive && (!profileData || !profileData.attendanceSubjects || !profileData.attendanceSubjects.length || !profileData.held)) {
+    if (demoActive) {
       if (window.__reecap_demo_mode && window.__reecap_demo_mode.getDemoAttendance) {
         profileData = window.__reecap_demo_mode.getDemoAttendance();
       }

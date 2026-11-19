@@ -63,7 +63,7 @@
 
     // 2. Attendance page simulation if current URL is attendance
     const path = (window.location.pathname || '').toLowerCase();
-    if (path.includes('studentattendance.aspx')) {
+    if (path.includes('studentattendance') || path.includes('attendancereport') || path.includes('attendanceregister')) {
       simulateAttendancePage();
     }
 
@@ -77,7 +77,7 @@
     const attCard = document.querySelector('.overview-metric-card.metric-card-attendance');
     if (!attCard) return;
 
-    const ringRadius = 24;
+    const ringRadius = 21;
     const ringCircumference = 2 * Math.PI * ringRadius;
     const percent = DEMO_ATTENDANCE.percent;
     const ringOffset = ringCircumference - (percent / 100) * ringCircumference;
@@ -86,6 +86,7 @@
     const ringFg = attCard.querySelector('.ring-fg');
     if (ringFg) {
       ringFg.setAttribute('stroke', ringColor);
+      ringFg.style.stroke = ringColor;
       ringFg.setAttribute('stroke-dasharray', String(ringCircumference));
       ringFg.setAttribute('stroke-dashoffset', String(ringOffset));
     }

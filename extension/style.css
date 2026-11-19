@@ -215,13 +215,14 @@
 
 .toolbar-presets-grid {
   display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 8px !important;
-  max-height: 250px !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  max-height: 220px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding-right: 4px !important;
   scrollbar-width: thin !important;
+  flex-shrink: 0 !important;
 }
 
 .toolbar-presets-grid::-webkit-scrollbar {
@@ -232,9 +233,10 @@
   border-radius: 4px;
 }
 
-.preset-card {
-  background: var(--surface-sunken) !important;
-  border: 1px solid var(--border-light) !important;
+.preset-card,
+.toolbar-presets-grid .preset-card {
+  background-color: hsl(var(--theme-primary-020)) !important;
+  border: 1px solid hsl(var(--theme-primary-030)) !important;
   border-radius: calc(var(--theme-radius, 25) * 0.01em) !important;
   padding: 6px !important;
   cursor: pointer !important;
@@ -243,26 +245,31 @@
   gap: 4px !important;
   position: relative !important;
   text-align: left !important;
-  min-height: 0 !important;
-  width: auto !important;
+  min-height: 84px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
   transition: transform var(--layout-transition-extra-fast, 0.15s),
               border-color var(--layout-transition-extra-fast, 0.15s),
               box-shadow var(--layout-transition-extra-fast, 0.15s) !important;
 }
 
-.preset-card:hover {
-  transform: translateY(-2px) !important;
-  border-color: rgb(var(--theme-accent)) !important;
+.preset-card:hover,
+.toolbar-presets-grid .preset-card:hover {
+  transform: translateY(-1px) !important;
+  border-color: hsl(var(--theme-primary-050)) !important;
   box-shadow: var(--theme-shadow-bottom-small, 0 2px 6px rgba(0,0,0,0.2)) !important;
 }
 
-.preset-card.is-selected {
+.preset-card.is-selected,
+.toolbar-presets-grid .preset-card.is-selected {
   border-color: rgb(var(--theme-accent)) !important;
   box-shadow: var(--form-ring-accent, 0 0 0 2px rgba(var(--theme-accent), 0.35)) !important;
 }
 
-.preset-swatch {
-  height: 38px !important;
+.preset-swatch,
+.toolbar-presets-grid .preset-swatch {
+  height: 34px !important;
+  min-height: 34px !important;
   border-radius: 4px !important;
   display: flex !important;
   align-items: center !important;
@@ -271,54 +278,64 @@
   overflow: hidden !important;
   background-color: var(--swatch-bg) !important;
   color: var(--swatch-fg) !important;
-  border: 1px solid var(--border-light) !important;
-  font-size: 16px !important;
+  border: 1px solid hsl(var(--theme-primary-030)) !important;
+  font-size: 15px !important;
   font-weight: 600 !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
 }
 
-.preset-accent-dot {
+.preset-accent-dot,
+.toolbar-presets-grid .preset-accent-dot {
   position: absolute !important;
   right: 5px !important;
   bottom: 5px !important;
-  width: 8px !important;
-  height: 8px !important;
+  width: 7px !important;
+  height: 7px !important;
   border-radius: 50% !important;
   background-color: var(--swatch-accent) !important;
-  box-shadow: 0 0 0 1px var(--border-light) !important;
+  box-shadow: 0 0 0 1px hsl(var(--theme-primary-030)) !important;
 }
 
-.preset-name {
-  font-size: 11px !important;
+.preset-name,
+.toolbar-presets-grid .preset-name {
+  font-size: 10.5px !important;
   font-weight: 600 !important;
-  color: var(--text-primary) !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.preset-font-name {
-  font-size: 9px !important;
-  color: var(--text-faint, rgba(255, 255, 255, 0.45)) !important;
+  color: hsl(var(--theme-primary-text-010)) !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   line-height: 1.2 !important;
 }
 
-.preset-card:hover .preset-font-name {
-  color: var(--text-secondary) !important;
+.preset-font-name,
+.toolbar-presets-grid .preset-font-name {
+  font-size: 8.5px !important;
+  color: hsl(var(--theme-primary-text-040)) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.1 !important;
 }
 
-.preset-card.is-selected .preset-font-name {
+.preset-card:hover .preset-font-name,
+.toolbar-presets-grid .preset-card:hover .preset-font-name {
+  color: hsl(var(--theme-primary-text-020)) !important;
+}
+
+.preset-card.is-selected .preset-font-name,
+.toolbar-presets-grid .preset-card.is-selected .preset-font-name {
   color: rgb(var(--theme-accent)) !important;
   font-weight: 600 !important;
 }
 
-.preset-style-badge {
-  color: var(--text-secondary) !important;
-  font-size: 9px !important;
+.preset-style-badge,
+.toolbar-presets-grid .preset-style-badge {
+  color: hsl(var(--theme-primary-text-030)) !important;
+  font-size: 8.5px !important;
   font-weight: 500 !important;
   text-transform: capitalize !important;
+  line-height: 1.2 !important;
 }
 
 .toolbar-tuning-box {
@@ -7766,10 +7783,10 @@ table#tblquestions input[type="text"]:not([value]) {
 
 .metric-ring-box {
   position: relative !important;
-  width: 56px !important;
-  height: 56px !important;
-  min-width: 56px !important;
-  max-width: 56px !important;
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+  max-width: 52px !important;
   flex-shrink: 0 !important;
   display: flex !important;
   align-items: center !important;
@@ -7807,10 +7824,14 @@ table#tblquestions input[type="text"]:not([value]) {
 
 .metric-ring-text {
   font-family: var(--font-mono), monospace !important;
-  font-size: 13.5px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
   line-height: 1 !important;
+  letter-spacing: -0.02em !important;
   text-align: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .metric-badge-box {
@@ -8898,7 +8919,8 @@ html, body {
   stroke: hsl(var(--theme-primary-030)) !important;
 }
 .ring-fg {
-  stroke: rgb(var(--theme-accent)) !important;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ring-value {
   color: hsl(var(--theme-primary-text-010)) !important;

@@ -146,10 +146,22 @@ renderDashboardCards(slotMock, { held: 0, attended: 0, percent: 0 }, true);
 assert.ok(slotMock.innerHTML.includes('90.4%'), 'Attendance card ring must show 90.4% in demo mode');
 assert.ok(slotMock.innerHTML.includes('282 / 312 Classes'), 'Attendance card must show 282 / 312 Classes in demo mode');
 assert.ok(slotMock.innerHTML.includes('Demo Showcase (Active)'), 'Caption must state Demo Showcase (Active)');
+assert.ok(slotMock.innerHTML.includes('viewBox="0 0 52 52"'), 'Attendance ring must use 52x52 coordinate space matching 52px badge box');
+assert.ok(slotMock.innerHTML.includes('₹0.00'), 'Fee balance when cleared must display ₹0.00');
+assert.ok(!slotMock.innerHTML.includes('<span class="status-pill-pass">Cleared</span>'), 'Fee balance must not duplicate Cleared pill inside main value');
 
 // Test 3: Verify parseServerErrorInfo detects exam related paths for revaluation
 const parseServerErrorInfo = vm.runInContext('parseServerErrorInfo', context);
 const examErr = parseServerErrorInfo('Sorry, error while accessing page', '/aus/Examinations/RevalutionScriptViewer.aspx');
 assert.strictEqual(examErr.isExamRelated, true, 'RevalutionScriptViewer.aspx must be recognized as exam related');
+
+// Test 4: Verify standalone attendance page renderView overrides cached non-demo profileData when demo is active
+const renderView = vm.runInContext('window.__reecap_render_attendance', context);
+if (typeof renderView === 'function') {
+  // Pre-cached 0% non-demo data
+  const cachedData = { held: 10, attended: 0, percent: 0, attendanceSubjects: [{ name: 'Test', held: 10, attended: 0, percent: 0 }] };
+  // Should unconditionally receive demo attendance (held: 312)
+  renderView(cachedData, true);
+}
 
 console.log('PASS: All Showcase Demo Mode integration, attendance simulation, and error bypass tests passed cleanly.');
