@@ -8154,6 +8154,8 @@ html.reecap-child-frame table {
 
 /* The parent shell capIframe adapts smoothly */
 #capIframeId {
+  width: 100% !important;
+  border: none;
   transition: height 0.15s ease-out;
 }
 

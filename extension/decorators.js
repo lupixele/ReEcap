@@ -6050,8 +6050,30 @@ function setActiveSidebarLink(target) {
       activeEl = links.find(l => (l.textContent || '').trim().toLowerCase().includes('hallticket'));
     } else if (term === 'lesson plan') {
       activeEl = links.find(l => (l.textContent || '').trim().toLowerCase().includes('lesson plan'));
-    } else if (term.includes('answer sheet') || term.includes('view answer')) {
-      activeEl = links.find(l => (l.textContent || '').trim().toLowerCase().includes('answer sheet'));
+    } else if (term.includes('answer sheet') || term.includes('view answer') || term.includes('scriptviewer')) {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        return txt.includes('answer sheet') || txt.includes('script') || txt.includes('answersheet');
+      });
+    } else if (term === 'college fee' || term === 'collegefee' || term.includes('studentfeereceipt')) {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        const href = (l.getAttribute('href') || '').toLowerCase();
+        return txt === 'college fee' || href.includes('studentfeereceipt');
+      });
+    } else if (term === 'receipts' || term === 'receipt' || term.includes('studentreceipts')) {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        const href = (l.getAttribute('href') || '').toLowerCase();
+        return txt === 'receipts' || href.includes('studentreceipts');
+      });
+    } else if (term === 'fee details' || term === 'feedetails' || term === 'divprofile_fees' || term.includes('studentpayments')) {
+      activeEl = links.find(l => {
+        const txt = (l.textContent || '').trim().toLowerCase();
+        const tabId = (l.getAttribute('data-tab-id') || l.dataset.tabId || '').toLowerCase();
+        const href = (l.getAttribute('href') || '').toLowerCase();
+        return txt === 'fee details' || tabId === 'divprofile_fees' || href.includes('studentpayments');
+      });
     }
 
     // 1. Check data-tab-id directly
@@ -6145,7 +6167,7 @@ function syncSidebarActiveState(pathOrUrl) {
   } else if (p.includes('lpreport.aspx')) {
     setActiveSidebarLink('LESSON PLAN');
     if (pageTitle) pageTitle.textContent = 'LESSON PLAN';
-  } else if (p.includes('revalutionscriptviewer.aspx') || p.includes('revaluationregistrationstudent') || p.includes('answersheet')) {
+  } else if (p.includes('revalutionscriptviewer.aspx') || p.includes('examscriptviewer.aspx') || p.includes('revaluationregistrationstudent') || p.includes('answersheet')) {
     setActiveSidebarLink('VIEW ANSWER SHEET');
     if (pageTitle) pageTitle.textContent = 'VIEW ANSWER SHEET';
   } else if (p.includes('courseregistration.aspx')) {
@@ -6163,7 +6185,10 @@ function syncSidebarActiveState(pathOrUrl) {
   } else if (p.includes('changepassword.aspx')) {
     setActiveSidebarLink('CHANGE PASSWORD');
     if (pageTitle) pageTitle.textContent = 'CHANGE PASSWORD';
-  } else if (p.includes('studentreceipts.aspx') || p.includes('studentfeereceipt.aspx')) {
+  } else if (p.includes('studentfeereceipt.aspx')) {
+    setActiveSidebarLink('COLLEGE FEE');
+    if (pageTitle) pageTitle.textContent = 'COLLEGE FEE';
+  } else if (p.includes('studentreceipts.aspx')) {
     setActiveSidebarLink('RECEIPTS');
     if (pageTitle) pageTitle.textContent = 'RECEIPTS';
   } else if (p.includes('studentpayments.aspx') || p.includes('studentfeeonline') || p.includes('onlinefee')) {
@@ -6188,7 +6213,7 @@ function syncSidebarActiveState(pathOrUrl) {
     } else if (p.includes('view=fee') || p.includes('#divprofile_fees') || p.includes('fee')) {
       setActiveSidebarLink('FEE DETAILS');
       if (pageTitle) pageTitle.textContent = 'FEE DETAILS';
-    } else {
+    } else if (p.includes('divprofile_biodata') || p.includes('biodata')) {
       setActiveSidebarLink('BIO-DATA');
       if (pageTitle) pageTitle.textContent = 'BIO-DATA';
     }
@@ -6200,6 +6225,16 @@ function syncSidebarActiveState(pathOrUrl) {
 
 window.setActiveSidebarLink = setActiveSidebarLink;
 window.syncSidebarActiveState = syncSidebarActiveState;
+
+function isIframeOnStudentProfile(iframe) {
+  if (!iframe) return false;
+  try {
+    const loc = iframe.contentWindow?.location;
+    const path = (loc?.pathname || '').toLowerCase();
+    if (path.includes('studentprofile.aspx')) return true;
+  } catch (e) {}
+  return false;
+}
 
 function navigateToProfileTab(tabId, title) {
   if (typeof showIframe === 'function') showIframe();
@@ -6215,13 +6250,19 @@ function navigateToProfileTab(tabId, title) {
 
   setActiveSidebarLink(title);
 
-  const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
-  if (curSrc.includes('studentprofile.aspx')) {
+  if (isIframeOnStudentProfile(iframe)) {
     try {
       iframe.contentWindow?.postMessage({ type: 'REECAP_SWITCH_TAB', tabId }, '*');
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (doc) {
+        const btn = doc.querySelector(`.reecap-tab-btn[data-tab-id="${tabId}"]`) ||
+                    doc.querySelector(`a[href="#${tabId}"]`) ||
+                    doc.getElementById(tabId);
+        if (btn) btn.click?.();
+      }
     } catch (e) {}
   } else {
-    iframe.src = `Academics/StudentProfile.aspx?scrid=17#${tabId}`;
+    iframe.src = `${getPortalBaseUrl()}Academics/StudentProfile.aspx?scrid=17#${tabId}`;
   }
 }
 
@@ -6239,13 +6280,19 @@ function navigateToFeeDetails() {
 
   setActiveSidebarLink('FEE DETAILS');
 
-  const curSrc = (iframe.getAttribute('src') || '').toLowerCase();
-  if (curSrc.includes('studentprofile.aspx')) {
+  if (isIframeOnStudentProfile(iframe)) {
     try {
       iframe.contentWindow?.postMessage({ type: 'REECAP_SWITCH_TAB', tabId: 'divProfile_Fees' }, '*');
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (doc) {
+        const btn = doc.querySelector(`.reecap-tab-btn[data-tab-id="divProfile_Fees"]`) ||
+                    doc.querySelector(`a[href="#divProfile_Fees"]`) ||
+                    doc.getElementById('divProfile_Fees');
+        if (btn) btn.click?.();
+      }
     } catch (e) {}
   } else {
-    iframe.src = 'Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees';
+    iframe.src = `${getPortalBaseUrl()}Academics/StudentProfile.aspx?scrid=17&view=fee#divProfile_Fees`;
   }
 }
 
@@ -6784,14 +6831,27 @@ function rebuildMainLayout() {
   contentCol.appendChild(iframe);
 
   iframe.addEventListener('load', () => {
-    if (document.documentElement.getAttribute('data-overview-active') !== 'true') {
+    if (document.documentElement.getAttribute('data-overview-active') !== 'true' &&
+        document.documentElement.getAttribute('data-calendar-active') !== 'true') {
       try {
         iframe.contentWindow?.postMessage({ type: 'REECAP_REQUEST_RESIZE' }, '*');
       } catch (e) {}
       try {
-        const curSrc = iframe.contentWindow?.location?.href || iframe.getAttribute('src') || '';
-        if (typeof syncSidebarActiveState === 'function') {
-          syncSidebarActiveState(curSrc);
+        let curSrc = '';
+        try {
+          curSrc = iframe.contentWindow?.location?.href || '';
+        } catch (e) {}
+        // Do not fallback to static iframe.getAttribute('src'); only sync if live href is available
+        if (curSrc && typeof syncSidebarActiveState === 'function') {
+          const curLower = curSrc.toLowerCase();
+          if (curLower.includes('studentprofile.aspx')) {
+            const hash = iframe.contentWindow?.location?.hash || '';
+            if (hash || curLower.includes('view=')) {
+              syncSidebarActiveState(curSrc);
+            }
+          } else {
+            syncSidebarActiveState(curSrc);
+          }
         }
       } catch (e) {}
     }
