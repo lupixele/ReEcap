@@ -314,7 +314,8 @@ const ADITYA_ACADEMIC_CALENDAR = {
           'reecapIdentity',
           'reecapProfileData',
           'reecapTimetable',
-          'reecapAcademicData'
+          'reecapAcademicData',
+          'reecapDemoMode'
         ], (data) => {
           try {
             if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) {
@@ -377,11 +378,27 @@ const ADITYA_ACADEMIC_CALENDAR = {
               }
             }
 
-            if (window.__reecap_demo_mode?.isActive()) {
+            const isDemoActive = Boolean(data?.reecapDemoMode) || (window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+            if (isDemoActive) {
               if (overallPercent === '--' || overallPercent === 0 || isNaN(overallPercent)) {
                 overallPercent = 90.4;
                 overallAttended = 282;
                 overallHeld = 312;
+              }
+              if (!subjectsAttendance.length && window.__reecap_demo_mode?.getDemoAttendance) {
+                const demoAtt = window.__reecap_demo_mode.getDemoAttendance();
+                demoAtt.attendanceSubjects.forEach(s => {
+                  const sStats = calculateAttendanceStatus(s.attended, s.held);
+                  subjectsAttendance.push({
+                    name: s.name,
+                    held: s.held,
+                    attended: s.attended,
+                    percent: s.percent,
+                    status: sStats.status,
+                    bunks: sStats.bunks,
+                    needed: sStats.needed
+                  });
+                });
               }
             }
 

@@ -162,6 +162,7 @@ function renderInUiErrorCard(info, targetContainer) {
 
       <div class="reecap-error-actions">
         <button type="button" class="pay-btn pay-btn-primary" id="reecap-err-reload-btn">Reload View</button>
+        <button type="button" class="pay-btn pay-btn-secondary" id="reecap-err-demo-btn">Simulate in Demo Mode</button>
         <button type="button" class="pay-btn pay-btn-secondary" id="reecap-err-calendar-btn">Academic Calendar</button>
         <button type="button" class="pay-btn pay-btn-secondary" id="reecap-err-overview-btn">Return to Overview</button>
       </div>
@@ -171,8 +172,42 @@ function renderInUiErrorCard(info, targetContainer) {
   container.appendChild(wrapper);
 
   const reloadBtn = wrapper.querySelector('#reecap-err-reload-btn');
+  const demoBtn = wrapper.querySelector('#reecap-err-demo-btn');
   const calBtn = wrapper.querySelector('#reecap-err-calendar-btn');
   const overviewBtn = wrapper.querySelector('#reecap-err-overview-btn');
+
+  if (demoBtn) {
+    demoBtn.addEventListener('click', () => {
+      try {
+        if (chrome && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ reecapDemoMode: true }, () => {
+            const path = (window.location.pathname || '').toLowerCase();
+            if (path.includes('exam') || path.includes('script') || path.includes('revalution')) {
+              wrapper.remove();
+              Array.from(document.body.children).forEach(c => c.style.removeProperty('display'));
+              if (window.__reecap_demo_mode && window.__reecap_demo_mode.simulateExamScriptViewer) {
+                window.__reecap_demo_mode.simulateExamScriptViewer();
+              } else {
+                window.location.reload();
+              }
+            } else if (path.includes('attendance')) {
+              wrapper.remove();
+              Array.from(document.body.children).forEach(c => c.style.removeProperty('display'));
+              if (typeof redesignAttendancePage === 'function') {
+                redesignAttendancePage();
+              } else {
+                window.location.reload();
+              }
+            } else {
+              window.location.reload();
+            }
+          });
+          return;
+        }
+      } catch (e) {}
+      window.location.reload();
+    });
+  }
 
   if (reloadBtn) {
     reloadBtn.addEventListener('click', () => {
@@ -227,33 +262,72 @@ function renderInUiErrorCard(info, targetContainer) {
 }
 
 function handleSuppressedAlert(rawMessage) {
-  const info = parseServerErrorInfo(rawMessage);
-  if (window.self !== window.top) {
-    renderInUiErrorCard(info);
-  } else {
-    let shellContainer = document.getElementById('reecap-shell-error-container');
-    const contentCol = document.getElementById('reecap-content-col');
-    if (!shellContainer && contentCol) {
-      shellContainer = document.createElement('div');
-      shellContainer.id = 'reecap-shell-error-container';
-      contentCol.appendChild(shellContainer);
-    }
-    if (shellContainer) {
-      shellContainer.innerHTML = '';
-      shellContainer.style.setProperty('display', 'flex', 'important');
-      const iframe = document.getElementById('capIframeId');
-      const overview = document.getElementById('reecap-overview');
-      const cal = document.getElementById('reecap-calendar-view');
-      if (iframe) iframe.style.setProperty('display', 'none', 'important');
-      if (overview) overview.style.setProperty('display', 'none', 'important');
-      if (cal) cal.style.setProperty('display', 'none', 'important');
-      const pageTitle = document.getElementById('reecap-page-title');
-      if (pageTitle) pageTitle.textContent = info.isExamRelated ? 'EXAMS DETAILS' : 'PORTAL NOTICE';
-      renderInUiErrorCard(info, shellContainer);
-    } else {
+  const path = (typeof window !== 'undefined' && window.location ? window.location.pathname : '').toLowerCase();
+  const isExam = path.includes('exam') || path.includes('script') || path.includes('revalution');
+  const isAttendance = path.includes('attendance');
+
+  const proceedWithError = () => {
+    const info = parseServerErrorInfo(rawMessage);
+    if (window.self !== window.top) {
       renderInUiErrorCard(info);
+    } else {
+      let shellContainer = document.getElementById('reecap-shell-error-container');
+      const contentCol = document.getElementById('reecap-content-col');
+      if (!shellContainer && contentCol) {
+        shellContainer = document.createElement('div');
+        shellContainer.id = 'reecap-shell-error-container';
+        contentCol.appendChild(shellContainer);
+      }
+      if (shellContainer) {
+        shellContainer.innerHTML = '';
+        shellContainer.style.setProperty('display', 'flex', 'important');
+        const iframe = document.getElementById('capIframeId');
+        const overview = document.getElementById('reecap-overview');
+        const cal = document.getElementById('reecap-calendar-view');
+        if (iframe) iframe.style.setProperty('display', 'none', 'important');
+        if (overview) overview.style.setProperty('display', 'none', 'important');
+        if (cal) cal.style.setProperty('display', 'none', 'important');
+        const pageTitle = document.getElementById('reecap-page-title');
+        if (pageTitle) pageTitle.textContent = info.isExamRelated ? 'EXAMS DETAILS' : 'PORTAL NOTICE';
+        renderInUiErrorCard(info, shellContainer);
+      } else {
+        renderInUiErrorCard(info);
+      }
+    }
+  };
+
+  try {
+    if (chrome && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['reecapDemoMode'], (res) => {
+        const isDemo = Boolean(res?.reecapDemoMode) || (window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+        if (isDemo) {
+          if (isExam && window.__reecap_demo_mode?.simulateExamScriptViewer) {
+            window.__reecap_demo_mode.simulateExamScriptViewer();
+            return;
+          }
+          if (isAttendance && typeof redesignAttendancePage === 'function') {
+            redesignAttendancePage();
+            return;
+          }
+        }
+        proceedWithError();
+      });
+      return;
+    }
+  } catch (e) {}
+
+  if (window.__reecap_demo_mode?.isActive()) {
+    if (isExam && window.__reecap_demo_mode.simulateExamScriptViewer) {
+      window.__reecap_demo_mode.simulateExamScriptViewer();
+      return;
+    }
+    if (isAttendance && typeof redesignAttendancePage === 'function') {
+      redesignAttendancePage();
+      return;
     }
   }
+
+  proceedWithError();
 }
 
 
@@ -779,10 +853,11 @@ function initDecorators() {
       redesignMarksPage();
     }
 
-    // 7. Exam Script Viewer (2026-08-29) — ExamScriptViewer.aspx.
+    // 7. Exam Script Viewer (2026-08-29) — ExamScriptViewer.aspx & RevalutionScriptViewer.aspx.
     //    Adds a "Save as PDF" button that stitches rendered canvas pages into
     //    a downloadable PDF using jsPDF.
-    if (window.location.pathname.toLowerCase().includes('examscriptviewer.aspx')) {
+    const viewerRoute = window.location.pathname.toLowerCase();
+    if (viewerRoute.includes('examscriptviewer.aspx') || viewerRoute.includes('revalutionscriptviewer.aspx') || viewerRoute.includes('scriptviewer.aspx')) {
       observeExamViewer();
     }
     
@@ -2965,6 +3040,25 @@ function observeAndRecoverServerError() {
         renderStandaloneBacklogsPage();
       } else if (lower.includes('studentattendance.aspx')) {
         redesignAttendancePage();
+      } else if (lower.includes('examscriptviewer.aspx') || lower.includes('revalutionscriptviewer.aspx') || lower.includes('scriptviewer.aspx')) {
+        try {
+          if (chrome && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.get(['reecapDemoMode'], (res) => {
+              const isDemo = Boolean(res?.reecapDemoMode) || (window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+              if (isDemo && window.__reecap_demo_mode) {
+                window.__reecap_demo_mode.simulateExamScriptViewer();
+              } else {
+                renderInUiErrorCard(parseServerErrorInfo(text, lower));
+              }
+            });
+            return;
+          }
+        } catch (e) {}
+        if (window.__reecap_demo_mode?.isActive()) {
+          window.__reecap_demo_mode.simulateExamScriptViewer();
+        } else {
+          renderInUiErrorCard(parseServerErrorInfo(text, lower));
+        }
       } else {
         renderInUiErrorCard(parseServerErrorInfo(text, lower));
       }
@@ -6827,17 +6921,32 @@ function buildOverviewPage(container) {
 
   if (!chrome || !chrome.storage || !chrome.storage.local) return;
   try {
-    chrome.storage.local.get(['reecapTimetable', 'reecapIdentity', 'reecapProfileData'], (data) => {
+    chrome.storage.local.get(['reecapTimetable', 'reecapIdentity', 'reecapProfileData', 'reecapDemoMode'], (data) => {
       if (chrome.runtime && chrome.runtime.lastError) return;
 
-      renderDashboardCards(metricsSlot, data ? data.reecapProfileData : null);
+      const isDemo = Boolean(data?.reecapDemoMode) || (window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+      let profData = data ? data.reecapProfileData : null;
+      if (isDemo && (!profData || !profData.held || profData.held === 0)) {
+        if (window.__reecap_demo_mode && window.__reecap_demo_mode.getDemoAttendance) {
+          profData = window.__reecap_demo_mode.getDemoAttendance();
+        }
+      }
+
+      renderDashboardCards(metricsSlot, profData, isDemo);
       renderScheduleCard(mainSplit, data ? data.reecapTimetable : null);
       renderCalendarOverviewCard(mainSplit, data ? data.reecapIdentity : null);
 
       chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName !== 'local' || !changes.reecapTimetable || !grid.isConnected) return;
-        const existingSchedule = mainSplit.querySelector('.overview-schedule-card');
-        renderScheduleCard(mainSplit, changes.reecapTimetable.newValue, existingSchedule);
+        if (areaName !== 'local' || !grid.isConnected) return;
+        if (changes.reecapDemoMode !== undefined) {
+          chrome.storage.local.get(['reecapProfileData'], (pData) => {
+            renderDashboardCards(metricsSlot, pData?.reecapProfileData || null, Boolean(changes.reecapDemoMode.newValue));
+          });
+        }
+        if (changes.reecapTimetable) {
+          const existingSchedule = mainSplit.querySelector('.overview-schedule-card');
+          renderScheduleCard(mainSplit, changes.reecapTimetable.newValue, existingSchedule);
+        }
       });
 
       if (!data || !data.reecapTimetable) prefetchTimetableData();
@@ -6866,11 +6975,25 @@ function renderSidebarQuickLinks() {
 function updateOverviewCards(profileData) {
   const slot = document.querySelector('.reecap-overview .overview-section-metrics');
   if (!slot) return;
-  renderDashboardCards(slot, profileData);
+  try {
+    chrome.storage.local.get(['reecapDemoMode'], (res) => {
+      const isDemo = Boolean(res?.reecapDemoMode) || (window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+      renderDashboardCards(slot, profileData, isDemo);
+    });
+  } catch (e) {
+    renderDashboardCards(slot, profileData);
+  }
 }
 
-function renderDashboardCards(slot, profileData) {
+function renderDashboardCards(slot, profileData, isDemo) {
   if (!slot) return;
+
+  const demoActive = isDemo !== undefined ? Boolean(isDemo) : Boolean(window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+  if (demoActive && (!profileData || !profileData.held || profileData.held === 0)) {
+    if (window.__reecap_demo_mode && window.__reecap_demo_mode.getDemoAttendance) {
+      profileData = window.__reecap_demo_mode.getDemoAttendance();
+    }
+  }
 
   const ringRadius = 24;
   const ringCircumference = 2 * Math.PI * ringRadius;
@@ -6905,7 +7028,9 @@ function renderDashboardCards(slot, profileData) {
     feeCurrentSemStatus  = profileData.feeCurrentSemStatus || 'pending';
     feeBalanceWords      = profileData.feeBalanceWords || '';
     feeTotalDue          = profileData.feeTotalDue   !== undefined && profileData.feeTotalDue   !== null ? `${profileData.feeTotalDue}` : "--";
-    if (profileData.lastUpdated) {
+    if (demoActive) {
+      syncedCaption = "Demo Showcase (Active)";
+    } else if (profileData.lastUpdated) {
       const minsAgo = Math.round((Date.now() - profileData.lastUpdated) / 60000);
       syncedCaption = minsAgo < 2 ? "Synced just now" : `Synced ${minsAgo < 60 ? minsAgo + 'm' : Math.round(minsAgo/60) + 'h'} ago`;
     } else {
@@ -6983,6 +7108,19 @@ function renderDashboardCards(slot, profileData) {
       ` : ''}
     </div>
   `;
+
+  const attCard = slot.querySelector('.metric-card-attendance');
+  if (attCard) {
+    attCard.style.cursor = 'pointer';
+    attCard.title = 'View Detailed Attendance Breakdown';
+    attCard.addEventListener('click', () => {
+      if (typeof showIframe === 'function') showIframe();
+      const iframe = document.getElementById('capIframeId');
+      if (iframe) {
+        iframe.src = `${getPortalBaseUrl()}Academics/StudentAttendance.aspx?scrid=3&showtype=SA`;
+      }
+    });
+  }
 
   const payBtn = slot.querySelector('.fee-pay-action-btn');
   if (payBtn) {
@@ -7471,10 +7609,13 @@ function redesignAttendancePage() {
     return;
   }
 
-  function renderView(profileData) {
+  function renderView(profileData, isDemo) {
     window.__reecap_render_attendance = renderView;
-    if ((!profileData || !profileData.attendanceSubjects || !profileData.attendanceSubjects.length) && window.__reecap_demo_mode?.isActive()) {
-      profileData = window.__reecap_demo_mode.getDemoAttendance();
+    const demoActive = isDemo !== undefined ? Boolean(isDemo) : Boolean(window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+    if (demoActive && (!profileData || !profileData.attendanceSubjects || !profileData.attendanceSubjects.length || !profileData.held)) {
+      if (window.__reecap_demo_mode && window.__reecap_demo_mode.getDemoAttendance) {
+        profileData = window.__reecap_demo_mode.getDemoAttendance();
+      }
     }
     if (!profileData || !profileData.attendanceSubjects || !profileData.attendanceSubjects.length) {
       wrapper.innerHTML = '<div class="marks-empty" style="text-align:center; margin-top: 40px; color: var(--text-secondary);">No attendance data synced yet.<br><br><span style="font-size:12px;opacity:0.7">Loading Profile in the background...</span></div>';
@@ -7590,17 +7731,26 @@ function redesignAttendancePage() {
 
   if (isExtensionValid() && chrome.storage && chrome.storage.local) {
     try {
-      chrome.storage.local.get(['reecapProfileData'], (data) => {
+      chrome.storage.local.get(['reecapProfileData', 'reecapDemoMode'], (data) => {
         if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) return;
         let prof = data ? data.reecapProfileData : null;
-        renderView(prof);
+        const isDemo = Boolean(data?.reecapDemoMode) || (window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+        renderView(prof, isDemo);
       });
 
       if (chrome.storage.onChanged) {
         chrome.storage.onChanged.addListener((changes, areaName) => {
           if (!isExtensionValid()) return;
-          if (areaName === 'local' && changes.reecapProfileData && changes.reecapProfileData.newValue) {
-            renderView(changes.reecapProfileData.newValue);
+          if (areaName === 'local') {
+            if (changes.reecapDemoMode !== undefined) {
+              chrome.storage.local.get(['reecapProfileData'], (pData) => {
+                renderView(pData?.reecapProfileData || null, Boolean(changes.reecapDemoMode.newValue));
+              });
+            } else if (changes.reecapProfileData && changes.reecapProfileData.newValue) {
+              chrome.storage.local.get(['reecapDemoMode'], (dData) => {
+                renderView(changes.reecapProfileData.newValue, Boolean(dData?.reecapDemoMode));
+              });
+            }
           }
         });
       }
@@ -7612,6 +7762,7 @@ function redesignAttendancePage() {
   }
 }
 
+window.redesignAttendancePage = redesignAttendancePage;
 
 // ────────────────────────────────────────────────────────────────
 // Exam Script Viewer — "Save as PDF" (2026-08-29)
@@ -7624,24 +7775,38 @@ function redesignAttendancePage() {
 function observeExamViewer() {
   document.body.classList.add('reecap-exam-viewer-page');
 
-  if (window.__reecap_demo_mode?.isActive()) {
+  const checkDemo = () => {
     try {
-      window.__reecap_demo_mode.simulateExamScriptViewer();
+      if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['reecapDemoMode'], (res) => {
+          const isDemo = Boolean(res?.reecapDemoMode) || (window.__reecap_demo_mode && window.__reecap_demo_mode.isActive());
+          if (isDemo && window.__reecap_demo_mode) {
+            window.__reecap_demo_mode.simulateExamScriptViewer();
+            return;
+          }
+          waitForLiveContainer();
+        });
+        return;
+      }
     } catch (e) {}
-  }
+    if (window.__reecap_demo_mode?.isActive()) {
+      window.__reecap_demo_mode.simulateExamScriptViewer();
+      return;
+    }
+    waitForLiveContainer();
+  };
 
-  // Wait for the button container to exist in the DOM
-  const waitForContainer = () => {
+  const waitForLiveContainer = () => {
     const container = document.querySelector('.button-container');
     if (container) {
       injectSavePdfButton(container);
       observePdfViewerChanges();
     } else {
-      // The page might still be loading — retry
-      setTimeout(waitForContainer, 500);
+      setTimeout(waitForLiveContainer, 500);
     }
   };
-  waitForContainer();
+
+  checkDemo();
 }
 
 /**
@@ -7749,6 +7914,9 @@ function injectPdfGenerator() {
   script.onload = () => script.remove();
   document.head.appendChild(script);
 }
+
+window.injectSavePdfButton = injectSavePdfButton;
+window.saveExamAsPdf = saveExamAsPdf;
 
 
 // ────────────────────────────────────────────────────────────────

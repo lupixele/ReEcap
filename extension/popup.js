@@ -29,15 +29,14 @@
   function sendMessageToPortal(message) {
     try {
       chrome.tabs.query({ url: '*://info.aec.edu.in/*' }, (tabs) => {
-        if (!tabs || !tabs.length) {
-          chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tabs && tabs.length) {
+          tabs.forEach(tab => {
             if (tab && tab.id) chrome.tabs.sendMessage(tab.id, message).catch(() => {});
           });
-          return;
         }
-        tabs.forEach(tab => {
-          chrome.tabs.sendMessage(tab.id, message).catch(() => {});
-        });
+      });
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tab && tab.id) chrome.tabs.sendMessage(tab.id, message).catch(() => {});
       });
     } catch (e) {}
   }

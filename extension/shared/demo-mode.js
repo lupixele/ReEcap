@@ -57,26 +57,188 @@
   function applyDemoHooks() {
     if (!demoActive) return;
 
-    // 1. Attendance page simulation if current URL is attendance
+    // 1. Dashboard Overview Attendance Card update
+    simulateOverviewCard();
+    observeOverviewMetrics();
+
+    // 2. Attendance page simulation if current URL is attendance
     const path = (window.location.pathname || '').toLowerCase();
     if (path.includes('studentattendance.aspx')) {
       simulateAttendancePage();
     }
 
-    // 2. Exam viewer simulation if current URL is exam script
-    if (path.includes('examscriptviewer.aspx') || path.includes('revalutionscriptviewer.aspx')) {
+    // 3. Exam viewer simulation if current URL is exam script or revaluation script
+    if (path.includes('examscriptviewer.aspx') || path.includes('revalutionscriptviewer.aspx') || path.includes('scriptviewer.aspx')) {
       simulateExamScriptViewer();
     }
   }
 
-  function simulateAttendancePage() {
-    const existing = document.querySelector('.reecap-attendance-standalone');
-    if (existing && existing.textContent.includes('No attendance data synced yet')) {
-      const renderFn = window.__reecap_render_attendance;
-      if (typeof renderFn === 'function') {
-        renderFn(DEMO_ATTENDANCE);
-      }
+  function simulateOverviewCard() {
+    const attCard = document.querySelector('.overview-metric-card.metric-card-attendance');
+    if (!attCard) return;
+
+    const ringRadius = 24;
+    const ringCircumference = 2 * Math.PI * ringRadius;
+    const percent = DEMO_ATTENDANCE.percent;
+    const ringOffset = ringCircumference - (percent / 100) * ringCircumference;
+    const ringColor = 'var(--success)';
+
+    const ringFg = attCard.querySelector('.ring-fg');
+    if (ringFg) {
+      ringFg.setAttribute('stroke', ringColor);
+      ringFg.setAttribute('stroke-dasharray', String(ringCircumference));
+      ringFg.setAttribute('stroke-dashoffset', String(ringOffset));
     }
+    const ringText = attCard.querySelector('.metric-ring-text');
+    if (ringText) {
+      ringText.textContent = percent.toFixed(1) + '%';
+      ringText.style.color = ringColor;
+    }
+    const mainVal = attCard.querySelector('.metric-main-val');
+    if (mainVal) {
+      mainVal.textContent = `${DEMO_ATTENDANCE.attended} / ${DEMO_ATTENDANCE.held} Classes`;
+    }
+    const subCaption = attCard.querySelector('.metric-sub-caption');
+    if (subCaption) {
+      subCaption.textContent = 'Demo Showcase (Active)';
+    }
+
+    attCard.style.cursor = 'pointer';
+    attCard.title = 'View Detailed Attendance Breakdown';
+  }
+
+  let overviewObserver = null;
+  function observeOverviewMetrics() {
+    if (overviewObserver) return;
+    const checkAndUpdate = () => {
+      const card = document.querySelector('.overview-metric-card.metric-card-attendance');
+      if (card) {
+        simulateOverviewCard();
+      }
+    };
+
+    checkAndUpdate();
+    if (document.body) {
+      overviewObserver = new MutationObserver(checkAndUpdate);
+      overviewObserver.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+
+  function simulateAttendancePage() {
+    // Clean up any error recovery cards that may have mounted on network failure
+    const errCard = document.getElementById('reecap-error-recovery-card') || document.querySelector('.reecap-error-recovery-container');
+    if (errCard) errCard.remove();
+
+    Array.from(document.body.children).forEach(c => {
+      if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+        c.style.removeProperty('display');
+      }
+    });
+
+    if (typeof window.__reecap_render_attendance === 'function') {
+      window.__reecap_render_attendance(DEMO_ATTENDANCE, true);
+      return;
+    }
+
+    if (typeof window.redesignAttendancePage === 'function') {
+      window.redesignAttendancePage();
+      return;
+    }
+
+    // Direct fallback if standalone container is already in DOM
+    let wrapper = document.querySelector('.reecap-attendance-standalone');
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.className = 'reecap-attendance-standalone';
+      wrapper.style.padding = '24px';
+      wrapper.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
+      document.body.appendChild(wrapper);
+    }
+    renderDemoAttendanceHtml(wrapper);
+  }
+
+  function renderDemoAttendanceHtml(wrapper) {
+    if (!wrapper) return;
+    const { held, attended, percent, attendanceSubjects } = DEMO_ATTENDANCE;
+    const ringRadius = 40;
+    const ringCircumf = 2 * Math.PI * ringRadius;
+    const offset = ringCircumf - (percent / 100) * ringCircumf;
+    const ringColor = "var(--success)";
+
+    let html = `
+      <div class="overview-section-metrics" style="margin-bottom: 24px; display: flex; flex-direction: column;">
+        <div class="ring-card" style="flex: 1; min-width: 280px; flex-direction: row; gap: 24px; text-align: left; justify-content: flex-start; padding: 24px 32px;">
+          <div class="ring-wrap" style="width: 96px; height: 96px; flex-shrink: 0;">
+            <svg width="96" height="96">
+              <circle class="ring-bg" cx="48" cy="48" r="${ringRadius}" stroke-width="8"></circle>
+              <circle class="ring-fg" cx="48" cy="48" r="${ringRadius}" stroke-width="8" stroke="${ringColor}" stroke-dasharray="${ringCircumf}" stroke-dashoffset="${offset}"></circle>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-value" style="font-size: 15px; font-weight: 700; color: ${ringColor}">${percent.toFixed(1)}%</div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin: 0; color: var(--text-primary);">Present Semester Attendance</h3>
+            <div style="font-size: 14px; color: var(--text-secondary); font-weight: 500;">
+              <span class="mono" style="font-weight: 600; color: var(--text-primary);">${attended}</span> attended out of <span class="mono" style="font-weight: 600; color: var(--text-primary);">${held}</span> total lectures held
+            </div>
+            <div style="font-size: 12px; color: var(--text-faint); margin-top: 4px;">Status: Satisfactory Standing (Demo Showcase Simulation)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overview-card" style="margin-bottom: 24px;">
+        <div class="overview-card-header">
+          <span class="overview-card-title">Subject Attendance Record</span>
+          <span class="overview-card-subtitle">Demo Showcase Session</span>
+        </div>
+        <div class="reecap-table-wrap">
+          <table class="reecap-data-table reecap-attendance-table">
+            <thead>
+              <tr>
+                <th>Subject Name</th>
+                <th style="text-align: right;">Held</th>
+                <th style="text-align: right;">Attended</th>
+                <th style="text-align: right;">Percentage</th>
+                <th style="text-align: center; width: 140px;">75% Target Status</th>
+                <th style="width: 140px; text-align: left;">Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    attendanceSubjects.forEach(s => {
+      const sAttend = s.attended;
+      const sHeld = s.held;
+      const sPct = s.percent;
+      const sColor = "var(--success)";
+      const skippableClasses = Math.max(0, Math.floor((4/3) * sAttend - sHeld));
+      const targetStatusStr = `<div class="bunkable-tag">Can skip next <b>${skippableClasses}</b></div>`;
+
+      html += `
+        <tr>
+          <td style="font-weight: 500;">${s.name}</td>
+          <td class="mono" style="text-align: right;">${sHeld}</td>
+          <td class="mono" style="text-align: right;">${sAttend}</td>
+          <td class="mono" style="text-align: right; color: ${sColor}; font-weight: 600;">${sPct.toFixed(1)}%</td>
+          <td style="text-align: center;">${targetStatusStr}</td>
+          <td>
+            <div class="reecap-prog-track" style="height: 6px; background: var(--surface-secondary, rgba(255,255,255,0.06)); border-radius: 99px; overflow: hidden;">
+              <div class="reecap-prog-fill" style="width: ${Math.min(100, sPct)}%; background: ${sColor}; height: 100%; border-radius: 99px;"></div>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    wrapper.innerHTML = html;
   }
 
   function createExamCanvasPage(pageNum, title, contentDrawer) {
@@ -125,6 +287,16 @@
   }
 
   function simulateExamScriptViewer() {
+    // Clean up any error recovery cards
+    const errCard = document.getElementById('reecap-error-recovery-card') || document.querySelector('.reecap-error-recovery-container') || document.getElementById('reecap-shell-error-container');
+    if (errCard) errCard.remove();
+
+    Array.from(document.body.children).forEach(c => {
+      if (c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && c.tagName !== 'LINK') {
+        c.style.removeProperty('display');
+      }
+    });
+
     let viewer = document.getElementById('pdf_viewer');
     let btnContainer = document.querySelector('.button-container');
 
@@ -370,6 +542,30 @@
     viewer.appendChild(page2);
     viewer.appendChild(page3);
 
+    // Provide "Save as PDF" button
+    if (!btnContainer.querySelector('#reecap-save-pdf')) {
+      const btn = document.createElement('a');
+      btn.id = 'reecap-save-pdf';
+      btn.className = 'btn btn-save-pdf';
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             style="vertical-align: -2px; margin-right: 4px;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>Save as PDF`;
+      btn.style.cursor = 'pointer';
+      btn.addEventListener('click', () => {
+        if (typeof window.saveExamAsPdf === 'function') {
+          window.saveExamAsPdf();
+        } else if (typeof window.injectSavePdfButton === 'function') {
+          window.saveExamAsPdf();
+        }
+      });
+      btnContainer.appendChild(btn);
+    }
+
     // Call observeExamViewer hooks if available
     try {
       if (typeof window.injectSavePdfButton === 'function') {
@@ -379,6 +575,12 @@
         window.updateSavePdfState();
       }
     } catch (e) {}
+
+    // Tell parent to set title and enlarge iframe height for booklet viewing
+    if (window.parent && window.parent.postMessage) {
+      window.parent.postMessage({ type: 'REECAP_SET_TITLE', title: 'VIEW ANSWER SHEET (EXT)' }, '*');
+      window.parent.postMessage({ type: 'REECAP_RESIZE', height: 3800 }, '*');
+    }
   }
 
   // Public API
@@ -387,10 +589,25 @@
     getDemoAttendance: () => DEMO_ATTENDANCE,
     getDemoDossier: () => DEMO_DOSSIER,
     simulateAttendancePage,
-    simulateExamScriptViewer
+    simulateExamScriptViewer,
+    simulateOverviewCard
   };
 
-  // Listen for broadcast toggle from popup
+  // Real-time synchronization across all tabs and frames via chrome.storage.onChanged
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.reecapDemoMode !== undefined) {
+        demoActive = Boolean(changes.reecapDemoMode.newValue);
+        if (demoActive) {
+          applyDemoHooks();
+        } else {
+          window.location.reload();
+        }
+      }
+    });
+  }
+
+  // Listen for direct broadcast toggle from popup
   if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((msg) => {
       if (msg && msg.type === 'REECAP_SET_DEMO_MODE') {
