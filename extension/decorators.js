@@ -26,6 +26,19 @@ function escapeAttr(s) {
     .replace(/>/g, '&gt;');
 }
 
+function getPortalBaseUrl() {
+  try {
+    const origin = window.location.origin;
+    const path = window.location.pathname;
+    const match = path.match(/^(\/[^\/]+\/)/);
+    const prefix = match ? match[1] : '/aus/';
+    return `${origin}${prefix}`;
+  } catch (e) {
+    return `${window.location.origin}/aus/`;
+  }
+}
+window.getPortalBaseUrl = getPortalBaseUrl;
+
 // ────────────────────────────────────────────────────────────────
 // Universal Alert & Server Error Interceptor (Main World + Isolated World)
 // ────────────────────────────────────────────────────────────────
@@ -417,7 +430,8 @@ function initDecorators() {
             if (isOverview) {
               iframe.style.setProperty('height', '1px', 'important');
             } else {
-              const targetHeight = Math.ceil(e.data.height);
+              const rawHeight = Math.ceil(e.data.height);
+              const targetHeight = Math.max(500, rawHeight);
               if (targetHeight > 0) {
                 iframe.style.setProperty('height', targetHeight + 'px', 'important');
               }
@@ -449,6 +463,20 @@ function initDecorators() {
             showOverview();
           } else if (e.data.route === 'calendar' && typeof showAcademicCalendar === 'function') {
             showAcademicCalendar();
+          }
+        }
+        if (e.data && e.data.type === 'REECAP_NAVIGATE_URL') {
+          if (typeof showIframe === 'function') showIframe();
+          const iframe = document.getElementById('capIframeId');
+          if (iframe && e.data.url) {
+            let fullUrl = e.data.url;
+            if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+              fullUrl = `${getPortalBaseUrl()}${fullUrl.replace(/^\//, '')}`;
+            }
+            iframe.src = fullUrl;
+          }
+          if (e.data.title && typeof setActiveSidebarLink === 'function') {
+            setActiveSidebarLink(e.data.title);
           }
         }
       });
@@ -2927,17 +2955,19 @@ function renderStandaloneFeePage() {
 
 function handleBacklogsPortalPage() {
   const bodyText = (document.body ? document.body.textContent : '') || '';
-  if (bodyText.includes('Sorry, error while accessing page') || bodyText.includes('Server Error in') || bodyText.includes('error while accessing page')) {
+  const lower = bodyText.toLowerCase();
+  if (lower.includes('error while accessing page') || lower.includes('server error') || lower.includes('no records found') || lower.includes('no backlogs') || lower.includes('zero backlogs') || lower.includes('have no backlogs')) {
     renderStandaloneBacklogsPage();
     return;
   }
-  // Check after brief delay
+  // Check after brief delay for slow ASP.NET table renders
   setTimeout(() => {
     const currentBody = (document.body ? document.body.textContent : '') || '';
-    if (currentBody.includes('Sorry, error while accessing page') || currentBody.includes('Server Error in') || currentBody.includes('No records found') || currentBody.includes('no backlogs')) {
+    const curLower = currentBody.toLowerCase();
+    if (curLower.includes('error while accessing page') || curLower.includes('server error') || curLower.includes('no records found') || curLower.includes('no backlogs') || curLower.includes('zero backlogs') || curLower.includes('have no backlogs')) {
       renderStandaloneBacklogsPage();
     }
-  }, 1000);
+  }, 300);
 }
 
 function renderStandaloneBacklogsPage() {
@@ -2957,6 +2987,7 @@ function renderStandaloneBacklogsPage() {
   container.id = 'reecap-standalone-backlogs-hub';
   container.style.padding = '32px 24px';
   container.style.maxWidth = '900px';
+  container.style.minHeight = '480px';
   container.style.margin = '0 auto';
   container.style.fontFamily = 'var(--font-sans), system-ui, sans-serif';
   document.body.appendChild(container);
@@ -2983,7 +3014,7 @@ function renderStandaloneBacklogsPage() {
 
     container.innerHTML = `
       <div style="background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg, 12px); padding: 36px 32px; text-align: center; box-shadow: var(--shadow-md);">
-        <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--success-soft); color: var(--success); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--success-soft); color: var(--success); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
           <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         <h2 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 0 0 8px 0;">Clean Academic Record</h2>
@@ -3008,15 +3039,34 @@ function renderStandaloneBacklogsPage() {
         </div>
 
         <div style="display: flex; gap: 12px; justify-content: center;">
-          <a href="Academics/StudentMarksReport.aspx?scrid=15" class="pay-btn pay-btn-secondary" style="text-decoration: none; font-size: 13px;">View Complete Marks Sheet</a>
+          <button type="button" id="reecap-backlogs-view-marks" class="pay-btn pay-btn-secondary" style="text-decoration: none; font-size: 13px; cursor: pointer; border: none;">View Complete Marks Sheet</button>
         </div>
       </div>
     `;
+
+    const marksBtn = container.querySelector('#reecap-backlogs-view-marks');
+    if (marksBtn) {
+      marksBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.parent && window.parent.postMessage) {
+          window.parent.postMessage({
+            type: 'REECAP_NAVIGATE_URL',
+            url: 'Academics/StudentMarksReport.aspx?scrid=15',
+            title: 'MARKS'
+          }, '*');
+        } else {
+          window.location.href = 'StudentMarksReport.aspx?scrid=15';
+        }
+      });
+    }
 
     sendBacklogResize();
     setTimeout(sendBacklogResize, 80);
     setTimeout(sendBacklogResize, 350);
   };
+
+  // Immediate synchronous render so container is never empty while awaiting storage
+  renderBacklogData(null);
 
   window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'REECAP_REQUEST_RESIZE') {
@@ -3025,21 +3075,17 @@ function renderStandaloneBacklogsPage() {
   });
 
   if (!isExtensionValid() || !chrome.storage || !chrome.storage.local) {
-    renderBacklogData(null);
     return;
   }
 
   try {
     chrome.storage.local.get(['reecapProfileData', 'reecapAcademicData'], (res) => {
       if (!isExtensionValid() || (chrome.runtime && chrome.runtime.lastError)) {
-        renderBacklogData(null);
         return;
       }
       renderBacklogData(res);
     });
-  } catch (e) {
-    renderBacklogData(null);
-  }
+  } catch (e) {}
 }
 
 function observeAndRecoverServerError() {
@@ -5507,7 +5553,7 @@ if (window.self !== window.top) {
       });
     }
 
-    return Math.max(120, Math.ceil(maxBottom + 16));
+    return Math.max(480, Math.ceil(maxBottom + 16));
   }
 
   function reportIframeHeight() {
@@ -5942,6 +5988,18 @@ function buildSidebar() {
             }
           } else {
             if (typeof showIframe === 'function') showIframe();
+            const iframe = document.getElementById('capIframeId');
+            if (iframe) {
+              const href = a.getAttribute('href');
+              if (href && !href.startsWith('javascript:')) {
+                let fullUrl = href;
+                if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+                  fullUrl = `${getPortalBaseUrl()}${fullUrl.replace(/^\//, '')}`;
+                }
+                iframe.src = fullUrl;
+                e.preventDefault();
+              }
+            }
           }
           if (typeof closeResponsiveNavigation === 'function') closeResponsiveNavigation();
         });

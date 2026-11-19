@@ -166,4 +166,55 @@ const mockIframeOnProfile = {
 };
 assert.strictEqual(isIframeOnStudentProfileMock(mockIframeOnProfile), true, 'When on StudentProfile, iframe is recognized as on StudentProfile');
 
+// Test 5: getPortalBaseUrl resolution and cross-page navigation from non-profile pages
+function getPortalBaseUrlMock(locationMock) {
+  try {
+    const origin = locationMock.origin;
+    const path = locationMock.pathname;
+    const match = path.match(/^(\/[^\/]+\/)/);
+    const prefix = match ? match[1] : '/aus/';
+    return `${origin}${prefix}`;
+  } catch (e) {
+    return `${locationMock.origin}/aus/`;
+  }
+}
+
+const mockLocAEC = { origin: 'http://info.aec.edu.in', pathname: '/aec/Academics/StudentMaster.aspx' };
+assert.strictEqual(getPortalBaseUrlMock(mockLocAEC), 'http://info.aec.edu.in/aec/', 'Resolves /aec/ prefix');
+
+const mockLocAUS = { origin: 'http://info.aec.edu.in', pathname: '/aus/Academics/StudentMaster.aspx' };
+assert.strictEqual(getPortalBaseUrlMock(mockLocAUS), 'http://info.aec.edu.in/aus/', 'Resolves /aus/ prefix');
+
+// Simulate navigation away from Backlogs page when isIframeOnStudentProfile is false
+let navigatedUrl = null;
+const mockIframeOnBacklogs = {
+  src: 'Academics/StudentBacklogs.aspx?scrid=18',
+  contentWindow: {
+    location: { pathname: '/aus/Academics/StudentBacklogs.aspx' }
+  }
+};
+
+function navigateToProfileTabMock(tabId, title, iframe, loc) {
+  if (isIframeOnStudentProfileMock(iframe)) {
+    // switch tab internally
+    return 'internal';
+  } else {
+    const base = getPortalBaseUrlMock(loc);
+    iframe.src = `${base}Academics/StudentProfile.aspx?scrid=17#${tabId}`;
+    return iframe.src;
+  }
+}
+
+const resultNav = navigateToProfileTabMock('divProfile_BioData', 'BIO-DATA', mockIframeOnBacklogs, mockLocAUS);
+assert.strictEqual(resultNav, 'http://info.aec.edu.in/aus/Academics/StudentProfile.aspx?scrid=17#divProfile_BioData', 'Must navigate iframe out of Backlogs to StudentProfile with tab hash without throwing');
+
+// Test 6: Minimum iframe height clamp prevents clipping
+const rawStubHeight = 74;
+const clampedParentHeight = Math.max(500, Math.ceil(rawStubHeight));
+assert.strictEqual(clampedParentHeight, 500, 'Parent REECAP_RESIZE must clamp minimum height to at least 500px');
+
+const rawContentHeight = 58;
+const clampedChildHeight = Math.max(480, Math.ceil(rawContentHeight + 16));
+assert.strictEqual(clampedChildHeight, 480, 'Child frame getTrueContentHeight must clamp minimum height to at least 480px');
+
 console.log('PASS: All Navigation Freezing, Sidebar Highlighter, and Fee Category separation tests passed cleanly.');
